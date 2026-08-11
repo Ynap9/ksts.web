@@ -77,19 +77,27 @@ Nguyên tắc không đổi:
 
 ```
 Excel  ->  IExcelSheetReader     đọc sheet, chuẩn hoá tên cột
-       ->  IQrCodeSvgRenderer    sinh mã QR từ số CCCD
+       ->  IQrCodeSvgRenderer    sinh mã QR từ số định danh
        ->  IHtmlDocumentFiller   nhồi giá trị vào mẫu HTML theo id thẻ
        ->  IGotenbergConverter   chuyển HTML sang PDF
-       ->  ZipArchive            ghi thẳng vào file zip tạm trên đĩa
+       ->  IS3FileStorage        đẩy thẳng lên MinIO rồi buông khỏi bộ nhớ
 ```
 
-Bản đồ cột Excel sang id thẻ HTML khai duy nhất tại `GiayBaoConstants.ColumnToElementId`. Đối chiếu theo
-**tên cột** chứ không theo thứ tự, nên file đảo cột hay thừa cột vẫn nhồi đúng.
+Bản đồ id thẻ HTML sang tên cột Excel khai duy nhất tại `GiayBaoConstants.IdTheToTenCot`. Đối chiếu theo
+**tên cột** chứ không theo thứ tự, nên file đảo cột hay thừa cột vẫn nhồi đúng. Mỗi thẻ nhận **nhiều tên
+cột** vì các đợt kết xuất đặt tên khác nhau cho cùng một trường (`Họ và Tên thí sinh` với `Họ tên`,
+`Số CCCD` với `Số ĐDCN`); lấy tên nào có mặt trước.
 
-Tên file đặt theo **số CCCD** vì đó là khoá định danh thí sinh, không dấu, không khoảng trắng, dùng làm
+Tên file đặt theo **số định danh** vì đó là khoá định danh thí sinh, không dấu, không khoảng trắng, dùng làm
 object key trên MinIO được ngay.
 
-Lô chạy nền và không gom PDF vào RAM: 5000 giấy báo là gần 4 GB, ghi thẳng vào zip tạm trên đĩa.
+**Máy chủ không giữ file ở bất kỳ khâu nào.** Mỗi giấy báo dựng xong là đẩy ngay lên MinIO trong cùng vòng
+chạy song song. Bản trước gom cả lô vào một file nén tạm trên đĩa; lô 5000 tờ là gần 4 GB, đủ làm đầy ổ máy
+chủ, mà đầy ổ thì Gotenberg cũng hỏng theo và cả lô chết giữa chừng với hàng loạt lỗi HTTP 500.
+
+Muốn tải về máy thì file nén được dựng **ngay lúc tải**: kéo từng giấy báo từ kho rồi nén thẳng vào luồng gửi
+cho trình duyệt, tải trước vài file để không phải đợi trọn một vòng đi-về cho mỗi file. Không có file nén
+trung gian nào trên đĩa.
 
 ## Luồng ký số
 

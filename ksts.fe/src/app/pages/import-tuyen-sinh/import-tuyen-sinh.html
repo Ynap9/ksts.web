@@ -49,22 +49,14 @@
     </div>
 
     <div class="mt-5 flex flex-col gap-1">
-        <div class="text-sm text-surface-500">Dựng giấy báo</div>
+        <div class="flex items-center justify-between text-sm text-surface-500">
+            <span>Dựng giấy báo và đẩy lên kho</span>
+            @if (tienToKho()) {
+                <span>{{ tienToKho() }}</span>
+            }
+        </div>
         <p-progressbar [value]="phanTram()" [showValue]="true" />
     </div>
-
-    @if (dangDay() || job()?.hoanTatDayLenKho) {
-        <div class="mt-4 flex flex-col gap-1">
-            <div class="flex items-center justify-between text-sm text-surface-500">
-                <span>Đẩy lên kho MinIO</span>
-                <span>
-                    {{ daDayLenKho() }}/{{ rows().length }} file@if (soLoiDay()) {, lỗi {{ soLoiDay() }}}
-                    @if (job()?.tienToKho) { — {{ job()?.tienToKho }} }
-                </span>
-            </div>
-            <p-progressbar [value]="phanTramDay()" [showValue]="true" />
-        </div>
-    }
 
     <div class="mt-5">
         <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [loading]="loading()">
@@ -114,8 +106,6 @@
     <div class="mt-5 flex flex-row items-center justify-end gap-2">
         <p-button label="Bắt đầu" icon="pi pi-play" type="button" styleClass="w-32" [disabled]="!coTheBatDau()"
             [loading]="dangChay()" (onClick)="onBatDau()" />
-        <p-button label="Đẩy lên MinIO" icon="pi pi-cloud-upload" type="button" severity="info" styleClass="w-44"
-            [disabled]="!dayDuoc()" [loading]="dangDay()" (onClick)="onDayLenKho()" />
         <p-button label="Tải xuống" icon="pi pi-download" type="button" severity="success" styleClass="w-36"
             [disabled]="!taiDuoc()" (onClick)="onTaiVe()" />
     </div>

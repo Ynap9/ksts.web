@@ -79,7 +79,7 @@ namespace ksts.be.shared.Requests.ErrorRequest
         public const int ConvertFileNotConfigured = 1124;
         public const int ConvertFileFailed = 1125;
         public const int GiayBaoJobNotFound = 1126;
-        public const int GiayBaoChuaDungXong = 1127;
-        public const int GiayBaoDangDayLenKho = 1128;
+        // 1127, 1128 đã dùng cho bước đẩy lô lên kho theo yêu cầu riêng — bước đó không còn nữa vì giấy báo
+        // dựng xong là lên kho luôn. Không cấp lại hai số này cho nghiệp vụ khác.
     }
 }

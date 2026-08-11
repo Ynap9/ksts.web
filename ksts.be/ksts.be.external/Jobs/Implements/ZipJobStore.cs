@@ -51,22 +51,7 @@ namespace ksts.be.external.Jobs.Implements
         {
             foreach (var item in _jobs.Where(x => x.Value.HetHanUtc < DateTime.UtcNow).ToList())
             {
-                if (!_jobs.TryRemove(item.Key, out var job))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrEmpty(job.DuongDanZip) && File.Exists(job.DuongDanZip))
-                {
-                    try
-                    {
-                        File.Delete(job.DuongDanZip);
-                    }
-                    catch (IOException)
-                    {
-                        // File đang được tải dở: để lần dọn sau xoá, không làm hỏng cả vòng dọn.
-                    }
-                }
+                _jobs.TryRemove(item.Key, out _);
             }
         }
     }

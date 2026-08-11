@@ -22,13 +22,10 @@ export interface IZipJob {
     soLoi: number;
     hoanTat: boolean;
     loiChung: string | null;
+
+    /** Tổng dung lượng đã đẩy lên kho, không phải dung lượng file nén — file nén chỉ dựng lúc tải. */
     dungLuong: number;
 
-    /** Đẩy lên kho object — bộ đếm riêng, độc lập với khâu dựng và với việc tải zip về. */
-    dangDayLenKho: boolean;
-    daDayLenKho: number;
-    soLoiDayLenKho: number;
-    hoanTatDayLenKho: boolean;
-    loiDayLenKho: string | null;
+    /** Thư mục trên kho chứa giấy báo của lô; giấy báo được đẩy lên ngay trong lúc dựng. */
     tienToKho: string | null;
 }

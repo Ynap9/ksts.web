@@ -108,10 +108,13 @@ namespace ksts.be.shared.Constants.GiayBao
         public static string GetKhoKey(string tenFile) => GetKhoKeyPrefix() + tenFile;
 
         /// <summary>
-        /// Số file đẩy lên kho song song. Đẩy lên MinIO là việc CHỜ MẠNG chứ không tốn CPU: tuần tự thì mỗi
-        /// file phải chờ trọn một vòng đi-về, 5000 file là ngần ấy vòng xếp hàng. Giữ bằng mức đồng thời của
-        /// khâu dựng — cao hơn nữa thì nghẽn ở đường truyền chứ không nhanh thêm.
+        /// Số giấy báo tải trước từ kho khi đóng gói file nén. Nén phải ghi TUẦN TỰ từng file vào luồng gửi
+        /// cho trình duyệt, nhưng tải về là việc chờ mạng: tải trước vài file trong khi đang ghi file hiện
+        /// tại thì không phải đợi trọn một vòng đi-về cho mỗi file.
+        ///
+        /// Giữ ở mức thấp vì mỗi file chờ sẵn là một bản PDF nằm trong bộ nhớ (~900 KB): 8 file là ~7 MB,
+        /// nâng cao nữa chỉ đổi băng thông đã bão hoà lấy bộ nhớ.
         /// </summary>
-        public const int SoFileDayLenKhoSongSong = 8;
+        public const int SoFileTaiTruocKhiNen = 8;
     }
 }

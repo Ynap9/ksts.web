@@ -41,16 +41,9 @@ export class ImportTuyenSinh extends BaseComponent {
     });
     taiDuoc = computed(() => !!this.job()?.hoanTat && !this.job()?.loiChung);
 
-    dangDay = computed(() => !!this.job()?.dangDayLenKho);
-    daDayLenKho = computed(() => this.job()?.daDayLenKho ?? 0);
-    soLoiDay = computed(() => this.job()?.soLoiDayLenKho ?? 0);
-    phanTramDay = computed(() => {
-        const tong = this.rows().length;
-        return tong === 0 ? 0 : Math.round(((this.daDayLenKho() + this.soLoiDay()) / tong) * 100);
-    });
+    /** Kho chứa giấy báo của lô. Có giá trị ngay từ khi mở lô vì file được đẩy lên trong lúc dựng. */
+    tienToKho = computed(() => this.job()?.tienToKho ?? '');
 
-    /** Đẩy lên kho và tải zip là hai lựa chọn ngang hàng: cùng mở ra khi lô đã dựng xong, không việc nào chặn việc kia. */
-    dayDuoc = computed(() => this.taiDuoc() && !this.dangDay());
     coTheBatDau = computed(() => !!this.file() && !!this.sheetName() && this.rows().length > 0 && !this.dangChay());
 
     coTheDocDanhSach = computed(() => !!this.file() && !!this.sheetName() && !this.dangChay());
@@ -209,57 +202,6 @@ export class ImportTuyenSinh extends BaseComponent {
         this.dangChay.set(false);
         this.rows.update((rows) => rows.map((r) => ({ ...r, trangThai: 'loi' as const })));
         this.messageError(thongDiep);
-    }
-
-    onDayLenKho() {
-        const jobId = this.job()?.jobId;
-        if (!jobId || !this.dayDuoc()) {
-            return;
-        }
-
-        this._giayBaoService.dayLenKho(jobId).subscribe({
-            next: (res) => {
-                if (this.isResponseSucceed(res)) {
-                    this.job.set(res.data);
-                    this.hoiTienDoDay();
-                }
-            },
-            error: () => this.messageError('Không mở được việc đẩy lô lên kho.')
-        });
-    }
-
-    /** Hỏi tiến độ đẩy theo nhịp riêng: lô chạy nền nên rời màn rồi quay lại vẫn hỏi tiếp được. */
-    hoiTienDoDay() {
-        const jobId = this.job()?.jobId;
-        if (!jobId) {
-            return;
-        }
-
-        this._giayBaoService.tienDo(jobId).subscribe({
-            next: (res) => {
-                if (!this.isResponseSucceed(res, false)) {
-                    this.messageError('Mất dấu lô khi đang đẩy lên kho.');
-                    return;
-                }
-
-                const job = res.data;
-                this.job.set(job);
-
-                if (!job.hoanTatDayLenKho) {
-                    setTimeout(() => this.hoiTienDoDay(), NHIP_HOI_TIEN_DO);
-                    return;
-                }
-
-                if (job.loiDayLenKho) {
-                    this.messageError(`Đẩy lên kho hỏng: ${job.loiDayLenKho}`);
-                } else if (job.soLoiDayLenKho) {
-                    this.messageWarning(`Đã đẩy ${job.daDayLenKho}/${this.rows().length} file, lỗi ${job.soLoiDayLenKho} file.`);
-                } else {
-                    this.messageSuccess(`Đã đẩy ${job.daDayLenKho} file lên kho.`);
-                }
-            },
-            error: () => this.messageError('Mất kết nối khi theo dõi tiến độ đẩy.')
-        });
     }
 
     onTaiVe() {

@@ -29,11 +29,6 @@ export class GiayBaoService {
         });
     }
 
-    /** Mở việc đẩy cả lô lên MinIO chạy nền. Song song với tải zip, không thay thế nó. */
-    dayLenKho(jobId: string) {
-        return this.http.post<IBaseResponseWithData<IZipJob>>(`${this.api}/tao-zip/${jobId}/day-len-kho`, null);
-    }
-
     tienDo(jobId: string) {
         return this.http.get<IBaseResponseWithData<IZipJob>>(`${this.api}/tao-zip/${jobId}`);
     }
@@ -41,6 +36,9 @@ export class GiayBaoService {
     /**
      * Đường dẫn tải zip. Trình duyệt tự tải xuống đĩa qua đường này, không đọc qua JS: file lô lớn tới vài
      * GB, nhận vào bộ nhớ trang rồi mới lưu là hết bộ nhớ.
+     *
+     * Máy chủ dựng file nén ngay lúc tải bằng cách kéo giấy báo từ kho về, nên tải một lô lớn sẽ mất vài
+     * phút mới xong — trình duyệt hiện tiến trình tải như bình thường.
      */
     duongDanTai(job: IZipJob) {
         return `${environment.apiUrl}${this.api}/tao-zip/${job.jobId}/tai-ve?token=${job.taiToken}`;

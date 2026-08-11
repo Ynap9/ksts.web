@@ -56,7 +56,8 @@ trên MinIO; toạ độ lưu theo tỉ lệ 0..1 nên một lần cấu hình �
 
 **Bước 2 — Import dữ liệu tuyển sinh.** Tải lên file Excel danh sách thí sinh, chọn sheet và dòng tiêu đề.
 Hệ thống nhồi dữ liệu từng thí sinh vào mẫu HTML rồi gọi Gotenberg chuyển sang PDF, chạy nền nhiều file song
-song. Kết quả đóng thành zip để tải về, hoặc đẩy thẳng lên MinIO.
+song, mỗi file dựng xong là đẩy thẳng lên MinIO. Muốn bản sao trên máy thì bấm tải: file nén được dựng ngay
+lúc tải, kéo từ kho ra rồi gửi thẳng cho trình duyệt chứ không để lại gì trên đĩa máy chủ.
 
 **Bước 3 — Ký số hàng loạt.** Chọn nguồn file (tải từ máy, hoặc trỏ vào thư mục có sẵn trên MinIO để bỏ hẳn
 khâu tải lên), chọn mẫu chữ ký và chứng thư số, bấm Bắt đầu. Với mỗi file:

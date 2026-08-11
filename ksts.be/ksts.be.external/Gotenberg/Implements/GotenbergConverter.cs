@@ -20,6 +20,12 @@ namespace ksts.be.external.Gotenberg.Implements
         private const string PaperWidthInch = "8.27";
         private const string PaperHeightInch = "11.7";
 
+        /// <summary>
+        /// Cắt bớt câu trả lời lỗi trước khi ghi log. Gotenberg trả một dòng lý do, nhưng khi hỏng nặng nó
+        /// có thể trả cả trang HTML - lô vài nghìn file mà mỗi lỗi ghi trọn trang là log phình vô ích.
+        /// </summary>
+        private const int MaxKyTuLoi = 500;
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ConvertFileSettings _settings;
 
@@ -64,15 +70,25 @@ namespace ksts.be.external.Gotenberg.Implements
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 throw new UserFriendlyException(ErrorCodes.ConvertFileFailed,
-                    "Không gọi được dịch vụ chuyển đổi file.");
+                    $"Không gọi được dịch vụ chuyển đổi file. {ex.Message}");
             }
 
             using (response)
             {
                 if (!response.IsSuccessStatusCode)
                 {
+                    // Lý do thật nằm trong thân câu trả lời của Gotenberg (hết chỗ trên đĩa, Chromium không
+                    // khởi chạy được, trang không tải xong...). Bỏ nó đi là mất manh mối duy nhất, vì log của
+                    // dịch vụ đó nằm ở máy khác và không phải lúc nào cũng mở ra xem được.
+                    var lyDo = await response.Content.ReadAsStringAsync(cancellationToken);
+                    lyDo = lyDo.Trim();
+                    if (lyDo.Length > MaxKyTuLoi)
+                    {
+                        lyDo = lyDo[..MaxKyTuLoi];
+                    }
+
                     throw new UserFriendlyException(ErrorCodes.ConvertFileFailed,
-                        $"Dịch vụ chuyển đổi file trả về lỗi {(int)response.StatusCode}.");
+                        $"Dịch vụ chuyển đổi file trả về lỗi {(int)response.StatusCode}. {lyDo}");
                 }
 
                 return await response.Content.ReadAsByteArrayAsync(cancellationToken);

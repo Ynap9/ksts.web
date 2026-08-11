@@ -16,7 +16,8 @@ namespace ksts.be.external.Jobs.Interfaces
         /// <summary>Cập nhật tiến độ theo cách an toàn khi nhiều luồng cùng ghi.</summary>
         void CapNhat(string jobId, Action<ZipJobDto> thayDoi);
 
-        /// <summary>Xoá lô đã quá hạn kèm file nén của nó — không dọn thì đĩa đầy sau vài lô.</summary>
+        /// <summary>Xoá bản ghi của lô đã quá hạn. Không còn file tạm nào phải dọn kèm: giấy báo dựng xong
+        /// là đẩy thẳng lên kho object, đĩa máy chủ không giữ gì.</summary>
         void DonHetHan();
     }
 }

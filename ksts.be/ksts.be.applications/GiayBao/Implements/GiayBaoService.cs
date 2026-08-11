@@ -27,8 +27,9 @@ namespace ksts.be.applications.GiayBao.Implements
     /// Dựng cả lô giấy báo trúng tuyển. Chuyển HTML sang PDF là việc chờ mạng chứ không tốn CPU, nên chạy
     /// nhiều bản song song với trần đồng thời lấy từ cấu hình; thả hết một lúc sẽ làm ngộp Gotenberg.
     ///
-    /// Kết quả ghi thẳng vào file nén tạm trên đĩa thay vì giữ trong bộ nhớ: năm nghìn giấy báo cỡ vài GB,
-    /// gom hết vào RAM là chết tiến trình API.
+    /// Mỗi file dựng xong là ĐẨY NGAY lên kho object rồi buông khỏi bộ nhớ, đĩa máy chủ không giữ gì. Bản cũ
+    /// gom cả lô vào một file nén tạm trên đĩa: năm nghìn giấy báo là gần 4 GB, đủ làm đầy ổ máy chủ, mà đầy
+    /// ổ thì Gotenberg cũng hỏng theo và cả lô chết giữa chừng.
     /// </summary>
     public class GiayBaoService : BaseService, IGiayBaoService
     {
@@ -121,9 +122,13 @@ namespace ksts.be.applications.GiayBao.Implements
             _zipJobStore.DonHetHan();
             var job = _zipJobStore.Tao(hopLe.Count);
 
+            // Biết ngay từ đầu giấy báo sẽ nằm ở đâu trên kho: không còn bước đẩy lên kho riêng nữa, mỗi
+            // file dựng xong là lên kho luôn.
+            _zipJobStore.CapNhat(job.JobId, x => x.TienToKho = GiayBaoConstants.GetKhoKeyPrefix());
+
             // Không await: người dùng nhận JobId ngay rồi hỏi tiến độ, thay vì giữ một request chạy 30 phút.
             _ = ChayLoAsync(job.JobId, template, hopLe);
-            return job;
+            return _zipJobStore.Lay(job.JobId)!;
         }
 
         /// <inheritdoc/>
@@ -132,103 +137,87 @@ namespace ksts.be.applications.GiayBao.Implements
             var dongHo = Stopwatch.StartNew();
             var banDo = GiayBaoConstants.IdTheToTenCot;
             var cancellationToken = CancellationToken.None;
-
-            // Giữ lại sau khi dựng xong để người dùng tải; ZipJobStore dọn khi lô hết hạn.
-            var zipPath = Path.Combine(Path.GetTempPath(), $"giay-bao-{jobId}.zip");
-            var zipStream = new FileStream(zipPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None,
-                bufferSize: 81920);
+            var khoaDatTen = new object();
             var daDungTen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             try
             {
-                using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
-                {
-                    var khoaGhi = new SemaphoreSlim(1, 1);
-                    var tranDongThoi = new SemaphoreSlim(Math.Max(1, _settings.MaxDongThoi));
+                var tranDongThoi = new SemaphoreSlim(Math.Max(1, _settings.MaxDongThoi));
 
-                    var congViec = hopLe.Select(async (row, thuTu) =>
+                var congViec = hopLe.Select(async (row, thuTu) =>
+                {
+                    await tranDongThoi.WaitAsync(cancellationToken);
+                    try
                     {
-                        await tranDongThoi.WaitAsync(cancellationToken);
-                        try
+                        var giaTri = new Dictionary<string, string>();
+                        foreach (var muc in banDo)
                         {
-                            var giaTri = new Dictionary<string, string>();
-                            foreach (var muc in banDo)
-                            {
-                                giaTri[muc.Key] = _excelSheetReader.LayGiaTri(row, muc.Value);
-                            }
-
-                            var cccd = _excelSheetReader.LayGiaTri(row, GiayBaoConstants.CotDinhDanh());
-                            var htmlTheoId = new Dictionary<string, string>();
-                            if (!string.IsNullOrWhiteSpace(cccd))
-                            {
-                                htmlTheoId[GiayBaoConstants.IdQrBox] =
-                                    _qrCodeSvgRenderer.RenderSvg(GiayBaoConstants.QrBaseUrl + cccd.Trim());
-                            }
-
-                            var html = _htmlDocumentFiller.Fill(template, giaTri, htmlTheoId);
-                            var pdf = await _gotenbergConverter.HtmlToPdfAsync(html, cancellationToken);
-
-                            // Đặt tên bằng ĐÚNG số CCCD: nó là khoá định danh thí sinh, không dấu, không
-                            // khoảng trắng, nên vừa tra cứu được ngay vừa làm object key sạch khi đẩy lên
-                            // kho. Dòng thiếu CCCD thì lùi về số thứ tự để vẫn có tên duy nhất.
-                            var cccdSach = string.Concat(cccd.Trim()
-                                .Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
-                            var ten = string.IsNullOrWhiteSpace(cccdSach) ? $"{thuTu + 1}" : cccdSach;
-
-                            await khoaGhi.WaitAsync(cancellationToken);
-                            try
-                            {
-                                var tenFile = ten;
-                                var lan = 1;
-                                while (!daDungTen.Add(tenFile))
-                                {
-                                    tenFile = $"{ten}-{++lan}";
-                                }
-
-                                var entry = archive.CreateEntry(tenFile + GiayBaoConstants.PdfExtension,
-                                    CompressionLevel.Fastest);
-                                using var target = entry.Open();
-                                await target.WriteAsync(pdf, cancellationToken);
-                            }
-                            finally
-                            {
-                                khoaGhi.Release();
-                            }
-
-                            _zipJobStore.CapNhat(jobId, x => x.DaXong++);
+                            giaTri[muc.Key] = _excelSheetReader.LayGiaTri(row, muc.Value);
                         }
-                        catch (Exception ex)
+
+                        var cccd = _excelSheetReader.LayGiaTri(row, GiayBaoConstants.CotDinhDanh());
+                        var htmlTheoId = new Dictionary<string, string>();
+                        if (!string.IsNullOrWhiteSpace(cccd))
                         {
-                            _logger.LogWarning(ex, "Dựng giấy báo hỏng ở dòng {ThuTu}", thuTu + 1);
-                            _zipJobStore.CapNhat(jobId, x => x.SoLoi++);
+                            htmlTheoId[GiayBaoConstants.IdQrBox] =
+                                _qrCodeSvgRenderer.RenderSvg(GiayBaoConstants.QrBaseUrl + cccd.Trim());
                         }
-                        finally
+
+                        var html = _htmlDocumentFiller.Fill(template, giaTri, htmlTheoId);
+                        var pdf = await _gotenbergConverter.HtmlToPdfAsync(html, cancellationToken);
+
+                        // Đặt tên bằng ĐÚNG số định danh: nó là khoá định danh thí sinh, không dấu, không
+                        // khoảng trắng, nên vừa tra cứu được ngay vừa làm object key sạch trên kho. Dòng
+                        // thiếu số định danh thì lùi về số thứ tự để vẫn có tên duy nhất.
+                        var cccdSach = string.Concat(cccd.Trim()
+                            .Where(c => !Path.GetInvalidFileNameChars().Contains(c)));
+                        var ten = string.IsNullOrWhiteSpace(cccdSach) ? $"{thuTu + 1}" : cccdSach;
+
+                        string tenFile;
+                        lock (khoaDatTen)
                         {
-                            tranDongThoi.Release();
+                            tenFile = ten;
+                            var lan = 1;
+                            while (!daDungTen.Add(tenFile))
+                            {
+                                tenFile = $"{ten}-{++lan}";
+                            }
                         }
-                    });
 
-                    await Task.WhenAll(congViec);
-                }
+                        tenFile += GiayBaoConstants.PdfExtension;
+                        await _s3FileStorage.UploadBytesAsync(pdf, GiayBaoConstants.GetKhoKey(tenFile),
+                            GiayBaoConstants.PdfContentType, cancellationToken);
 
-                var dungLuong = zipStream.Length;
-                await zipStream.DisposeAsync();
-
-                _logger.LogInformation("ChayLoAsync xong: {SoFile}/{TongSo} file, {Dung} MB, {Giay}s",
-                    daDungTen.Count, hopLe.Count, dungLuong / 1024 / 1024, dongHo.Elapsed.TotalSeconds);
-
-                _zipJobStore.CapNhat(jobId, x =>
-                {
-                    x.DuongDanZip = zipPath;
-                    x.DungLuong = dungLuong;
-                    x.HoanTat = true;
+                        _zipJobStore.CapNhat(jobId, x =>
+                        {
+                            x.DaXong++;
+                            x.DungLuong += pdf.LongLength;
+                            x.TenFileDaDay.Add(tenFile);
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Dựng giấy báo hỏng ở dòng {ThuTu}", thuTu + 1);
+                        _zipJobStore.CapNhat(jobId, x => x.SoLoi++);
+                    }
+                    finally
+                    {
+                        tranDongThoi.Release();
+                    }
                 });
+
+                await Task.WhenAll(congViec);
+
+                var xong = _zipJobStore.Lay(jobId);
+                _logger.LogInformation("ChayLoAsync xong: {SoFile}/{TongSo} file, {Dung} MB lên kho, {Giay}s",
+                    xong?.TenFileDaDay.Count, hopLe.Count, (xong?.DungLuong ?? 0) / 1024 / 1024,
+                    dongHo.Elapsed.TotalSeconds);
+
+                _zipJobStore.CapNhat(jobId, x => x.HoanTat = true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "ChayLoAsync hỏng sau {SoFile}/{TongSo} file, {Giay}s",
-                    daDungTen.Count, hopLe.Count, dongHo.Elapsed.TotalSeconds);
-                await zipStream.DisposeAsync();
+                _logger.LogError(ex, "ChayLoAsync hỏng sau {Giay}s", dongHo.Elapsed.TotalSeconds);
                 _zipJobStore.CapNhat(jobId, x =>
                 {
                     x.LoiChung = ex.Message;
@@ -238,136 +227,74 @@ namespace ksts.be.applications.GiayBao.Implements
         }
 
         /// <inheritdoc/>
-        public ZipJobDto BatDauDayLenKho(string jobId)
-        {
-            _logger.LogInformation("BatDauDayLenKho: {JobId}, đồng thời {SoLuong}",
-                jobId, GiayBaoConstants.SoFileDayLenKhoSongSong);
-
-            var job = _zipJobStore.Lay(jobId)
-                ?? throw new UserFriendlyException(ErrorCodes.GiayBaoJobNotFound,
-                    "Lô dựng giấy báo không còn tồn tại.");
-
-            if (!job.HoanTat || job.DuongDanZip == null || !File.Exists(job.DuongDanZip))
-            {
-                throw new UserFriendlyException(ErrorCodes.GiayBaoChuaDungXong,
-                    "Lô chưa dựng xong nên chưa có file để đẩy lên kho.");
-            }
-
-            // Giành quyền chạy NGAY TRONG khoá của lô: kiểm cờ rồi mới đặt ở hai bước tách rời thì bấm nút
-            // hai lần thật nhanh sẽ lọt cả hai, thành hai lượt đẩy chồng nhau cùng cộng vào một bộ đếm.
-            // Đặt lại bộ đếm ở đây luôn, để lần đẩy lại sau khi hỏng không cộng dồn lên số cũ.
-            var giuDuoc = false;
-            _zipJobStore.CapNhat(jobId, x =>
-            {
-                if (x.DangDayLenKho)
-                {
-                    return;
-                }
-
-                giuDuoc = true;
-                x.DangDayLenKho = true;
-                x.HoanTatDayLenKho = false;
-                x.DaDayLenKho = 0;
-                x.SoLoiDayLenKho = 0;
-                x.LoiDayLenKho = null;
-                x.TienToKho = GiayBaoConstants.GetKhoKeyPrefix();
-            });
-
-            if (!giuDuoc)
-            {
-                throw new UserFriendlyException(ErrorCodes.GiayBaoDangDayLenKho,
-                    "Lô này đang được đẩy lên kho, chờ xong rồi hãy đẩy lại.");
-            }
-
-            // Không await: 5000 file đẩy lên kho mất hàng chục phút, giữ một request suốt ngần ấy thời gian
-            // thì trình duyệt đã cắt kết nối từ lâu — giống hệt khâu dựng, FE hỏi tiến độ.
-            _ = ChayDayLenKhoAsync(jobId, job.DuongDanZip);
-            return _zipJobStore.Lay(jobId)!;
-        }
-
-        /// <inheritdoc/>
-        public async Task ChayDayLenKhoAsync(string jobId, string zipPath)
+        public async Task GhiNenAsync(string jobId, Stream dich, CancellationToken cancellationToken)
         {
             var dongHo = Stopwatch.StartNew();
 
-            try
+            if (_zipJobStore.Lay(jobId) == null)
             {
-                List<string> tenFile;
-                using (var mucLuc = ZipFile.OpenRead(zipPath))
+                throw new UserFriendlyException(ErrorCodes.GiayBaoJobNotFound,
+                    "Lô dựng giấy báo không còn tồn tại.");
+            }
+
+            List<string> danhSach = [];
+            _zipJobStore.CapNhat(jobId, x => danhSach = [.. x.TenFileDaDay]);
+
+            var daGhi = 0;
+            using (var archive = new ZipArchive(dich, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                // Nén phải ghi tuần tự, nhưng kéo file về là việc chờ mạng: giữ sẵn vài file đã tải xong
+                // trong hàng đợi để lúc ghi xong file này là có ngay file kế tiếp, không đợi trọn một vòng
+                // đi-về cho từng file.
+                // Tên đi kèm luôn với việc tải của chính nó: file hỏng thì bỏ qua, mà số thứ tự đếm riêng sẽ
+                // lệch khỏi danh sách ngay từ file hỏng đầu tiên và mọi file sau đó vào nén sai tên.
+                var hangCho = new Queue<(string Ten, Task<byte[]?> Tai)>();
+                var ke = 0;
+
+                while (ke < danhSach.Count && hangCho.Count < GiayBaoConstants.SoFileTaiTruocKhiNen)
                 {
-                    tenFile = mucLuc.Entries.Select(x => x.FullName).ToList();
+                    hangCho.Enqueue((danhSach[ke], TaiMotFileAsync(danhSach[ke], cancellationToken)));
+                    ke++;
                 }
 
-                var ke = -1;
-                var luong = Enumerable.Range(0, GiayBaoConstants.SoFileDayLenKhoSongSong)
-                    .Select(_ => Task.Run(async () =>
+                while (hangCho.Count > 0)
+                {
+                    var (ten, tai) = hangCho.Dequeue();
+                    var pdf = await tai;
+
+                    if (ke < danhSach.Count)
                     {
-                        // Mỗi luồng mở BẢN ĐỌC RIÊNG của file nén: một ZipArchive không dùng chung được giữa
-                        // nhiều luồng vì các entry chia nhau một con trỏ đọc, nhưng mở nhiều bản chỉ-đọc trên
-                        // cùng một file thì được.
-                        using var archive = ZipFile.OpenRead(zipPath);
+                        hangCho.Enqueue((danhSach[ke], TaiMotFileAsync(danhSach[ke], cancellationToken)));
+                        ke++;
+                    }
 
-                        while (true)
-                        {
-                            var thuTu = Interlocked.Increment(ref ke);
-                            if (thuTu >= tenFile.Count)
-                            {
-                                break;
-                            }
+                    if (pdf == null)
+                    {
+                        continue;
+                    }
 
-                            await DayMotFileAsync(jobId, archive, tenFile[thuTu]);
-                        }
-                    }))
-                    .ToArray();
-
-                await Task.WhenAll(luong);
-
-                var xong = _zipJobStore.Lay(jobId);
-                _logger.LogInformation("ChayDayLenKhoAsync xong: {DaDay}/{TongSo} file, lỗi {SoLoi}, {Giay}s",
-                    xong?.DaDayLenKho, tenFile.Count, xong?.SoLoiDayLenKho, dongHo.Elapsed.TotalSeconds);
-
-                _zipJobStore.CapNhat(jobId, x =>
-                {
-                    x.DangDayLenKho = false;
-                    x.HoanTatDayLenKho = true;
-                });
+                    var entry = archive.CreateEntry(ten, CompressionLevel.Fastest);
+                    using var target = entry.Open();
+                    await target.WriteAsync(pdf, cancellationToken);
+                    daGhi++;
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ChayDayLenKhoAsync hỏng sau {Giay}s", dongHo.Elapsed.TotalSeconds);
-                _zipJobStore.CapNhat(jobId, x =>
-                {
-                    x.DangDayLenKho = false;
-                    x.HoanTatDayLenKho = true;
-                    x.LoiDayLenKho = ex.Message;
-                });
-            }
+
+            _logger.LogInformation("GhiNenAsync xong: {DaGhi}/{TongSo} file, {Giay}s",
+                daGhi, danhSach.Count, dongHo.Elapsed.TotalSeconds);
         }
 
         /// <inheritdoc/>
-        public async Task DayMotFileAsync(string jobId, ZipArchive archive, string tenFile)
+        public async Task<byte[]?> TaiMotFileAsync(string tenFile, CancellationToken cancellationToken)
         {
             try
             {
-                var entry = archive.GetEntry(tenFile)
-                    ?? throw new UserFriendlyException(ErrorCodes.GiayBaoJobNotFound,
-                        $"Không còn thấy {tenFile} trong file nén của lô.");
-
-                // Nạp trọn một file vào bộ nhớ vì kho object cần biết trước độ dài nội dung. Một giấy báo
-                // cỡ 1 MB, tám luồng là vài MB — khác hẳn việc gom cả lô vài GB vào RAM.
-                using var nguon = entry.Open();
-                using var bo = new MemoryStream();
-                await nguon.CopyToAsync(bo);
-
-                await _s3FileStorage.UploadBytesAsync(bo.ToArray(),
-                    GiayBaoConstants.GetKhoKey(tenFile), GiayBaoConstants.PdfContentType);
-
-                _zipJobStore.CapNhat(jobId, x => x.DaDayLenKho++);
+                return await _s3FileStorage.DownloadAsync(GiayBaoConstants.GetKhoKey(tenFile), cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Đẩy {TenFile} lên kho hỏng", tenFile);
-                _zipJobStore.CapNhat(jobId, x => x.SoLoiDayLenKho++);
+                _logger.LogWarning(ex, "Kéo {TenFile} từ kho về để nén hỏng", tenFile);
+                return null;
             }
         }
     }

@@ -91,40 +91,29 @@ namespace ksts.be.api.Controllers.GiayBao
         }
 
         /// <summary>
-        /// Mở việc đẩy cả lô lên kho object chạy nền. Là lựa chọn SONG SONG với tải zip về, không thay thế:
-        /// lô dựng xong rồi thì đẩy lên kho hay tải về máy đều được, làm cả hai cũng được.
-        /// </summary>
-        [HttpPost("tao-zip/{jobId}/day-len-kho")]
-        public ApiResponse DayLenKho(string jobId)
-        {
-            try
-            {
-                var result = _giayBaoService.BatDauDayLenKho(jobId);
-                return new(result);
-            }
-            catch (Exception ex)
-            {
-                return OkException(ex);
-            }
-        }
-
-        /// <summary>
-        /// Nội dung file nén để trình duyệt tải thẳng xuống đĩa. KHÔNG bọc ApiResponse và KHÔNG đòi Bearer:
-        /// trình duyệt điều hướng tới đây thì không gắn được header, nên chặn bằng token dùng riêng cho lô.
+        /// File nén để trình duyệt tải thẳng xuống đĩa, dựng NGAY LÚC TẢI bằng cách kéo từng giấy báo từ kho
+        /// object ra rồi nén vào luồng gửi đi — máy chủ không giữ file nén nào trên đĩa.
+        ///
+        /// KHÔNG bọc ApiResponse và KHÔNG đòi Bearer: trình duyệt điều hướng tới đây thì không gắn được
+        /// header, nên chặn bằng token dùng riêng cho lô. Ghi thẳng vào <c>Response.Body</c> chứ không qua
+        /// <c>File(...)</c> vì độ dài gói chỉ biết được khi đã nén xong file cuối.
         /// </summary>
         [HttpGet("tao-zip/{jobId}/tai-ve")]
         [AllowAnonymous]
-        public IActionResult TaiVe(string jobId, string token)
+        public async Task<IActionResult> TaiVe(string jobId, string token)
         {
             var job = _zipJobStore.Lay(jobId);
-            if (job == null || job.TaiToken != token || !job.HoanTat || job.DuongDanZip == null)
+            if (job == null || job.TaiToken != token || !job.HoanTat)
             {
                 return NotFound();
             }
 
-            var stream = new FileStream(job.DuongDanZip, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return File(stream, GiayBaoConstants.ZipContentType,
-                $"giay-bao-trung-tuyen-{DateTime.UtcNow:yyyyMMddHHmmss}.zip");
+            Response.ContentType = GiayBaoConstants.ZipContentType;
+            Response.Headers.ContentDisposition =
+                $"attachment; filename=\"giay-bao-trung-tuyen-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";
+
+            await _giayBaoService.GhiNenAsync(jobId, Response.Body, HttpContext.RequestAborted);
+            return new EmptyResult();
         }
     }
 }

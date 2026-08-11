@@ -8,7 +8,11 @@ namespace ksts.be.applications.GiayBao.Interfaces
 {
     /// <summary>
     /// In giấy báo trúng tuyển hàng loạt: đọc danh sách thí sinh từ Excel, nhồi vào mẫu HTML, chuyển sang
-    /// PDF rồi gói thành một file nén để tải về.
+    /// PDF rồi đẩy thẳng lên kho object.
+    ///
+    /// Máy chủ KHÔNG giữ file trên đĩa ở bất kỳ khâu nào. Lô 5000 giấy báo là gần 4 GB; gom vào một file nén
+    /// tạm là đủ làm đầy ổ đĩa máy chủ, mà đầy ổ thì Gotenberg dựng file cũng hỏng theo. Muốn tải về máy thì
+    /// file nén được dựng NGAY LÚC TẢI, kéo từng file từ kho ra rồi ghi thẳng vào luồng gửi cho trình duyệt.
     /// </summary>
     public interface IGiayBaoService
     {
@@ -27,27 +31,22 @@ namespace ksts.be.applications.GiayBao.Interfaces
         /// </summary>
         ZipJobDto BatDauTaoZip(IFormFile file, string? sheetName, int startRow);
 
-        /// <summary>Dựng toàn bộ giấy báo của lô rồi ghi ra file nén. Lỗi một file không làm dừng cả lô.</summary>
+        /// <summary>
+        /// Dựng toàn bộ giấy báo của lô, nhiều file song song, mỗi file dựng xong là đẩy ngay lên kho object
+        /// rồi buông khỏi bộ nhớ. Lỗi một file không làm dừng cả lô.
+        /// </summary>
         Task ChayLoAsync(string jobId, string template, List<Dictionary<string, string>> hopLe);
 
         /// <summary>
-        /// Mở việc đẩy cả lô lên kho object chạy nền và trả về ngay trạng thái lô.
+        /// Kéo giấy báo của lô từ kho về rồi nén thẳng vào <paramref name="dich"/> - là luồng gửi cho trình
+        /// duyệt. Không có file nén trung gian trên đĩa máy chủ.
         ///
-        /// Độc lập hoàn toàn với việc tải zip về: lô đã dựng xong thì đẩy lên kho hay tải về máy là hai lựa
-        /// chọn riêng, làm một trong hai hay cả hai đều được và không việc nào chặn việc nào.
+        /// Câu trả lời đã bắt đầu gửi đi thì không đổi được mã lỗi HTTP nữa, nên file nào kéo hỏng thì ghi
+        /// log rồi bỏ qua chứ không làm hỏng cả gói.
         /// </summary>
-        ZipJobDto BatDauDayLenKho(string jobId);
+        Task GhiNenAsync(string jobId, Stream dich, CancellationToken cancellationToken);
 
-        /// <summary>
-        /// Đẩy từng giấy báo trong file nén của lô lên kho object, nhiều file song song. Lỗi một file không
-        /// làm dừng cả lô, giống hệt khâu dựng.
-        /// </summary>
-        Task ChayDayLenKhoAsync(string jobId, string zipPath);
-
-        /// <summary>
-        /// Đẩy một giấy báo lên kho. Nuốt lỗi rồi đếm vào <c>SoLoiDayLenKho</c> chứ không ném ra: một file
-        /// hỏng không được phép làm dừng cả lô đang đẩy.
-        /// </summary>
-        Task DayMotFileAsync(string jobId, ZipArchive archive, string tenFile);
+        /// <summary>Kéo một giấy báo từ kho về. Hỏng thì trả null để khâu nén bỏ qua file đó.</summary>
+        Task<byte[]?> TaiMotFileAsync(string tenFile, CancellationToken cancellationToken);
     }
 }
