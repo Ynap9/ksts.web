@@ -50,6 +50,11 @@ hệt backend để frontend dùng chung một cách đọc:
 CORS khai origin của trang web trong `ksts.plugin.api/appsettings.json`. Đây là **điều kiện để trình duyệt
 đọc được kết quả, không phải lớp bảo mật**: header `Origin` do phía gọi tự đặt, `curl` hay mã độc đặt tuỳ ý.
 
+⚠️ **Đưa trang web lên tên miền mới thì phải thêm origin đó vào danh sách rồi đóng gói lại.** Thiếu bước này,
+triệu chứng trông y hệt *chưa cài plugin*: request vẫn tới plugin và vẫn được ghi log, nhưng trình duyệt vứt
+bỏ câu trả lời nên phép dò `trang-thai` rơi vào nhánh lỗi. Nhìn log plugin thấy có request mà giao diện vẫn
+báo chưa cài thì kiểm CORS trước tiên.
+
 ## API
 
 | Method | Route | Việc |
