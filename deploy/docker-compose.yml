@@ -23,3 +23,5 @@ services:
     restart: unless-stopped
     environment:
       - DOTNET_ENVIRONMENT=${APP_BE_ENV}
+    volumes:
+      - ./plugins:/app/Plugins:ro

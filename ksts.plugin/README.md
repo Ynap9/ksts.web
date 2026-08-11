@@ -97,6 +97,20 @@ Script làm bốn việc:
 Backend phát file zip này qua `api/core/plugin/bo-cai/noi-dung`. Sau khi đóng gói phải **build lại
 `ksts.be.api`** để file được chép sang thư mục output.
 
+### Đưa bộ cài lên máy chủ
+
+File zip **không nằm trong git** (~43 MB, là sản phẩm build), nên máy chủ dựng image từ bản clone của repo sẽ
+không có nó — thiếu bước này thì màn Ký số báo *"Máy chủ chưa có bộ cài plugin"*. Chép tay lên thư mục đã
+mount sẵn vào container:
+
+```bash
+scp ksts.be/ksts.be.api/Plugins/ksts-plugin-setup.zip <user>@<may-chu>:<repo>/deploy/plugins/
+```
+
+`deploy/docker-compose.yml` mount `./plugins` vào `/app/Plugins` chỉ đọc, nên bản mới có hiệu lực ngay,
+không phải build lại image cũng không phải khởi động lại container. Chi tiết:
+[`deploy/plugins/README.md`](../deploy/plugins/README.md).
+
 ### Middleware không nằm trong repo
 
 `vendor/bit4id/` là chỗ cắm sẵn cho file cài middleware, nhưng file đó là **phần mềm của hãng token**, phải

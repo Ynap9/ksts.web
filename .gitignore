@@ -66,6 +66,7 @@ secrets.json
 *.log
 
 ksts.be/ksts.be.api/Plugins/*.zip
+deploy/plugins/*.zip
 ksts.plugin/vendor/bit4id/*
 !ksts.plugin/vendor/bit4id/*.md
 
