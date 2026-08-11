@@ -104,12 +104,12 @@ không có nó — thiếu bước này thì màn Ký số báo *"Máy chủ ch�
 mount sẵn vào container:
 
 ```bash
-scp ksts.be/ksts.be.api/Plugins/ksts-plugin-setup.zip <user>@<may-chu>:<repo>/deploy/plugins/
+scp ksts.be/ksts.be.api/Plugins/ksts-plugin-setup.zip <user>@<may-chu>:<repo>/ksts.be/ksts.be.api/Plugins/
 ```
 
-`deploy/docker-compose.yml` mount `./plugins` vào `/app/Plugins` chỉ đọc, nên bản mới có hiệu lực ngay,
+`deploy/docker-compose.yml` mount thẳng thư mục đó vào `/app/Plugins` chỉ đọc, nên bản mới có hiệu lực ngay,
 không phải build lại image cũng không phải khởi động lại container. Chi tiết:
-[`deploy/plugins/README.md`](../deploy/plugins/README.md).
+[`ksts.be/ksts.be.api/Plugins/README.md`](../ksts.be/ksts.be.api/Plugins/README.md).
 
 ### Middleware không nằm trong repo
 
