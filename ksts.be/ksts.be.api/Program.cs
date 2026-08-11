@@ -260,12 +260,24 @@ builder.Services.AddSingleton<IPdfObjectWriter, PdfObjectWriter>();
 builder.Services.AddSingleton<IPdfAppearanceBuilder, PdfAppearanceBuilder>();
 builder.Services.AddSingleton<IPdfPreparer, PdfPreparer>();
 builder.Services.AddSingleton<IPdfContentWriter, PdfContentWriter>();
-builder.Services.AddSingleton<ISigningKey, StoreSigningKey>();
+// Hàng đợi chờ chữ ký giữ trạng thái phiên của từng lô nên phải là Singleton.
+builder.Services.AddSingleton<IHangDoiKy, HangDoiKy>();
+
+// Nguồn ký: mặc định là plugin ở máy người dùng - khoá nằm trong token, máy chủ chỉ gửi SignedAttributes đi
+// và nhận chữ ký về. Đặt Signing:Nguon = "store" để quay về đọc certificate store của máy chạy API, chỉ dùng
+// được khi API và token nằm trên cùng một máy Windows.
+if (string.Equals(builder.Configuration["Signing:Nguon"], "store", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddSingleton<ISigningKey, StoreSigningKey>();
+}
+else
+{
+    builder.Services.AddSingleton<ISigningKey, PluginSigningKey>();
+}
 builder.Services.AddSingleton<ILoKyFileStorage, LoKyFileStorage>();
 
 // Tiến trình ký chạy nền: Singleton vì lô sống lâu hơn request, tự mở scope riêng cho từng file.
 builder.Services.AddSingleton<IKySoRunner, KySoRunner>();
-builder.Services.AddSingleton<IDayLenKhoRunner, DayLenKhoRunner>();
 
 #endregion
 

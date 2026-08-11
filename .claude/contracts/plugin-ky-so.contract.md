@@ -18,6 +18,27 @@ Bearer token — plugin không biết gì về tài khoản. Mã nguồn: `ksts.
 
 Envelope giống hệt BE: `{ "status": 1, "data": …, "code": 200, "message": "Ok" }`, enum serialize thành **SỐ**.
 
+## Ký hộ máy chủ — `api/plugin/ky-so`
+
+| Method | Route | Body | `data` trả về |
+|---|---|---|---|
+| POST | `ky-so/mo-phien` | `{ thumbprint }` | `{ thumbprint, commonName, chungThuBase64 }` |
+| POST | `ky-so/ky` | `{ yeuCau: [{ yeuCauId, duLieuBase64 }] }` | `[{ yeuCauId, chuKyBase64, loi }]` |
+| POST | `ky-so/dong-phien` | — | `true` |
+
+`mo-phien` là **chỗ duy nhất hộp PIN bật lên** trong luồng ký: nó mở khoá rồi GIỮ handle cho cả lô. Giữ handle
+khác cache PIN — PIN vẫn đi thẳng từ bàn phím vào middleware, không byte nào vào tiến trình plugin. Phiên tự
+đóng sau **15 phút không dùng** (`KySoConstants.PhutTuDongDongPhien`).
+
+`chungThuBase64` là chứng thư phần **CÔNG KHAI** (DER), nộp lên máy chủ để dựng chuỗi tin cậy và lắp vào CMS.
+
+`ky` nhận **cả một đợt** yêu cầu chứ không phải một: token ký tuần tự nên mỗi vòng đi-về cộng thẳng vào từng
+file, gom đợt là cách duy nhất chia nhỏ khoản đó. Một yêu cầu hỏng trả `loi` riêng cho nó, các yêu cầu còn
+lại vẫn ký.
+
+`duLieuBase64` là **SignedAttributes** do máy chủ dựng — plugin không cần biết nội dung file vẫn ký được, và
+cũng không nhận file nào.
+
 ## Dò plugin đã cài hay chưa
 
 `GET api/plugin/trang-thai` là **phép dò**: gọi được nghĩa là máy đã cài và plugin đang chạy. Timeout ngắn

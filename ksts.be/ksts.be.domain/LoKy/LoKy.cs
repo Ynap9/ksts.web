@@ -37,17 +37,6 @@ namespace ksts.be.domain.LoKy
 
         public DateTime? ThoiDiemXong { get; set; }
 
-        public bool DangDayLenKho { get; set; }
-
-        public int DaDayLenKho { get; set; }
-
-        public int SoLoiDayLenKho { get; set; }
-
-        public bool HoanTatDayLenKho { get; set; }
-
-        [MaxLength(1000)]
-        public string? LoiDayLenKho { get; set; }
-
         [MaxLength(1000)]
         public string? TienToKho { get; set; }
 

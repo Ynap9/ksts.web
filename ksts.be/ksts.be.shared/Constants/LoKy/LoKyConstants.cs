@@ -32,9 +32,12 @@ namespace ksts.be.shared.Constants.LoKy
         /// </summary>
         public static string GetKhoDaKyKey(string tenFile) => GetKhoDaKyPrefix() + tenFile;
 
-        // Số file đẩy lên kho song song. Chép trong kho là việc chờ MẠNG, tuần tự thì mỗi file phải chờ trọn
-        // một vòng đi-về. Giữ bằng số luồng ký để không dội thêm kết nối vào kho so với lúc đang ký.
-        public const int SoFileDayLenKhoSongSong = 8;
+        /// <summary>
+        /// Số file tải trước từ kho khi đóng gói. Nén phải ghi TUẦN TỰ vào luồng gửi cho trình duyệt, nhưng
+        /// tải về là việc chờ mạng: giữ sẵn vài file đã tải xong thì ghi xong file này là có ngay file kế
+        /// tiếp. Giữ mức thấp vì mỗi file chờ sẵn là một bản PDF nằm trong bộ nhớ.
+        /// </summary>
+        public const int SoFileTaiTruocKhiNen = 8;
 
         public const string PdfContentType = "application/pdf";
         public const string ZipContentType = "application/zip";

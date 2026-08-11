@@ -4,14 +4,39 @@
 
 ## Bắt đầu từ đâu
 
-**Việc kế tiếp: chạy thử luồng ký một lô thật, rồi tới [plugin/plans/](plugin/plans/ky-so-plugin.plan.md).**
+> Cập nhật 2026-08-12. Phép ký đã chuyển sang **plugin ở máy người dùng**, không còn đọc certificate store
+> của máy chạy API.
 
-Luồng ký đã thông từ FE tới file PDF ký xong. Chỗ còn TẠM là **nguồn ký**: `ISigningKey` hiện là
-`StoreSigningKey` đọc certificate store của **máy chạy API** — đúng cùng kiểu tạm với `ICertificateProvider`,
-chạy được ở dev (BE và trình duyệt cùng máy) nhưng trên server thật thì đó là cert của server.
+**Việc kế tiếp: chạy thử một lô thật trên prod với token cắm ở máy người dùng.**
 
-Đổi sang plugin **không phải sửa service lẫn controller**: viết một implement `ISigningKey` khác lấy chữ ký
-từ plugin rồi đăng ký DI khác đi. Đó là toàn bộ chỗ phải đụng.
+Luồng ký hiện tại — trang web làm **người đưa thư** giữa máy chủ và token:
+
+```
+1. FE  -> plugin  ky-so/mo-phien {thumbprint}     <- hộp PIN bật ĐÚNG MỘT LẦN, plugin giữ handle khoá
+2. FE  -> BE      lo-ky/{id}/mo-phien {chungThuBase64}   <- chỉ phần CÔNG KHAI
+3. FE  -> BE      lo-ky/{id}/bat-dau
+4. lặp: BE giữ lời gọi lo-ky/{id}/cho-ky tới khi có việc, trả tối đa 8 SignedAttributes một đợt
+        FE -> plugin ky-so/ky  -> chữ ký thô
+        FE -> BE     lo-ky/{id}/chu-ky
+5. xong -> plugin ky-so/dong-phien + BE lo-ky/{id}/dong-phien
+```
+
+Qua mạng chỉ có **SignedAttributes**, **chữ ký thô** và **chứng thư phần công khai**. Máy chủ tự dựng chuỗi
+tin cậy (`ICertificateTrustValidator`), không tin cờ nào máy người dùng gửi lên.
+
+Ba chỗ quyết định tốc độ, đừng đụng nếu chưa đo lại: gom 8 yêu cầu một đợt · giữ lời gọi lấy việc thay vì hỏi
+theo nhịp · **không** khoá tuần tự phép ký ở máy chủ (token tự xếp hàng bên plugin).
+
+⚠️ **Đóng tab là lô dừng** — mất người đưa thư. File đã ký giữ nguyên, bấm Bắt đầu lại thì chạy tiếp từ file
+dở. Muốn đóng tab mà lô vẫn chạy thì phải chuyển sang WSS; khi đó `IHangDoiKy` và `PluginSigningKey` giữ
+nguyên, chỉ thay lớp vận chuyển.
+
+⚠️ **Mở lại màn hình khi lô đang chạy thì chưa nối lại được vòng đưa thư** — màn hình thấy tiến độ nhưng
+không ai mang chữ ký đi, các lượt ký hết hạn sau 120 giây và file tính lỗi. Chưa làm nút nối lại phiên vì
+việc đó phải hỏi PIN lần nữa; cần quyết định về mặt giao diện trước.
+
+`Signing:Nguon` trong `appsettings.json` đổi được nguồn ký: bỏ trống là **plugin**, đặt `store` thì quay về
+đọc certificate store của máy chạy API (chỉ dùng khi API và token cùng một máy Windows).
 
 ## Hợp đồng `api/core/lo-ky` (đã chạy)
 

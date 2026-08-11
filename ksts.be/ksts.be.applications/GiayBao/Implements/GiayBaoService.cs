@@ -198,7 +198,11 @@ namespace ksts.be.applications.GiayBao.Implements
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Dựng giấy báo hỏng ở dòng {ThuTu}", thuTu + 1);
-                        _zipJobStore.CapNhat(jobId, x => x.SoLoi++);
+                        _zipJobStore.CapNhat(jobId, x =>
+                        {
+                            x.SoLoi++;
+                            x.DongLoi.Add(new DongLoiDto { ThuTu = thuTu + 1, LyDo = ex.Message });
+                        });
                     }
                     finally
                     {

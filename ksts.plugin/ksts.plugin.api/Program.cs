@@ -5,7 +5,11 @@ using ksts.plugin.applications.ChungThuSo.Interfaces;
 using ksts.plugin.applications.Plugin.Implements;
 using ksts.plugin.applications.Plugin.Interfaces;
 using ksts.plugin.external.Certificates.Implements;
+using ksts.plugin.applications.KySo.Implements;
+using ksts.plugin.applications.KySo.Interfaces;
 using ksts.plugin.external.Certificates.Interfaces;
+using ksts.plugin.external.Signing.Implements;
+using ksts.plugin.external.Signing.Interfaces;
 using ksts.plugin.external.Setup.Implements;
 using ksts.plugin.shared.Constants;
 using System.Text;
@@ -84,6 +88,10 @@ builder.Services.AddSingleton<ICertificateProvider, CertificateProvider>();
 builder.Services.AddSingleton<ITokenVerifier, TokenVerifier>();
 builder.Services.AddSingleton<IChungThuSoService, ChungThuSoService>();
 builder.Services.AddSingleton<IPluginService, PluginService>();
+
+// Phiên ký là Singleton vì nó GIỮ handle khoá đã mở: mỗi request một phiên mới thì lô nào cũng hỏi PIN từng file.
+builder.Services.AddSingleton<ISigningSession, SigningSession>();
+builder.Services.AddSingleton<IKySoService, KySoService>();
 
 var app = builder.Build();
 

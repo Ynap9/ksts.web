@@ -33,13 +33,26 @@ export interface IViewTienDoLoKy {
     hoanTat: boolean;
     loiChung?: string | null;
 
-    /** Tiến độ đẩy bản đã ký lên kho — bộ đếm riêng, độc lập với tiến độ ký. */
-    dangDayLenKho: boolean;
-    daDayLenKho: number;
-    soLoiDayLenKho: number;
-    hoanTatDayLenKho: boolean;
-    loiDayLenKho?: string | null;
+    /** Thư mục trên kho chứa bản đã ký; bản ký được đẩy lên ngay trong lúc ký. */
     tienToKho?: string | null;
 
-    files: IViewFileKy[];
+    /** CHỈ file lỗi, để bảng tra nguyên nhân theo thứ tự dòng. */
+    filesLoi: IViewFileKy[];
+}
+
+export interface IYeuCauKy {
+    yeuCauId: string;
+    duLieuBase64: string;
+}
+
+export interface IKetQuaKy {
+    yeuCauId: string;
+    chuKyBase64?: string | null;
+    loi?: string | null;
+}
+
+export interface IMoPhienKetQua {
+    thumbprint: string;
+    commonName: string;
+    chungThuBase64: string;
 }

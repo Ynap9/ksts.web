@@ -8,6 +8,11 @@ export interface IViewThiSinh {
     hoTen: string;
 }
 
+export interface IDongLoi {
+    thuTu: number;
+    lyDo: string;
+}
+
 export interface IZipJob {
     jobId: string;
     taiToken: string;
@@ -22,4 +27,7 @@ export interface IZipJob {
 
     /** Thư mục trên kho chứa giấy báo của lô; giấy báo được đẩy lên ngay trong lúc dựng. */
     tienToKho: string | null;
+
+    /** CHỈ dòng lỗi, để bảng tra nguyên nhân theo thứ tự dòng. */
+    dongLoi: IDongLoi[];
 }

@@ -5,7 +5,8 @@ import { timeout } from 'rxjs';
 import { environment } from '@/environments/environment';
 import { IViewBoCaiPlugin, IViewCertScanResult, IViewTokenVerify, IViewTrangThaiPlugin } from '../models/plugin.models';
 import { PLUGIN_PROBE_TIMEOUT_MS } from '../shared/constants/chung-thu-so.constants';
-import { IBaseResponseWithData } from '../shared/models/request-paging.base.models';
+import { IKetQuaKy, IMoPhienKetQua, IYeuCauKy } from '../models/lo-ky.models';
+import { IBaseResponse, IBaseResponseWithData } from '../shared/models/request-paging.base.models';
 
 @Injectable({
     providedIn: 'root'
@@ -43,6 +44,25 @@ export class PluginService {
         return this.http.post<IBaseResponseWithData<IViewTokenVerify>>(`${this.api}/chung-thu-so/kiem-tra-token`, {
             thumbprint
         });
+    }
+
+    /**
+     * Mở phiên ký trên token. Hộp nhập PIN bật ở đây và chỉ ở đây, nên không đặt timeout: người dùng cần
+     * thời gian gõ PIN. Trả về chứng thư phần công khai để nộp lên máy chủ.
+     */
+    moPhienKy(thumbprint: string) {
+        return this.http.post<IBaseResponseWithData<IMoPhienKetQua>>(`${this.api}/ky-so/mo-phien`, {
+            thumbprint
+        });
+    }
+
+    /** Ký cả một đợt yêu cầu trong một lời gọi; token ký tuần tự nên gom đợt là cách duy nhất bớt vòng đi-về. */
+    kyLo(yeuCau: IYeuCauKy[]) {
+        return this.http.post<IBaseResponseWithData<IKetQuaKy[]>>(`${this.api}/ky-so/ky`, { yeuCau });
+    }
+
+    dongPhienKy() {
+        return this.http.post<IBaseResponse>(`${this.api}/ky-so/dong-phien`, {});
     }
 
     getBoCai() {

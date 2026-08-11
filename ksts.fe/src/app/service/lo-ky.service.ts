@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '@/environments/environment';
-import { IViewLoKy, IViewTienDoLoKy } from '../models/lo-ky.models';
+import { IKetQuaKy, IViewFileKy, IViewLoKy, IViewTienDoLoKy, IYeuCauKy } from '../models/lo-ky.models';
 import { IBaseResponse, IBaseResponseWithData } from '../shared/models/request-paging.base.models';
 
 @Injectable({
@@ -34,13 +34,36 @@ export class LoKyService {
         return this.http.post<IBaseResponseWithData<IViewLoKy>>(`${this.api}/${loKyId}/them-tu-kho`, { duongDan });
     }
 
-    /** Đẩy bản đã ký lên thư mục dùng chung của kho. Song song với tải zip, không thay thế nó. */
-    dayLenKho(loKyId: number) {
-        return this.http.post<IBaseResponseWithData<IViewLoKy>>(`${this.api}/${loKyId}/day-len-kho`, {});
-    }
-
     batDau(loKyId: number, thumbprint: string) {
         return this.http.post<IBaseResponseWithData<IViewLoKy>>(`${this.api}/${loKyId}/bat-dau`, { thumbprint });
+    }
+
+    /** Nộp chứng thư phần công khai của phiên ký lên máy chủ, gọi trước khi bắt đầu. */
+    moPhien(loKyId: number, chungThuBase64: string) {
+        return this.http.post<IBaseResponseWithData<IViewLoKy>>(`${this.api}/${loKyId}/mo-phien`, {
+            chungThuBase64
+        });
+    }
+
+    dongPhien(loKyId: number) {
+        return this.http.post<IBaseResponse>(`${this.api}/${loKyId}/dong-phien`, {});
+    }
+
+    /**
+     * Lấy yêu cầu ký đang chờ. Máy chủ GIỮ lời gọi này tới khi có việc nên không đặt timeout ngắn: hỏi theo
+     * nhịp sẽ cộng độ trễ vào từng file, mà token ký tuần tự nên khoản đó nhân thẳng với số file.
+     */
+    choKy(loKyId: number) {
+        return this.http.get<IBaseResponseWithData<IYeuCauKy[]>>(`${this.api}/${loKyId}/cho-ky`);
+    }
+
+    nopChuKy(loKyId: number, ketQua: IKetQuaKy[]) {
+        return this.http.post<IBaseResponse>(`${this.api}/${loKyId}/chu-ky`, ketQua);
+    }
+
+    /** Danh sách file của lô, gọi MỘT lần khi mở màn hình - tiến độ hỏi theo nhịp nên không kèm danh sách. */
+    danhSachFile(loKyId: number) {
+        return this.http.get<IBaseResponseWithData<IViewFileKy[]>>(`${this.api}/${loKyId}/danh-sach-file`);
     }
 
     trangThai(loKyId: number) {

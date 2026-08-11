@@ -2,6 +2,8 @@ using AutoMapper;
 using ksts.be.applications.Base;
 using ksts.be.applications.LoKy.Dtos;
 using ksts.be.applications.LoKy.Interfaces;
+using ksts.be.external.Certificates.Interfaces;
+using ksts.be.external.Signing.Interfaces;
 using ksts.be.external.Storage.Interfaces;
 using ksts.be.infrastructure.Persistence;
 using ksts.be.shared.Constants.LoKy;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using LoKyEntity = ksts.be.domain.LoKy.LoKy;
 using LoKyFileEntity = ksts.be.domain.LoKy.LoKyFile;
@@ -26,7 +29,8 @@ namespace ksts.be.applications.LoKy.Implements
         private readonly ILoKyFileStorage _loKyFileStorage;
         private readonly IS3FileStorage _s3FileStorage;
         private readonly IKySoRunner _kySoRunner;
-        private readonly IDayLenKhoRunner _dayLenKhoRunner;
+        private readonly IHangDoiKy _hangDoiKy;
+        private readonly ICertificateTrustValidator _certificateTrustValidator;
         private readonly S3Settings _s3Settings;
 
         public LoKyService(
@@ -37,13 +41,15 @@ namespace ksts.be.applications.LoKy.Implements
             ILoKyFileStorage loKyFileStorage,
             IS3FileStorage s3FileStorage,
             IKySoRunner kySoRunner,
-            IDayLenKhoRunner dayLenKhoRunner,
+            IHangDoiKy hangDoiKy,
+            ICertificateTrustValidator certificateTrustValidator,
             IOptions<S3Settings> s3Options) : base(kstsDbContext, logger, httpContextAccessor, mapper)
         {
+            _hangDoiKy = hangDoiKy;
+            _certificateTrustValidator = certificateTrustValidator;
             _loKyFileStorage = loKyFileStorage;
             _s3FileStorage = s3FileStorage;
             _kySoRunner = kySoRunner;
-            _dayLenKhoRunner = dayLenKhoRunner;
             _s3Settings = s3Options.Value;
         }
 
@@ -252,6 +258,54 @@ namespace ksts.be.applications.LoKy.Implements
         }
 
         /// <inheritdoc/>
+        public async Task<ViewLoKyDto> MoPhienKyAsync(int loKyId, MoPhienKyDto input)
+        {
+            _logger.LogInformation($"{nameof(MoPhienKyAsync)} loKyId={loKyId}");
+
+            var lo = await LayLoAsync(loKyId);
+
+            if (string.IsNullOrWhiteSpace(input.ChungThuBase64))
+            {
+                throw new UserFriendlyException(ErrorCodes.CertificateNotFound,
+                    "Máy người dùng chưa gửi chứng thư số của phiên ký.");
+            }
+
+            X509Certificate2 cert;
+            try
+            {
+                cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(input.ChungThuBase64));
+            }
+            catch (Exception)
+            {
+                throw new UserFriendlyException(ErrorCodes.CertificateNotFound,
+                    "Không đọc được chứng thư số máy người dùng gửi lên.");
+            }
+
+            // Máy chủ TỰ thẩm định chuỗi tin cậy: máy người dùng không kiểm soát được nên cờ tin cậy nó gửi
+            // lên là vô giá trị.
+            if (!_certificateTrustValidator.IsTrusted(cert, DateTime.UtcNow))
+            {
+                throw new UserFriendlyException(ErrorCodes.CertificateCannotSign,
+                    "Chứng thư số không dựng được chuỗi tin cậy về CA đã ghim.");
+            }
+
+            _hangDoiKy.MoPhien(loKyId, cert);
+
+            lo.Thumbprint = cert.Thumbprint;
+            lo.ModifiedDate = GetVietnamTime();
+            await _kstsDbContext.SaveChangesAsync();
+
+            return ToViewDto(lo);
+        }
+
+        /// <inheritdoc/>
+        public async Task DongPhienKyAsync(int loKyId)
+        {
+            await LayLoAsync(loKyId);
+            _hangDoiKy.DongPhien(loKyId);
+        }
+
+        /// <inheritdoc/>
         public async Task<ViewLoKyDto> BatDauAsync(int loKyId, BatDauKyDto input)
         {
             _logger.LogInformation($"{nameof(BatDauAsync)} loKyId={loKyId}");
@@ -276,6 +330,7 @@ namespace ksts.be.applications.LoKy.Implements
             lo.Thumbprint = input.Thumbprint;
             lo.TrangThai = TrangThaiLoKy.DangKy;
             lo.LoiChung = null;
+            lo.TienToKho = LoKyConstants.GetKhoDaKyPrefix();
             lo.ThoiDiemBatDau = GetVietnamTime();
             lo.ModifiedDate = lo.ThoiDiemBatDau;
             await _kstsDbContext.SaveChangesAsync();
@@ -286,71 +341,45 @@ namespace ksts.be.applications.LoKy.Implements
         }
 
         /// <inheritdoc/>
-        public async Task<ViewLoKyDto> BatDauDayLenKhoAsync(int loKyId)
+        public async Task<List<ViewFileKyDto>> DanhSachFileAsync(int loKyId)
         {
-            _logger.LogInformation($"{nameof(BatDauDayLenKhoAsync)} loKyId={loKyId}");
+            await LayLoAsync(loKyId);
 
-            var lo = await LayLoAsync(loKyId);
-
-            if (_kySoRunner.DangChay(loKyId))
-            {
-                throw new UserFriendlyException(ErrorCodes.LoKyDangChay,
-                    "Lô đang ký dở nên chưa đẩy lên kho được.");
-            }
-
-            // Hỏi RUNNER chứ không đọc cờ trong DB: cờ chỉ để hiển thị, mà API tắt giữa chừng thì nó kẹt lại
-            // true vĩnh viễn và chặn luôn mọi lần đẩy lại về sau.
-            if (_dayLenKhoRunner.DangChay(loKyId))
-            {
-                throw new UserFriendlyException(ErrorCodes.LoKyDangDayLenKho,
-                    "Lô này đang được đẩy lên kho, chờ xong rồi hãy đẩy lại.");
-            }
-
-            var soXong = await _kstsDbContext.LoKyFile
-                .CountAsync(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Xong
-                    && x.ObjectKeyDaKy != null);
-
-            if (soXong == 0)
-            {
-                throw new UserFriendlyException(ErrorCodes.LoKyRong, "Lô chưa có file nào ký xong để đẩy.");
-            }
-
-            // Đặt lại bộ đếm để lần đẩy lại sau khi hỏng không cộng dồn lên số cũ.
-            lo.DangDayLenKho = true;
-            lo.HoanTatDayLenKho = false;
-            lo.DaDayLenKho = 0;
-            lo.SoLoiDayLenKho = 0;
-            lo.LoiDayLenKho = null;
-            lo.TienToKho = LoKyConstants.GetKhoDaKyPrefix();
-            lo.ModifiedDate = GetVietnamTime();
-            await _kstsDbContext.SaveChangesAsync();
-
-            _dayLenKhoRunner.BatDau(loKyId);
-
-            return ToViewDto(lo);
+            return (await _kstsDbContext.LoKyFile
+                    .Where(x => x.LoKyId == loKyId && !x.Deleted)
+                    .OrderBy(x => x.ThuTu)
+                    .AsNoTracking()
+                    .ToListAsync())
+                .Select(ToViewFileDto)
+                .ToList();
         }
+
+        /// <inheritdoc/>
+        public ViewFileKyDto ToViewFileDto(LoKyFileEntity file) => new()
+        {
+            Id = file.Id,
+            ThuTu = file.ThuTu,
+            TenFile = file.TenFile,
+            TrangThai = MaTrangThai(file.TrangThai),
+            LyDoLoi = file.LyDoLoi,
+            ThoiGianKy = file.ThoiGianKy,
+            DauThoiGian = file.DauThoiGian,
+        };
 
         /// <inheritdoc/>
         public async Task<ViewTienDoDto> TrangThaiAsync(int loKyId)
         {
             var lo = await LayLoAsync(loKyId);
 
-            // Lấy về rồi mới quy đổi trạng thái: MaTrangThai là hàm của mình, EF không dịch sang SQL được.
+            // CHỈ lấy file lỗi: trình duyệt hỏi tiến độ mỗi vài giây, kèm cả 5000 dòng mỗi nhịp là thứ làm
+            // nó cạn tài nguyên rồi chết giữa lô. Dòng bình thường suy được từ bộ đếm, chỉ dòng lỗi mới cần
+            // nói rõ lý do.
             var files = (await _kstsDbContext.LoKyFile
-                    .Where(x => x.LoKyId == loKyId && !x.Deleted)
+                    .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Loi)
                     .OrderBy(x => x.ThuTu)
                     .AsNoTracking()
                     .ToListAsync())
-                .Select(x => new ViewFileKyDto
-                {
-                    Id = x.Id,
-                    ThuTu = x.ThuTu,
-                    TenFile = x.TenFile,
-                    TrangThai = MaTrangThai(x.TrangThai),
-                    LyDoLoi = x.LyDoLoi,
-                    ThoiGianKy = x.ThoiGianKy,
-                    DauThoiGian = x.DauThoiGian,
-                })
+                .Select(ToViewFileDto)
                 .ToList();
 
             return new ViewTienDoDto
@@ -364,13 +393,8 @@ namespace ksts.be.applications.LoKy.Implements
                 DangChay = _kySoRunner.DangChay(loKyId),
                 HoanTat = lo.TrangThai is TrangThaiLoKy.Xong or TrangThaiLoKy.Huy or TrangThaiLoKy.Loi,
                 LoiChung = lo.LoiChung,
-                DangDayLenKho = _dayLenKhoRunner.DangChay(loKyId),
-                DaDayLenKho = lo.DaDayLenKho,
-                SoLoiDayLenKho = lo.SoLoiDayLenKho,
-                HoanTatDayLenKho = lo.HoanTatDayLenKho,
-                LoiDayLenKho = lo.LoiDayLenKho,
                 TienToKho = lo.TienToKho,
-                Files = files,
+                FilesLoi = files,
             };
         }
 
@@ -400,9 +424,10 @@ namespace ksts.be.applications.LoKy.Implements
         }
 
         /// <inheritdoc/>
-        public async Task<Stream> TaiZipAsync(int loKyId, string taiToken)
+        public async Task GhiNenAsync(int loKyId, string taiToken, Stream dich,
+            CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"{nameof(TaiZipAsync)} loKyId={loKyId}");
+            _logger.LogInformation($"{nameof(GhiNenAsync)} loKyId={loKyId}");
 
             // So khớp bằng thời gian cố định: token là bí mật duy nhất chặn đường tải này, so sánh chuỗi
             // thường sẽ rò rỉ độ dài tiền tố khớp qua thời gian trả lời.
@@ -430,24 +455,53 @@ namespace ksts.be.applications.LoKy.Implements
                 throw new UserFriendlyException(ErrorCodes.LoKyRong, "Lô chưa có file nào ký xong.");
             }
 
-            // DeleteOnClose: file tạm tự biến mất khi stream đóng, kể cả khi request bị huỷ giữa chừng.
-            var temp = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite,
-                FileShare.None, 81920, FileOptions.DeleteOnClose);
+            using var archive = new ZipArchive(dich, ZipArchiveMode.Create, leaveOpen: true);
 
-            using (var archive = new ZipArchive(temp, ZipArchiveMode.Create, leaveOpen: true))
+            // Tên đi kèm luôn với việc tải của chính nó: file hỏng thì bỏ qua, mà đếm thứ tự riêng sẽ lệch
+            // khỏi danh sách ngay từ file hỏng đầu tiên và mọi file sau đó vào gói sai tên.
+            var hangCho = new Queue<(string Ten, Task<byte[]?> Tai)>();
+            var ke = 0;
+
+            while (ke < files.Count && hangCho.Count < LoKyConstants.SoFileTaiTruocKhiNen)
             {
-                foreach (var file in files)
-                {
-                    var noiDung = await _loKyFileStorage.TaiAsync(file.ObjectKeyDaKy!);
-                    var entry = archive.CreateEntry(file.TenFile, CompressionLevel.NoCompression);
-
-                    await using var stream = entry.Open();
-                    await stream.WriteAsync(noiDung);
-                }
+                hangCho.Enqueue((files[ke].TenFile, TaiMotFileAsync(files[ke].ObjectKeyDaKy!, cancellationToken)));
+                ke++;
             }
 
-            temp.Position = 0;
-            return temp;
+            while (hangCho.Count > 0)
+            {
+                var (ten, tai) = hangCho.Dequeue();
+                var noiDung = await tai;
+
+                if (ke < files.Count)
+                {
+                    hangCho.Enqueue((files[ke].TenFile, TaiMotFileAsync(files[ke].ObjectKeyDaKy!, cancellationToken)));
+                    ke++;
+                }
+
+                if (noiDung == null)
+                {
+                    continue;
+                }
+
+                var entry = archive.CreateEntry(ten, CompressionLevel.NoCompression);
+                await using var stream = entry.Open();
+                await stream.WriteAsync(noiDung, cancellationToken);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<byte[]?> TaiMotFileAsync(string objectKey, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await _loKyFileStorage.TaiAsync(objectKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Kéo {ObjectKey} từ kho về để nén hỏng", objectKey);
+                return null;
+            }
         }
 
         /// <inheritdoc/>

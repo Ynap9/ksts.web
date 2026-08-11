@@ -6,11 +6,16 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace ksts.be.external.Signing.Implements
 {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Nguồn ký đọc certificate store của MÁY ĐANG CHẠY API. Chỉ dùng được khi API và token nằm trên cùng
+    /// một máy Windows, tức môi trường phát triển; trên máy chủ Linux nó không thấy chứng thư nào.
+    /// Tham số loKyId không dùng tới vì nguồn này không có khái niệm phiên với máy người dùng.
+    /// </summary>
     public class StoreSigningKey : ISigningKey
     {
         /// <inheritdoc/>
-        public X509Certificate2 LayChungThu(string thumbprint)
+        public Task<X509Certificate2> LayChungThuAsync(int loKyId, string thumbprint,
+            CancellationToken cancellationToken)
         {
             foreach (var location in new[] { StoreLocation.CurrentUser, StoreLocation.LocalMachine })
             {
@@ -30,7 +35,7 @@ namespace ksts.be.external.Signing.Implements
 
                 if (found != null)
                 {
-                    return found;
+                    return Task.FromResult(found);
                 }
             }
 
@@ -39,14 +44,15 @@ namespace ksts.be.external.Signing.Implements
         }
 
         /// <inheritdoc/>
-        public byte[] Ky(byte[] duLieu, X509Certificate2 cert)
+        public Task<byte[]> KyAsync(int loKyId, byte[] duLieu, X509Certificate2 cert,
+            CancellationToken cancellationToken)
         {
             // Chỉ RA LỆNH ký, không đọc khoá: với token thì khoá nằm trong chip và middleware tự bật hộp PIN.
             using var rsa = cert.GetRSAPrivateKey()
                 ?? throw new UserFriendlyException(ErrorCodes.CertificateCannotSign,
                     "Chứng thư số không dùng khoá RSA nên chưa ký được.");
 
-            return rsa.SignData(duLieu, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return Task.FromResult(rsa.SignData(duLieu, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
         }
 
         /// <inheritdoc/>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ksts.be.infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using ksts.be.infrastructure.Persistence;
 namespace ksts.be.infrastructure.Migrations
 {
     [DbContext(typeof(KstsDbContext))]
-    partial class KstsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260811200606_BoBuocDayLenKhoRieng")]
+    partial class BoBuocDayLenKhoRieng
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

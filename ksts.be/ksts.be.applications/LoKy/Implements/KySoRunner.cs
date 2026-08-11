@@ -37,12 +37,6 @@ namespace ksts.be.applications.LoKy.Implements
         /// <summary>Khoá nhận việc: hai luồng không được nhận trúng cùng một file.</summary>
         private readonly SemaphoreSlim _khoaNhanViec = new(1, 1);
 
-        /// <summary>
-        /// Khoá phép ký. Token phần cứng chỉ có MỘT phiên và ký lần lượt, nên dù các file chạy song song thì
-        /// riêng lượt ký vẫn phải xếp hàng — giữ đúng hình dạng đó từ bây giờ để lắp plugin vào không phải sửa.
-        /// </summary>
-        private readonly SemaphoreSlim _khoaKy = new(1, 1);
-
         public KySoRunner(
             IServiceScopeFactory scopeFactory,
             IPdfPreparer pdfPreparer,
@@ -146,7 +140,7 @@ namespace ksts.be.applications.LoKy.Implements
 
             // Lấy chứng thư MỘT lần cho cả lô. Với token thật, đây chính là chỗ giữ phiên khoá để N file chỉ
             // phải mở khoá một lần — giữ handle khoá, không phải nhớ mã PIN.
-            var cert = _signingKey.LayChungThu(thumbprint);
+            var cert = await _signingKey.LayChungThuAsync(loKyId, thumbprint, cancellationToken);
             var tenNguoiKy = cert.GetNameInfo(System.Security.Cryptography.X509Certificates.X509NameType
                 .SimpleName, false);
 
@@ -233,16 +227,12 @@ namespace ksts.be.applications.LoKy.Implements
                 var hash = SHA256.HashData(prepared.NoiDungKy);
                 var signedAttributes = _cmsAssembler.BuildSignedAttributes(hash, phien.Cert, DateTime.UtcNow);
 
-                byte[] chuKyTho;
-                await _khoaKy.WaitAsync(cancellationToken);
-                try
-                {
-                    chuKyTho = _signingKey.Ky(signedAttributes, phien.Cert);
-                }
-                finally
-                {
-                    _khoaKy.Release();
-                }
+                // KHÔNG khoá tuần tự ở đây: token vẫn ký lần lượt, nhưng việc xếp hàng do chính nơi giữ khoá
+                // lo. Khoá ở đây thì mỗi lúc chỉ có đúng một yêu cầu bay sang máy người dùng, và mỗi file
+                // phải chịu trọn một vòng đi-về; thả ra thì tám luồng cùng gửi, hàng đợi gom cả tám vào một
+                // đợt và chi phí đường truyền chia đều cho ngần ấy file.
+                var chuKyTho = await _signingKey.KyAsync(file.LoKyId, signedAttributes, phien.Cert,
+                    cancellationToken);
 
                 var tsaToken = await _timestampClient.RequestTokenAsync(chuKyTho, cancellationToken);
                 var cms = _cmsAssembler.Assemble(signedAttributes, chuKyTho, phien.Cert,
@@ -250,6 +240,9 @@ namespace ksts.be.applications.LoKy.Implements
 
                 var daKy = _pdfContentWriter.Write(prepared, cms);
                 file.ObjectKeyDaKy = await _loKyFileStorage.LuuFileDaKyAsync(file.LoKyId, file.ThuTu, daKy,
+                    cancellationToken);
+
+                await _s3FileStorage.CopyAsync(file.ObjectKeyDaKy, LoKyConstants.GetKhoDaKyKey(file.TenFile),
                     cancellationToken);
 
                 var genTime = _timestampClient.DocGenTime(tsaToken);

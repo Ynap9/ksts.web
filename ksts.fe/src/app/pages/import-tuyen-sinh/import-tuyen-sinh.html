@@ -66,6 +66,7 @@
                     <th style="min-width: 12rem">Số văn bản</th>
                     <th style="min-width: 18rem">Họ và tên thí sinh</th>
                     <th style="width: 12rem">Tình trạng</th>
+                    <th style="min-width: 18rem">Nguyên nhân</th>
                 </tr>
             </ng-template>
 
@@ -75,22 +76,23 @@
                     <td>{{ row.soVanBan }}</td>
                     <td>{{ row.hoTen }}</td>
                     <td>
-                        @if (i < daXong()) {
-                            <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Xong</span>
-                        } @else if (i < daXong() + soLoi()) {
+                        @if (lyDoTheoThuTu().has(i + 1)) {
                             <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
+                        } @else if (i < daXong()) {
+                            <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Xong</span>
                         } @else if (dangChay()) {
                             <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang dựng</span>
                         } @else {
                             <span class="text-surface-500">Chờ xử lý</span>
                         }
                     </td>
+                    <td class="text-red-600">{{ lyDoTheoThuTu().get(i + 1) }}</td>
                 </tr>
             </ng-template>
 
             <ng-template #emptymessage>
                 <tr>
-                    <td colspan="4" class="text-center py-8 text-surface-500">
+                    <td colspan="5" class="text-center py-8 text-surface-500">
                         Chọn file Excel để xem danh sách thí sinh.
                     </td>
                 </tr>

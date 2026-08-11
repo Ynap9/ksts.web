@@ -51,6 +51,15 @@ export class ImportTuyenSinh extends BaseComponent {
     /** Kho chứa giấy báo của lô. Có giá trị ngay từ khi mở lô vì file được đẩy lên trong lúc dựng. */
     tienToKho = computed(() => this.job()?.tienToKho ?? '');
 
+    /** Tra nguyên nhân theo thứ tự dòng; chỉ dòng lỗi mới có mặt ở đây. */
+    lyDoTheoThuTu = computed(() => {
+        const bang = new Map<number, string>();
+        for (const dong of this.job()?.dongLoi ?? []) {
+            bang.set(dong.thuTu, dong.lyDo);
+        }
+        return bang;
+    });
+
     coTheBatDau = computed(() => !!this.file() && !!this.sheetName() && this.rows().length > 0 && !this.dangChay());
 
     coTheDocDanhSach = computed(() => !!this.file() && !!this.sheetName() && !this.dangChay());

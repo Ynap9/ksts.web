@@ -1,10 +1,14 @@
 using ksts.be.api.Controllers.Base;
 using ksts.be.applications.LoKy.Dtos;
 using ksts.be.applications.LoKy.Interfaces;
+using ksts.be.external.Signing.Dtos;
+using ksts.be.external.Signing.Interfaces;
 using ksts.be.shared.Constants.LoKy;
+using ksts.be.shared.Constants.Signing;
 using ksts.be.shared.Requests;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ksts.be.api.Controllers.LoKy
@@ -16,11 +20,14 @@ namespace ksts.be.api.Controllers.LoKy
     public class LoKyController : BaseController
     {
         private readonly ILoKyService _loKyService;
+        private readonly IHangDoiKy _hangDoiKy;
         private readonly ILogger<LoKyController> _logger;
 
-        public LoKyController(ILoKyService loKyService, ILogger<LoKyController> logger) : base(logger)
+        public LoKyController(ILoKyService loKyService,
+            IHangDoiKy hangDoiKy, ILogger<LoKyController> logger) : base(logger)
         {
             _loKyService = loKyService;
+            _hangDoiKy = hangDoiKy;
             _logger = logger;
         }
 
@@ -70,14 +77,65 @@ namespace ksts.be.api.Controllers.LoKy
         }
 
         /// <summary>
-        /// Đẩy bản đã ký lên thư mục dùng chung của kho, chạy nền. Là lựa chọn SONG SONG với tải zip về.
+        /// Nhận chứng thư phần công khai của phiên ký từ máy người dùng. Gọi trước khi bắt đầu ký.
         /// </summary>
-        [HttpPost("{id}/day-len-kho")]
-        public async Task<ApiResponse> DayLenKho(int id)
+        [HttpPost("{id}/mo-phien")]
+        public async Task<ApiResponse> MoPhienKy(int id, [FromBody] MoPhienKyDto input)
         {
             try
             {
-                return new(await _loKyService.BatDauDayLenKhoAsync(id));
+                return new(await _loKyService.MoPhienKyAsync(id, input));
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
+        /// <summary>Đóng phiên ký, huỷ mọi lượt còn treo.</summary>
+        [HttpPost("{id}/dong-phien")]
+        public async Task<ApiResponse> DongPhienKy(int id)
+        {
+            try
+            {
+                await _loKyService.DongPhienKyAsync(id);
+                return new(true);
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Lấy các yêu cầu ký đang chờ. Lời gọi được GIỮ tới khi có việc hoặc hết thời gian chờ, nên trang
+        /// web không phải hỏi theo nhịp — độ trễ đó cộng thẳng vào từng file vì token ký tuần tự.
+        /// </summary>
+        [HttpGet("{id}/cho-ky")]
+        public async Task<ApiResponse> ChoKy(int id)
+        {
+            try
+            {
+                await _loKyService.LayLoAsync(id);
+                var ket = await _hangDoiKy.LayYeuCauAsync(id,
+                    TimeSpan.FromSeconds(SigningQueueConstants.GiayChoLayViec), HttpContext.RequestAborted);
+                return new(ket);
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
+        /// <summary>Nộp chữ ký của một đợt yêu cầu, đánh thức các lượt ký đang chờ.</summary>
+        [HttpPost("{id}/chu-ky")]
+        public async Task<ApiResponse> NopChuKy(int id, [FromBody] List<KetQuaKyDto> input)
+        {
+            try
+            {
+                await _loKyService.LayLoAsync(id);
+                _hangDoiKy.NopKetQua(id, input);
+                return new(true);
             }
             catch (Exception ex)
             {
@@ -99,7 +157,24 @@ namespace ksts.be.api.Controllers.LoKy
             }
         }
 
-        /// <summary>Tiến độ và danh sách file của lô.</summary>
+        /// <summary>
+        /// Danh sách file của lô, gọi MỘT lần khi mở màn hình. Tiến độ hỏi theo nhịp nên không kèm danh sách
+        /// này.
+        /// </summary>
+        [HttpGet("{id}/danh-sach-file")]
+        public async Task<ApiResponse> DanhSachFile(int id)
+        {
+            try
+            {
+                return new(await _loKyService.DanhSachFileAsync(id));
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
+        /// <summary>Tiến độ và danh sách file LỖI của lô.</summary>
         [HttpGet("{id}/trang-thai")]
         public async Task<ApiResponse> TrangThai(int id)
         {
@@ -143,8 +218,9 @@ namespace ksts.be.api.Controllers.LoKy
         }
 
         /// <summary>
-        /// File nén chứa toàn bộ bản đã ký. KHÔNG bọc ApiResponse: trình duyệt tải thẳng xuống đĩa, gói lô vài
-        /// GB vào envelope JSON rồi mới lưu là hết bộ nhớ trang.
+        /// File nén chứa toàn bộ bản đã ký, dựng NGAY LÚC TẢI bằng cách kéo từng bản từ kho ra rồi nén vào
+        /// luồng gửi đi - máy chủ không giữ file nén nào trên đĩa. KHÔNG bọc ApiResponse: trình duyệt tải
+        /// thẳng xuống đĩa, gói lô vài GB vào envelope JSON rồi mới lưu là hết bộ nhớ trang.
         ///
         /// KHÔNG đòi Bearer vì trình duyệt điều hướng tới đây thì không gắn được header Authorization; chặn
         /// bằng token phát riêng cho lô, kiểm trong service.
@@ -155,9 +231,20 @@ namespace ksts.be.api.Controllers.LoKy
         {
             try
             {
-                var stream = await _loKyService.TaiZipAsync(id, token);
-                return File(stream, LoKyConstants.ZipContentType,
-                    $"lo-ky-{id}-{DateTime.UtcNow:yyyyMMddHHmmss}.zip");
+                // ZipArchive ghi header và bảng mục lục bằng lệnh ghi ĐỒNG BỘ, mà Response.Body cấm ghi đồng
+                // bộ theo mặc định - không mở cờ này thì hỏng ngay ở entry đầu tiên.
+                var dieuKhienThan = HttpContext.Features.Get<IHttpBodyControlFeature>();
+                if (dieuKhienThan != null)
+                {
+                    dieuKhienThan.AllowSynchronousIO = true;
+                }
+
+                Response.ContentType = LoKyConstants.ZipContentType;
+                Response.Headers.ContentDisposition =
+                    $"attachment; filename=\"lo-ky-{id}-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";
+
+                await _loKyService.GhiNenAsync(id, token, Response.Body, HttpContext.RequestAborted);
+                return new EmptyResult();
             }
             catch (Exception ex)
             {

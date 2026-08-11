@@ -95,22 +95,14 @@
     </div>
 
     <div class="mt-5 flex flex-col gap-1">
-        <div class="text-sm text-surface-500">Ký số</div>
+        <div class="flex items-center justify-between text-sm text-surface-500">
+            <span>Ký số và đẩy lên kho</span>
+            @if (tienToKho()) {
+                <span>{{ tienToKho() }}</span>
+            }
+        </div>
         <p-progressbar [value]="dangUpload() ? phanTramUpload() : phanTram()" [showValue]="true" />
     </div>
-
-    @if (dangDayKho() || tienDo()?.hoanTatDayLenKho) {
-        <div class="mt-4 flex flex-col gap-1">
-            <div class="flex items-center justify-between text-sm text-surface-500">
-                <span>Đẩy bản đã ký lên MinIO</span>
-                <span>
-                    {{ daDayLenKho() }}/{{ daXong() }} file@if (soLoiDayKho()) {, lỗi {{ soLoiDayKho() }}}
-                    @if (tienDo()?.tienToKho) { — {{ tienDo()?.tienToKho }} }
-                </span>
-            </div>
-            <p-progressbar [value]="phanTramDayKho()" [showValue]="true" />
-        </div>
-    }
 
     <div class="mt-5">
         <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [loading]="loading()">
@@ -119,6 +111,7 @@
                     <th style="width: 5rem">STT</th>
                     <th style="min-width: 22rem">Tên file</th>
                     <th style="width: 13rem">Tình trạng</th>
+                    <th style="min-width: 18rem">Nguyên nhân</th>
                     <th style="width: 12rem">Thời gian ký</th>
                     <th style="min-width: 14rem">Dấu thời gian</th>
                 </tr>
@@ -129,23 +122,17 @@
                     <td>{{ i + 1 }}</td>
                     <td>{{ row.tenFile }}</td>
                     <td>
-                        @switch (row.trangThai) {
-                            @case ('cho') {
-                                <span class="text-surface-500">Chờ ký</span>
-                            }
-                            @case ('dangKy') {
-                                <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang ký</span>
-                            }
-                            @case ('xong') {
-                                <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Đã ký</span>
-                            }
-                            @case ('loi') {
-                                <span class="text-red-600" [pTooltip]="row.lyDoLoi" tooltipPosition="top">
-                                    <i class="pi pi-times-circle mr-2"></i>Lỗi
-                                </span>
-                            }
+                        @if (lyDoTheoThuTu().has(i + 1)) {
+                            <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
+                        } @else if (i < daXong()) {
+                            <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Đã ký</span>
+                        } @else if (dangKy()) {
+                            <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang ký</span>
+                        } @else {
+                            <span class="text-surface-500">Chờ ký</span>
                         }
                     </td>
+                    <td class="text-red-600">{{ lyDoTheoThuTu().get(i + 1) }}</td>
                     <td>{{ row.thoiGianKy | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ row.dauThoiGian | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                 </tr>
@@ -153,7 +140,7 @@
 
             <ng-template #emptymessage>
                 <tr>
-                    <td colspan="5" class="text-center py-8 text-surface-500">
+                    <td colspan="6" class="text-center py-8 text-surface-500">
                         Kéo thả thư mục PDF vào ô bên trên để bắt đầu.
                     </td>
                 </tr>
@@ -166,8 +153,6 @@
             [loading]="dangKy() || dangUpload()" (onClick)="onBatDau()" />
         <p-button label="Huỷ" icon="pi pi-times" type="button" severity="secondary" styleClass="w-28"
             [disabled]="!dangKy()" (onClick)="onHuy()" />
-        <p-button label="Đẩy lên MinIO" icon="pi pi-cloud-upload" type="button" severity="info" styleClass="w-44"
-            [disabled]="!dayKhoDuoc()" [loading]="dangDayKho()" (onClick)="onDayLenKho()" />
         <p-button label="Tải zip" icon="pi pi-download" type="button" severity="success" styleClass="w-32"
             [disabled]="!taiDuoc()" (onClick)="onTaiZip()" />
     </div>

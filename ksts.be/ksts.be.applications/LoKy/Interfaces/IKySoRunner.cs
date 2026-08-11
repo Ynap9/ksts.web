@@ -48,8 +48,12 @@ namespace ksts.be.applications.LoKy.Interfaces
         Task<int?> NhanViecAsync(int loKyId, CancellationToken cancellationToken);
 
         /// <summary>
-        /// Ký đúng một file. Fail-closed với dấu thời gian: TSA hỏng sau các lần thử thì file bị đánh lỗi chứ
-        /// KHÔNG bao giờ phát hành bản ký thiếu dấu thời gian.
+        /// Ký đúng một file rồi đẩy luôn bản ký sang thư mục dùng chung của kho. Gộp hai việc vào một lượt vì
+        /// chúng cùng chờ mạng: tách thành bước riêng chạy sau cả lô thì phải quét lại toàn bộ file lần nữa,
+        /// mà người dùng cũng không có lý do gì để muốn một lô ký xong nhưng chưa có trên kho.
+        ///
+        /// Fail-closed với dấu thời gian: TSA hỏng sau các lần thử thì file bị đánh lỗi chứ KHÔNG bao giờ
+        /// phát hành bản ký thiếu dấu thời gian.
         ///
         /// Phép KÝ được khoá cho chạy tuần tự dù các file chạy song song: token phần cứng chỉ có MỘT phiên và
         /// ký lần lượt, nên giữ đúng hình dạng đó ngay từ bây giờ để lúc lắp plugin vào không phải sửa lại.

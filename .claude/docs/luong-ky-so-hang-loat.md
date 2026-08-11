@@ -17,7 +17,39 @@
 Thao tác mật mã **không thể** chạy trên server: khoá bí mật nằm trong chip token, không trích xuất được. Qua
 mạng chỉ có hash + cert phần public; PIN và khoá không bao giờ rời máy user.
 
-## Topology B — plugin tự gọi ra server
+## Đường truyền chữ ký — ĐÃ ĐỔI ngày 2026-08-12
+
+Bản đầu chốt **topology B** (plugin tự gọi ra server qua WSS), mô tả ở mục ngay dưới. Khi thi công đã đổi
+sang **trang web làm người đưa thư**, vì cùng một mức bảo mật nhưng ít việc hơn hẳn và kịp cho bản chạy thật:
+
+```
+Server  --- ngủ chờ chữ ký ---┐
+                              │  FE: GET lo-ky/{id}/cho-ky   (máy chủ GIỮ lời gọi tới khi có việc)
+                              │      -> [{yeuCauId, signedAttrs}] tối đa 8 cái một đợt
+   FE --127.0.0.1--> Plugin     (ký bằng handle đã mở, PIN đã hỏi một lần lúc mở phiên)
+                              │      <- [{yeuCauId, chuKy}]
+ Server <-- POST lo-ky/{id}/chu-ky ──┘
+```
+
+Qua mạng vẫn đúng ngần ấy thứ: **SignedAttributes** đi xuống, **chữ ký thô** đi lên, cộng chứng thư phần
+CÔNG KHAI nộp một lần lúc mở phiên. Máy chủ tự dựng chuỗi tin cậy, không tin cờ nào máy người dùng gửi.
+
+Ba điều kiện làm nó nhanh ngang topology B, thiếu một là hỏng:
+
+1. **Gom yêu cầu theo đợt** (`SigningQueueConstants.SoYeuCauMoiDot = 8`). Token ký tuần tự nên độ trễ đường
+   truyền cộng thẳng vào từng file; gom 8 thì chia đều cho 8.
+2. **Giữ lời gọi lấy việc** thay vì hỏi theo nhịp. Hỏi mỗi 500 ms là cộng tới 500 ms cho mỗi file, lô 5000
+   file thành gần một tiếng.
+3. **Bỏ khoá tuần tự ở máy chủ** (`_khoaKy` cũ trong `KySoRunner`). Còn khoá đó thì mỗi lúc chỉ một yêu cầu
+   bay đi và điều 1 vô nghĩa. Token vẫn ký lần lượt — việc xếp hàng do chính plugin lo.
+
+Cái giá phải trả, phải nói rõ với người dùng: **đóng tab là lô dừng**, vì mất người đưa thư. File đã ký giữ
+nguyên, bấm Bắt đầu lại thì chạy tiếp từ file dở.
+
+WSS vẫn là đích đến khi nghiệp vụ cần đóng tab mà lô vẫn chạy. Đổi sang nó **không phải viết lại phần lõi**:
+`IHangDoiKy` và `PluginSigningKey` giữ nguyên, chỉ thay lớp vận chuyển.
+
+## Topology B — plugin tự gọi ra server (chưa thi công)
 
 ```
 Browser (FE) ──HTTPS──> Server <──WSS outbound── Plugin ──> Token
