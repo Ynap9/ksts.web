@@ -122,9 +122,9 @@
                     <td>{{ i + 1 }}</td>
                     <td>{{ row.tenFile }}</td>
                     <td>
-                        @if (lyDoTheoThuTu().has(i + 1)) {
+                        @if (row.trangThai === 'loi' || lyDoTheoThuTu().has(i + 1)) {
                             <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
-                        } @else if (i < daXong()) {
+                        } @else if (row.trangThai === 'xong' || i < daXong()) {
                             <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Đã ký</span>
                         } @else if (dangKy()) {
                             <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang ký</span>
@@ -132,7 +132,7 @@
                             <span class="text-surface-500">Chờ ký</span>
                         }
                     </td>
-                    <td class="text-red-600">{{ lyDoTheoThuTu().get(i + 1) }}</td>
+                    <td class="text-red-600">{{ lyDoTheoThuTu().get(i + 1) || row.lyDoLoi }}</td>
                     <td>{{ row.thoiGianKy | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>{{ row.dauThoiGian | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                 </tr>

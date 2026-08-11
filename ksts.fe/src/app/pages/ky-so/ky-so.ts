@@ -425,6 +425,11 @@ export class KySo extends BaseComponent {
                 }
 
                 this.dangKy.set(false);
+
+                // Nạp lại danh sách MỘT lần khi lô dừng: thời gian ký và dấu thời gian của từng file chỉ có
+                // sau khi ký xong, mà nhịp hỏi tiến độ thì không mang theo danh sách nên chúng không tự về.
+                this.getDanhSachFile(loKyId);
+
                 if (tienDo.loiChung) {
                     this.messageError(`Lô ký dừng: ${tienDo.loiChung}`);
                 } else if (tienDo.hoanTat) {
