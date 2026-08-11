@@ -23,5 +23,7 @@ namespace ksts.be.applications.LoKy.Dtos
         public string? TienToKho { get; set; }
 
         public List<ViewFileKyDto> FilesLoi { get; set; } = new();
+
+        public List<ViewFileKyDto> FilesVuaXong { get; set; } = new();
     }
 }

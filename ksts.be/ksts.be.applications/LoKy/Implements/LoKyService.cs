@@ -382,6 +382,17 @@ namespace ksts.be.applications.LoKy.Implements
                 .Select(ToViewFileDto)
                 .ToList();
 
+            // Kèm những file VỪA ký xong để bảng điền dần thời gian ký và dấu thời gian. Chỉ lấy phần mới
+            // nhất chứ không cả lô: kèm cả nghìn dòng mỗi nhịp là thứ làm trình duyệt cạn tài nguyên.
+            var vuaXong = (await _kstsDbContext.LoKyFile
+                    .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Xong)
+                    .OrderByDescending(x => x.ModifiedDate)
+                    .Take(LoKyConstants.SoFileVuaXongMoiNhip)
+                    .AsNoTracking()
+                    .ToListAsync())
+                .Select(ToViewFileDto)
+                .ToList();
+
             return new ViewTienDoDto
             {
                 Id = lo.Id,
@@ -395,6 +406,7 @@ namespace ksts.be.applications.LoKy.Implements
                 LoiChung = lo.LoiChung,
                 TienToKho = lo.TienToKho,
                 FilesLoi = files,
+                FilesVuaXong = vuaXong,
             };
         }
 

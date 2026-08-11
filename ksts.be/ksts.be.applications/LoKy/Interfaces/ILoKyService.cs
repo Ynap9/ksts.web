@@ -13,8 +13,8 @@ namespace ksts.be.applications.LoKy.Interfaces
         Task<ViewLoKyDto> TaoLoAsync(TaoLoKyDto input);
 
         /// <summary>
-        /// Nhận MỘT đợt file. Chịu được gọi lại cùng một đợt mà không nhân đôi dòng — FE gửi lại đúng đợt hỏng,
-        /// nên khử trùng theo tên file trong phạm vi lô.
+        /// Nhận MỘT đợt file tải lên từ máy người dùng. Chịu được gọi lại cùng một đợt mà không nhân đôi dòng
+        /// — FE gửi lại đúng đợt hỏng, nên khử trùng theo tên file trong phạm vi lô.
         /// </summary>
         Task<ViewLoKyDto> ThemFileAsync(int loKyId, IFormFileCollection files);
 

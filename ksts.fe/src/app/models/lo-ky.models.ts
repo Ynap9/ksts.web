@@ -38,6 +38,9 @@ export interface IViewTienDoLoKy {
 
     /** CHỈ file lỗi, để bảng tra nguyên nhân theo thứ tự dòng. */
     filesLoi: IViewFileKy[];
+
+    /** File vừa ký xong ở nhịp gần đây, để bảng điền dần thời gian ký và dấu thời gian. */
+    filesVuaXong: IViewFileKy[];
 }
 
 export interface IYeuCauKy {

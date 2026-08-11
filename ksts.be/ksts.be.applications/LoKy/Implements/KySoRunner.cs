@@ -215,9 +215,13 @@ namespace ksts.be.applications.LoKy.Implements
             }
 
             var thanhCong = false;
+            var dongHo = System.Diagnostics.Stopwatch.StartNew();
+            long msTai = 0, msDung = 0, msKy = 0, msTsa = 0;
+
             try
             {
                 var pdf = await _loKyFileStorage.TaiAsync(file.ObjectKeyNguon, cancellationToken);
+                msTai = dongHo.ElapsedMilliseconds;
 
                 var signedAt = DateTimeConstants.VietnamNow;
                 var prepared = _pdfPreparer.Prepare(pdf, NhanBanTuyChon(phien.TuyChonMau, signedAt));
@@ -226,6 +230,7 @@ namespace ksts.be.applications.LoKy.Implements
                 // tính, còn phép ký thì nằm ở nơi giữ khoá.
                 var hash = SHA256.HashData(prepared.NoiDungKy);
                 var signedAttributes = _cmsAssembler.BuildSignedAttributes(hash, phien.Cert, DateTime.UtcNow);
+                msDung = dongHo.ElapsedMilliseconds - msTai;
 
                 // KHÔNG khoá tuần tự ở đây: token vẫn ký lần lượt, nhưng việc xếp hàng do chính nơi giữ khoá
                 // lo. Khoá ở đây thì mỗi lúc chỉ có đúng một yêu cầu bay sang máy người dùng, và mỗi file
@@ -233,16 +238,20 @@ namespace ksts.be.applications.LoKy.Implements
                 // đợt và chi phí đường truyền chia đều cho ngần ấy file.
                 var chuKyTho = await _signingKey.KyAsync(file.LoKyId, signedAttributes, phien.Cert,
                     cancellationToken);
+                msKy = dongHo.ElapsedMilliseconds - msTai - msDung;
 
                 var tsaToken = await _timestampClient.RequestTokenAsync(chuKyTho, cancellationToken);
+                msTsa = dongHo.ElapsedMilliseconds - msTai - msDung - msKy;
                 var cms = _cmsAssembler.Assemble(signedAttributes, chuKyTho, phien.Cert,
                     phien.ChuoiChungThu, tsaToken);
 
                 var daKy = _pdfContentWriter.Write(prepared, cms);
-                file.ObjectKeyDaKy = await _loKyFileStorage.LuuFileDaKyAsync(file.LoKyId, file.ThuTu, daKy,
-                    cancellationToken);
 
-                await _s3FileStorage.CopyAsync(file.ObjectKeyDaKy, LoKyConstants.GetKhoDaKyKey(file.TenFile),
+                // Ghi THẲNG vào thư mục dùng chung của kho, một thao tác cho một file. Bản trước ghi vào chỗ
+                // làm việc của lô rồi mới chép sang đây: hai vòng đi-về tới kho cho mỗi file, mà kho nằm
+                // ngoài mạng nên khoản đó cộng thẳng vào thời gian của cả lô.
+                file.ObjectKeyDaKy = LoKyConstants.GetKhoDaKyKey(file.TenFile);
+                await _s3FileStorage.UploadBytesAsync(daKy, file.ObjectKeyDaKy, LoKyConstants.PdfContentType,
                     cancellationToken);
 
                 var genTime = _timestampClient.DocGenTime(tsaToken);
@@ -270,6 +279,12 @@ namespace ksts.be.applications.LoKy.Implements
             file.ModifiedDate = DateTimeConstants.VietnamNow;
             await db.SaveChangesAsync(CancellationToken.None);
             await CongDonKetQuaAsync(file.LoKyId, thanhCong);
+
+            // Chia nhỏ thời gian từng chặng: không có bảng này thì mọi phán đoán về chỗ chậm đều là đoán mò.
+            _logger.LogInformation(
+                "Ky file {ThuTu}: tong {Tong}ms (tai {Tai}ms, dung {Dung}ms, cho chu ky {Ky}ms, tsa {Tsa}ms, day len kho {Day}ms)",
+                file.ThuTu, dongHo.ElapsedMilliseconds, msTai, msDung, msKy, msTsa,
+                dongHo.ElapsedMilliseconds - msTai - msDung - msKy - msTsa);
         }
 
         /// <inheritdoc/>
@@ -392,8 +407,9 @@ namespace ksts.be.applications.LoKy.Implements
                 return;
             }
 
-            // Ký xong thì bản nguồn hết việc — dọn ngay để lô không nằm lại trên kho. CHỈ dọn khi lô chạy
-            // trọn: lô bị huỷ còn phải ký tiếp từ file dở, xoá nguồn là mất luôn đường chạy tiếp.
+            // Dọn bản nguồn của lô. CHỈ có tác dụng với lô nhận file từ máy người dùng — lô lấy từ thư mục
+            // trên kho không chép gì vào lo-ky/ nên tiền tố này rỗng và lệnh xoá thành vô hại. Chỉ dọn khi lô
+            // chạy trọn: lô bị huỷ còn phải ký tiếp từ file dở, xoá nguồn là mất luôn đường chạy tiếp.
             try
             {
                 await _loKyFileStorage.XoaThuMucAsync(loKyId, LoKyConstants.ThuMucNguon);

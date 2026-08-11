@@ -67,6 +67,13 @@ export class KySo extends BaseComponent {
      */
     rows = signal<IViewFileKy[]>([]);
 
+    /**
+     * Thời gian ký và dấu thời gian của những file đã xong, gom dần qua từng nhịp hỏi tiến độ. Giữ riêng
+     * ngoài `rows` để mỗi nhịp không phải dựng lại cả mảng nghìn phần tử — đó là thứ làm trình duyệt cạn
+     * tài nguyên rồi chết giữa lô.
+     */
+    thoiGianTheoThuTu = signal<Map<number, IViewFileKy>>(new Map());
+
     /** Tra nguyên nhân theo thứ tự dòng; chỉ dòng lỗi mới có mặt ở đây. */
     lyDoTheoThuTu = computed(() => {
         const bang = new Map<number, string>();
@@ -167,6 +174,21 @@ export class KySo extends BaseComponent {
                     this.hoiTienDo();
                 }
             }
+        });
+    }
+
+    /** Gom file vừa ký xong vào bảng tra theo thứ tự dòng, không đụng tới danh sách file. */
+    gomFileVuaXong(files: IViewFileKy[]) {
+        if (!files?.length) {
+            return;
+        }
+
+        this.thoiGianTheoThuTu.update((bang) => {
+            const moi = new Map(bang);
+            for (const file of files) {
+                moi.set(file.thuTu, file);
+            }
+            return moi;
         });
     }
 
@@ -418,6 +440,7 @@ export class KySo extends BaseComponent {
 
                 const tienDo = res.data;
                 this.tienDo.set(tienDo);
+                this.gomFileVuaXong(tienDo.filesVuaXong);
 
                 if (!tienDo.hoanTat && tienDo.dangChay) {
                     setTimeout(() => this.hoiTienDo(), NHIP_HOI_TIEN_DO);

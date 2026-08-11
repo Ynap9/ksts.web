@@ -45,7 +45,7 @@ namespace ksts.be.api.Controllers.LoKy
             }
         }
 
-        /// <summary>Nhận một đợt file PDF vào lô. Gọi lại nhiều lần cho tới hết thư mục.</summary>
+        /// <summary>Nhận một đợt file PDF tải lên từ máy người dùng. Gọi lại nhiều lần cho tới hết thư mục.</summary>
         [HttpPost("{id}/them-file")]
         public async Task<ApiResponse> ThemFile(int id)
         {

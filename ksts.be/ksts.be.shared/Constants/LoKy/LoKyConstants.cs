@@ -9,7 +9,6 @@ namespace ksts.be.shared.Constants.LoKy
         // lô không bao giờ đụng nhau.
         public const string ObjectKeyPrefix = "lo-ky";
         public const string ThuMucNguon = "nguon";
-        public const string ThuMucDaKy = "da-ky";
 
         // Object key do SERVER đặt, KHÔNG lấy tên file người dùng tải lên: hai người cùng tải "A.pdf" sẽ ghi
         // đè file của nhau, mà tên file người dùng còn có thể chứa ký tự phá đường dẫn.
@@ -31,6 +30,13 @@ namespace ksts.be.shared.Constants.LoKy
         /// cùng một thí sinh nằm đúng cùng một tên ở hai thư mục, đối chiếu được ngay.
         /// </summary>
         public static string GetKhoDaKyKey(string tenFile) => GetKhoDaKyPrefix() + tenFile;
+
+        /// <summary>
+        /// Số file vừa ký xong kèm theo mỗi nhịp hỏi tiến độ, để bảng điền dần thời gian ký và dấu thời gian.
+        /// Có trần vì kèm cả nghìn dòng mỗi nhịp là thứ làm trình duyệt cạn tài nguyên rồi chết giữa lô; lấy
+        /// dư so với số file ký xong trong một nhịp nên thực tế không bao giờ chạm trần.
+        /// </summary>
+        public const int SoFileVuaXongMoiNhip = 100;
 
         /// <summary>
         /// Số file tải trước từ kho khi đóng gói. Nén phải ghi TUẦN TỰ vào luồng gửi cho trình duyệt, nhưng

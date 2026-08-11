@@ -25,16 +25,6 @@ namespace ksts.be.external.Storage.Implements
         }
 
         /// <inheritdoc/>
-        public async Task<string> LuuFileDaKyAsync(int loKyId, int thuTu, byte[] noiDung,
-            CancellationToken cancellationToken = default)
-        {
-            var objectKey = BuildObjectKey(loKyId, LoKyConstants.ThuMucDaKy, thuTu);
-            await _s3FileStorage.UploadBytesAsync(noiDung, objectKey, LoKyConstants.PdfContentType,
-                cancellationToken);
-            return objectKey;
-        }
-
-        /// <inheritdoc/>
         public Task<byte[]> TaiAsync(string objectKey, CancellationToken cancellationToken = default) =>
             _s3FileStorage.DownloadAsync(objectKey, cancellationToken);
 

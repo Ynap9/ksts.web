@@ -14,10 +14,6 @@ namespace ksts.be.external.Storage.Interfaces
         Task<string> LuuFileNguonAsync(int loKyId, int thuTu, IFormFile file,
             CancellationToken cancellationToken = default);
 
-        /// <summary>Lưu bản đã ký, trả về object key.</summary>
-        Task<string> LuuFileDaKyAsync(int loKyId, int thuTu, byte[] noiDung,
-            CancellationToken cancellationToken = default);
-
         /// <summary>Tải nội dung một object của lô về bộ nhớ.</summary>
         Task<byte[]> TaiAsync(string objectKey, CancellationToken cancellationToken = default);
 

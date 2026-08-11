@@ -124,7 +124,7 @@
                     <td>
                         @if (row.trangThai === 'loi' || lyDoTheoThuTu().has(i + 1)) {
                             <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
-                        } @else if (row.trangThai === 'xong' || i < daXong()) {
+                        } @else if (thoiGianTheoThuTu().has(i + 1) || row.trangThai === 'xong' || i < daXong()) {
                             <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Đã ký</span>
                         } @else if (dangKy()) {
                             <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang ký</span>
@@ -133,8 +133,8 @@
                         }
                     </td>
                     <td class="text-red-600">{{ lyDoTheoThuTu().get(i + 1) || row.lyDoLoi }}</td>
-                    <td>{{ row.thoiGianKy | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
-                    <td>{{ row.dauThoiGian | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ (thoiGianTheoThuTu().get(i + 1)?.thoiGianKy ?? row.thoiGianKy) | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ (thoiGianTheoThuTu().get(i + 1)?.dauThoiGian ?? row.dauThoiGian) | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
                 </tr>
             </ng-template>
 

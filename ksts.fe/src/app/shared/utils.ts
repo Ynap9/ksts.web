@@ -41,6 +41,27 @@ export class Utils {
         sessionStorage.clear();
     }
 
+    /**
+     * Dọn cache của trình duyệt khi kết thúc phiên: Cache Storage và service worker. JavaScript không xoá
+     * được cache HTTP, nên bên gọi phải điều hướng cứng sau đó để trang được nạp lại từ đầu thay vì dùng
+     * lại mã và dữ liệu của phiên trước.
+     */
+    public static async clearBrowserCache(): Promise<void> {
+        try {
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+
+            if ('serviceWorker' in navigator) {
+                const workers = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(workers.map((worker) => worker.unregister()));
+            }
+        } catch {
+            // Dọn cache hỏng không được phép chặn việc đăng xuất: phiên đã bị xoá rồi.
+        }
+    }
+
     public static getAccessToken(): string | undefined {
         return this.getLocalStorage(AuthConstants.STORAGE_AUTH)?.accessToken;
     }
