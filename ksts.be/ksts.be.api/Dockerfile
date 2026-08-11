@@ -27,7 +27,7 @@ COPY ["ksts.be.applications/ksts.be.applications.csproj", "ksts.be.applications/
 COPY ["ksts.be.domain/ksts.be.domain.csproj", "ksts.be.domain/"]
 COPY ["ksts.be.external/ksts.be.external.csproj", "ksts.be.external/"]
 COPY ["ksts.be.infrastructure/ksts.be.infrastructure.csproj", "ksts.be.infrastructure/"]
-COPY ["ksts.be.infrastructure.external/ksts.be.infrastructure.external.csproj", "ksts.be.infrastructure.external/"]
+COPY ["ksts.be.external/ksts.be.external.csproj", "ksts.be.external/"]
 COPY ["ksts.be.shared/ksts.be.shared.csproj", "ksts.be.shared/"]
 RUN dotnet restore "./ksts.be.api/ksts.be.api.csproj"
 COPY . .
