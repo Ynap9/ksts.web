@@ -11,8 +11,12 @@ namespace ksts.be.external.Html.Interfaces
         /// Đổ <paramref name="giaTriTheoId"/> vào phần chữ của các thẻ tương ứng và
         /// <paramref name="htmlTheoId"/> vào phần bên trong các thẻ tương ứng, trả về HTML hoàn chỉnh.
         /// Id không có trong tài liệu thì bỏ qua để một thẻ bị gỡ khỏi mẫu không làm hỏng cả lô in.
+        ///
+        /// <paramref name="hienTheoId"/> bật tắt cả khối bằng lớp <c>hidden</c> của mẫu: giấy báo có mấy dòng
+        /// chỉ xuất hiện ở một nhóm loại trúng tuyển, và chúng phải BIẾN MẤT chứ không phải để trống.
         /// </summary>
         string Fill(string html, IReadOnlyDictionary<string, string> giaTriTheoId,
-            IReadOnlyDictionary<string, string> htmlTheoId);
+            IReadOnlyDictionary<string, string> htmlTheoId,
+            IReadOnlyDictionary<string, bool> hienTheoId);
     }
 }

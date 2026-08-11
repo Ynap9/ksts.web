@@ -25,6 +25,9 @@ namespace ksts.be.shared.Constants.GiayBao
         // Cùng một trường nhưng mỗi đợt kết xuất đặt tên một khác. Giữ cả hai cách gọi thay vì bắt người
         // dùng sửa tiêu đề trong Excel: sửa tay trên file vài nghìn dòng là chỗ dễ sai và không ai kiểm được.
         public const string ColHoTenNgan = "Họ tên";
+        public const string ColLoaiBangCap = "Loại bằng cấp";
+        public const string ColNgayNhapHoc = "Ngày nhập học";
+        public const string ColThoiGianNhapHoc = "Thời gian nhập học";
         public const string ColDinhDanhCaNhan = "Số ĐDCN";
         public const string ColKhuVucUuTien = "Khu vực ƯT";
 
@@ -41,6 +44,24 @@ namespace ksts.be.shared.Constants.GiayBao
         public const string IdDubiSchool = "doc-dubi-school";
         public const string IdTuyenThang = "doc-tuyenthang";
         public const string IdDocNo = "doc-no";
+
+        // Các thẻ do MÃ LOẠI TRÚNG TUYỂN quyết định, không đọc thẳng từ một cột Excel nào.
+        public const string IdDegree = "doc-degree";
+        public const string IdCohort = "doc-cohort";
+        public const string IdLead = "doc-lead";
+        public const string IdMethodLabel = "doc-method-label";
+        public const string IdMethod = "doc-method";
+        public const string IdProcSubtitle = "proc-subtitle";
+
+        // Các khối chỉ hiện với một nhóm mã.
+        public const string IdLineDuBiSchool = "line-dubi-school";
+        public const string IdLineTuyenThang = "line-tuyenthang";
+        public const string IdFieldBonus = "field-bonus";
+        public const string IdProcChinhQuy = "proc-chinhquy";
+        public const string IdProcDuBi = "proc-dubi";
+
+        public const string IdDate = "doc-date";
+        public const string IdTime = "doc-time";
 
         /// <summary>
         /// Bản đồ ID THẺ -> CÁC TÊN CỘT có thể gặp, cho những trường đổ thẳng không qua tính toán. Đối chiếu
@@ -64,7 +85,20 @@ namespace ksts.be.shared.Constants.GiayBao
                 [IdDubiSchool] = [ColTruongDuBi],
                 [IdTuyenThang] = [ColDoiTuongTuyenThang],
                 [IdDocNo] = [ColSoVanBan],
+                [IdDate] = [ColNgayNhapHoc],
+                [IdTime] = [ColThoiGianNhapHoc],
             };
+
+        /// <summary>Các tên cột có thể chứa mã loại trúng tuyển; bản thiết kế gọi là "Loại trúng tuyển".</summary>
+        public static string[] CotLoaiTrungTuyen() => [ColLoaiBangCap, ColLoaiTrungTuyen];
+
+        /// <summary>
+        /// Năm tuyển sinh, thay vào chỗ <c>{nam}</c> của câu phương thức và dùng để suy ra niên khóa.
+        ///
+        /// ⚠️ Phải đổi mỗi mùa tuyển sinh, ĐỒNG THỜI với <see cref="Khoa"/> và với năm ghi cứng trong mẫu
+        /// HTML (Templates/html/giay-bao-trung-tuyen.html).
+        /// </summary>
+        public const int NamTuyenSinh = 2026;
 
         /// <summary>Cột bắt buộc: thiếu tên thì không xác định được giấy báo của ai nên bỏ qua cả dòng.</summary>
         public static string[] CotBatBuoc() => IdTheToTenCot[IdName];

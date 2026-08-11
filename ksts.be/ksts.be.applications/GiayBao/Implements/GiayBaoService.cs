@@ -163,7 +163,10 @@ namespace ksts.be.applications.GiayBao.Implements
                                 _qrCodeSvgRenderer.RenderSvg(GiayBaoConstants.QrBaseUrl + cccd.Trim());
                         }
 
-                        var html = _htmlDocumentFiller.Fill(template, giaTri, htmlTheoId);
+                        var hien = new Dictionary<string, bool>();
+                        ApLoaiTrungTuyen(row, giaTri, hien);
+
+                        var html = _htmlDocumentFiller.Fill(template, giaTri, htmlTheoId, hien);
                         var pdf = await _gotenbergConverter.HtmlToPdfAsync(html, cancellationToken);
 
                         // Đặt tên bằng ĐÚNG số định danh: nó là khoá định danh thí sinh, không dấu, không
@@ -286,6 +289,77 @@ namespace ksts.be.applications.GiayBao.Implements
 
             _logger.LogInformation("GhiNenAsync xong: {DaGhi}/{TongSo} file, {Giay}s",
                 daGhi, danhSach.Count, dongHo.Elapsed.TotalSeconds);
+        }
+
+        /// <inheritdoc/>
+        public void ApLoaiTrungTuyen(IReadOnlyDictionary<string, string> row,
+            Dictionary<string, string> giaTri, Dictionary<string, bool> hien)
+        {
+            // Đối chiếu theo khoá đã CHUẨN HOÁ chứ không so khớp thô: file kết xuất hay ghi "DBDH_CN" thiếu
+            // dấu, mà khớp trượt thì thí sinh dự bị lặng lẽ nhận giấy chính quy - sai mà không ai thấy.
+            var ma = _excelSheetReader.NormalizeKey(
+                _excelSheetReader.LayGiaTri(row, GiayBaoConstants.CotLoaiTrungTuyen()));
+
+            var loai = LoaiTrungTuyenConstants.DanhMuc
+                .FirstOrDefault(x => _excelSheetReader.NormalizeKey(x.Key) == ma).Value;
+
+            // Ô bỏ trống hoặc ghi mã lạ thì ĐỂ TRỐNG, không đoán theo mã mặc định: đoán sai ra một tờ giấy
+            // trông hoàn chỉnh nhưng sai loại bằng và sai phương thức, còn để trống thì người soát thấy ngay.
+            if (loai == null)
+            {
+                foreach (var id in LoaiTrungTuyenConstants.IdTheoLoai)
+                {
+                    giaTri[id] = string.Empty;
+                }
+
+                hien[GiayBaoConstants.IdLineDuBiSchool] = false;
+                hien[GiayBaoConstants.IdLineTuyenThang] = false;
+                hien[GiayBaoConstants.IdProcDuBi] = false;
+                hien[GiayBaoConstants.IdProcChinhQuy] = true;
+                hien[GiayBaoConstants.IdFieldBonus] = true;
+                return;
+            }
+
+            var bang = LoaiTrungTuyenConstants.BangCaps[loai.MaBang];
+            var nam = GiayBaoConstants.NamTuyenSinh;
+
+            giaTri[GiayBaoConstants.IdDegree] = bang.Ten;
+            giaTri[GiayBaoConstants.IdCohort] = $"{nam}-{nam + bang.SoNam}";
+
+            // Câu mở đầu, vế nối và câu phương thức đi thành BỘ BA theo từng nhóm mã: đặt lẻ một cái là ra
+            // câu văn lai giữa hai mẫu giấy khác nhau.
+            (giaTri[GiayBaoConstants.IdLead],
+             giaTri[GiayBaoConstants.IdMethodLabel],
+             giaTri[GiayBaoConstants.IdMethod]) = loai.BoCuc switch
+             {
+                 LoaiTrungTuyenConstants.BoCucDuBi => (
+                     LoaiTrungTuyenConstants.CauMoDuBi,
+                     LoaiTrungTuyenConstants.VeNoiDuBi,
+                     LoaiTrungTuyenConstants.PhuongThucDuBi),
+                 LoaiTrungTuyenConstants.BoCucTuyenThang => (
+                     LoaiTrungTuyenConstants.CauMoTuyenThang,
+                     LoaiTrungTuyenConstants.VeNoiTuyenThang,
+                     LoaiTrungTuyenConstants.PhuongThucTuyenThang),
+                 _ => (
+                     LoaiTrungTuyenConstants.CauMoDayDu,
+                     LoaiTrungTuyenConstants.VeNoiDayDu,
+                     loai.PhuongThuc.Replace(LoaiTrungTuyenConstants.ChoThayNam, nam.ToString())),
+             };
+
+            var laDuBi = loai.BoCuc == LoaiTrungTuyenConstants.BoCucDuBi;
+            var laTuyenThang = loai.BoCuc == LoaiTrungTuyenConstants.BoCucTuyenThang;
+
+            hien[GiayBaoConstants.IdLineDuBiSchool] = laDuBi;
+            hien[GiayBaoConstants.IdLineTuyenThang] = laTuyenThang;
+            hien[GiayBaoConstants.IdProcDuBi] = laDuBi;
+            hien[GiayBaoConstants.IdProcChinhQuy] = !laDuBi;
+
+            // Điểm cộng chỉ in ở nhóm mã bắt đầu bằng số, đúng như bản .doc gốc.
+            hien[GiayBaoConstants.IdFieldBonus] = loai.BoCuc == LoaiTrungTuyenConstants.BoCucDayDu;
+
+            giaTri[GiayBaoConstants.IdProcSubtitle] = laDuBi
+                ? LoaiTrungTuyenConstants.TieuDeThuTucDuBi
+                : LoaiTrungTuyenConstants.TieuDeThuTucChinhQuy;
         }
 
         /// <inheritdoc/>

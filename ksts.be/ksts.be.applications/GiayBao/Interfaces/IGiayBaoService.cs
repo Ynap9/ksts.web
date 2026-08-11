@@ -46,6 +46,14 @@ namespace ksts.be.applications.GiayBao.Interfaces
         /// </summary>
         Task GhiNenAsync(string jobId, Stream dich, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Suy các trường do MÃ LOẠI TRÚNG TUYỂN quyết định: loại bằng cấp, niên khóa, câu mở đầu và câu
+        /// phương thức xét tuyển. Mã lấy từ cột "Loại bằng cấp"; bỏ trống hay ghi sai thì lùi về mã mặc định
+        /// để giấy báo vẫn dựng được thay vì hỏng cả dòng.
+        /// </summary>
+        void ApLoaiTrungTuyen(IReadOnlyDictionary<string, string> row, Dictionary<string, string> giaTri,
+            Dictionary<string, bool> hien);
+
         /// <summary>Kéo một giấy báo từ kho về. Hỏng thì trả null để khâu nén bỏ qua file đó.</summary>
         Task<byte[]?> TaiMotFileAsync(string tenFile, CancellationToken cancellationToken);
     }

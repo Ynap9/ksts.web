@@ -9,9 +9,13 @@ namespace ksts.be.external.Html.Implements
     /// </summary>
     public class HtmlDocumentFiller : IHtmlDocumentFiller
     {
+        /// <summary>Lớp ẩn của mẫu, đã có sẵn quy tắc display:none trong CSS đi kèm.</summary>
+        private const string LopAn = "hidden";
+
         /// <inheritdoc/>
         public string Fill(string html, IReadOnlyDictionary<string, string> giaTriTheoId,
-            IReadOnlyDictionary<string, string> htmlTheoId)
+            IReadOnlyDictionary<string, string> htmlTheoId,
+            IReadOnlyDictionary<string, bool> hienTheoId)
         {
             var document = new HtmlDocument();
             document.LoadHtml(html);
@@ -31,6 +35,24 @@ namespace ksts.be.external.Html.Implements
                 if (node != null)
                 {
                     node.InnerHtml = muc.Value ?? string.Empty;
+                }
+            }
+
+            foreach (var muc in hienTheoId)
+            {
+                var node = document.GetElementbyId(muc.Key);
+                if (node == null)
+                {
+                    continue;
+                }
+
+                if (muc.Value)
+                {
+                    node.RemoveClass(LopAn);
+                }
+                else
+                {
+                    node.AddClass(LopAn);
                 }
             }
 
