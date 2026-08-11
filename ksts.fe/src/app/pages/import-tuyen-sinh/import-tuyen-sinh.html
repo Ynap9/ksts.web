@@ -59,7 +59,8 @@
     </div>
 
     <div class="mt-5">
-        <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [loading]="loading()">
+        <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [virtualScroll]="true"
+            [virtualScrollItemSize]="46" [loading]="loading()">
             <ng-template #header>
                 <tr>
                     <th style="width: 6rem">STT</th>
@@ -70,24 +71,19 @@
             </ng-template>
 
             <ng-template #body let-row let-i="rowIndex">
-                <tr>
+                <tr style="height: 46px">
                     <td>{{ i + 1 }}</td>
                     <td>{{ row.soVanBan }}</td>
                     <td>{{ row.hoTen }}</td>
                     <td>
-                        @switch (row.trangThai) {
-                            @case ('cho') {
-                                <span class="text-surface-500">Chờ xử lý</span>
-                            }
-                            @case ('dangXuLy') {
-                                <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang dựng</span>
-                            }
-                            @case ('xong') {
-                                <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Xong</span>
-                            }
-                            @case ('loi') {
-                                <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
-                            }
+                        @if (i < daXong()) {
+                            <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Xong</span>
+                        } @else if (i < daXong() + soLoi()) {
+                            <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
+                        } @else if (dangChay()) {
+                            <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang dựng</span>
+                        } @else {
+                            <span class="text-surface-500">Chờ xử lý</span>
                         }
                     </td>
                 </tr>

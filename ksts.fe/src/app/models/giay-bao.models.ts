@@ -8,12 +8,6 @@ export interface IViewThiSinh {
     hoTen: string;
 }
 
-export type TrangThaiThiSinh = 'cho' | 'dangXuLy' | 'xong' | 'loi';
-
-export interface IDongThiSinh extends IViewThiSinh {
-    trangThai: TrangThaiThiSinh;
-}
-
 export interface IZipJob {
     jobId: string;
     taiToken: string;

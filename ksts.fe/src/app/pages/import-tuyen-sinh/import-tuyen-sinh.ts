@@ -5,11 +5,17 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { Breadcrumb } from '@/app/shared/components/breadcrumb/breadcrumb';
 import { BaseComponent } from '@/app/shared/components/base/base-component';
 import { GiayBaoService } from '@/app/service/giay-bao.service';
-import { IDongThiSinh, IExcelSheet, IZipJob } from '@/app/models/giay-bao.models';
+import { IExcelSheet, IViewThiSinh, IZipJob } from '@/app/models/giay-bao.models';
 import { SharedImports } from '@/app/shared/import.shared';
 
 /** Nhịp hỏi tiến độ. Lô 5000 file chạy khoảng nửa tiếng nên hỏi dày hơn chỉ tốn request. */
 const NHIP_HOI_TIEN_DO = 2000;
+
+/**
+ * Số nhịp hỏi hỏng LIÊN TIẾP trước khi buông theo dõi. Lô chạy nền ở MÁY CHỦ nên một nhịp hỏng chỉ là chập
+ * mạng, không phải lô hỏng — buông ngay chỉ làm màn hình báo lỗi trong khi lô vẫn đang chạy tốt.
+ */
+const SO_NHIP_HONG_TOI_DA = 5;
 
 @Component({
     selector: 'app-import-tuyen-sinh',
@@ -27,7 +33,8 @@ export class ImportTuyenSinh extends BaseComponent {
     sheets = signal<IExcelSheet[]>([]);
     sheetName = signal<string>('');
     dongBatDau = signal<number>(1);
-    rows = signal<IDongThiSinh[]>([]);
+    rows = signal<IViewThiSinh[]>([]);
+    soNhipHong = 0;
 
     dangChay = signal<boolean>(false);
     keoVao = signal<boolean>(false);
@@ -123,7 +130,7 @@ export class ImportTuyenSinh extends BaseComponent {
             .subscribe({
                 next: (res) => {
                     if (this.isResponseSucceed(res)) {
-                        this.rows.set(res.data.map((t) => ({ ...t, trangThai: 'cho' as const })));
+                        this.rows.set(res.data);
                     }
                 }
             })
@@ -138,7 +145,7 @@ export class ImportTuyenSinh extends BaseComponent {
 
         this.job.set(null);
         this.dangChay.set(true);
-        this.rows.update((rows) => rows.map((r) => ({ ...r, trangThai: 'dangXuLy' as const })));
+        this.soNhipHong = 0;
 
         this._giayBaoService.taoZip(file, this.sheetName(), this.dongBatDau()).subscribe({
             next: (res) => {
@@ -163,13 +170,13 @@ export class ImportTuyenSinh extends BaseComponent {
         this._giayBaoService.tienDo(jobId).subscribe({
             next: (res) => {
                 if (!this.isResponseSucceed(res, false)) {
-                    this.dungVoiLoi('Mất dấu lô dựng giấy báo.');
+                    this.hongMotNhip('Mất dấu lô dựng giấy báo.');
                     return;
                 }
 
+                this.soNhipHong = 0;
                 const job = res.data;
                 this.job.set(job);
-                this.apTrangThaiDong(job);
 
                 if (!job.hoanTat) {
                     setTimeout(() => this.hoiTienDo(), NHIP_HOI_TIEN_DO);
@@ -183,24 +190,25 @@ export class ImportTuyenSinh extends BaseComponent {
                     this.messageSuccess(`Đã dựng xong ${job.daXong}/${job.tongSo} giấy báo.`);
                 }
             },
-            error: () => this.dungVoiLoi('Mất kết nối khi theo dõi tiến độ.')
+            error: () => this.hongMotNhip('Mất kết nối khi theo dõi tiến độ.')
         });
     }
 
-    /** BE chỉ đếm số file xong và số lỗi nên tô trạng thái theo thứ tự dòng. */
-    apTrangThaiDong(job: IZipJob) {
-        this.rows.update((rows) =>
-            rows.map((r, i) => {
-                if (i < job.daXong) return { ...r, trangThai: 'xong' as const };
-                if (i < job.daXong + job.soLoi) return { ...r, trangThai: 'loi' as const };
-                return { ...r, trangThai: job.hoanTat ? ('cho' as const) : ('dangXuLy' as const) };
-            })
-        );
+    /** Một nhịp hỏi hỏng chưa phải lô hỏng: lô chạy nền ở máy chủ nên hỏi lại vài lần rồi mới buông. */
+    hongMotNhip(thongDiep: string) {
+        this.soNhipHong++;
+
+        if (this.soNhipHong < SO_NHIP_HONG_TOI_DA) {
+            setTimeout(() => this.hoiTienDo(), NHIP_HOI_TIEN_DO * this.soNhipHong);
+            return;
+        }
+
+        this.dangChay.set(false);
+        this.messageError(`${thongDiep} Lô vẫn chạy ở máy chủ, mở lại màn hình để xem tiếp.`);
     }
 
     dungVoiLoi(thongDiep: string) {
         this.dangChay.set(false);
-        this.rows.update((rows) => rows.map((r) => ({ ...r, trangThai: 'loi' as const })));
         this.messageError(thongDiep);
     }
 

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace ksts.be.external.Jobs.Dtos
 {
     public class ZipJobDto
@@ -22,6 +24,12 @@ namespace ksts.be.external.Jobs.Dtos
 
         public string? TienToKho { get; set; }
 
+        /// <summary>
+        /// Danh sách file đã lên kho, chỉ dùng ở khâu đóng gói phía máy chủ. KHÔNG gửi cho FE: nó dài bằng
+        /// số giấy báo, mà FE hỏi tiến độ mỗi 2 giây — cuối lô 5000 file là mỗi nhịp kéo về ngót trăm KB
+        /// danh sách không ai dùng tới.
+        /// </summary>
+        [JsonIgnore]
         public List<string> TenFileDaDay { get; set; } = [];
     }
 }
