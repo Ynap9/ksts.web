@@ -16,8 +16,8 @@ services:
     image: ksts.be.${APP_ENV}
     container_name: ksts.be_c.${APP_ENV}
     build:
-      context: ..
-      dockerfile: ./ksts.be/ksts.be.api/Dockerfile
+      context: ../ksts.be
+      dockerfile: ./ksts.be.api/Dockerfile
     ports:
       - "8100:8080"
     restart: unless-stopped
