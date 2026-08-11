@@ -21,6 +21,13 @@ namespace ksts.be.shared.Constants.GiayBao
         public const string ColDoiTuongTuyenThang = "Đối tượng tuyển thẳng";
         public const string ColSoVanBan = "Số văn bản";
 
+        // ===== Tên cột của bản kết xuất theo mẫu Bộ =====
+        // Cùng một trường nhưng mỗi đợt kết xuất đặt tên một khác. Giữ cả hai cách gọi thay vì bắt người
+        // dùng sửa tiêu đề trong Excel: sửa tay trên file vài nghìn dòng là chỗ dễ sai và không ai kiểm được.
+        public const string ColHoTenNgan = "Họ tên";
+        public const string ColDinhDanhCaNhan = "Số ĐDCN";
+        public const string ColKhuVucUuTien = "Khu vực ƯT";
+
         // ===== Id thẻ trên template =====
         public const string IdQrBox = "qr-box";
         public const string IdName = "doc-name";
@@ -36,28 +43,36 @@ namespace ksts.be.shared.Constants.GiayBao
         public const string IdDocNo = "doc-no";
 
         /// <summary>
-        /// Bản đồ CỘT EXCEL -> ID THẺ cho các trường đổ thẳng, không qua tính toán. Đối chiếu theo TÊN cột
-        /// chứ không theo thứ tự, nên file khác cùng bộ tiêu đề vẫn nhồi đúng dù đảo cột hay thừa cột.
-        /// Riêng <see cref="ColLoaiTrungTuyen"/> không có trong bản đồ vì nó quyết định bố cục trang chứ
-        /// không đổ ra thẻ nào.
+        /// Bản đồ ID THẺ -> CÁC TÊN CỘT có thể gặp, cho những trường đổ thẳng không qua tính toán. Đối chiếu
+        /// theo TÊN cột chứ không theo thứ tự, nên file đảo cột hay thừa cột vẫn nhồi đúng.
+        ///
+        /// Một thẻ nhận NHIỀU tên cột vì các đợt kết xuất đặt tên khác nhau cho cùng một trường; lấy tên nào
+        /// có mặt trước trong danh sách. Riêng <see cref="ColLoaiTrungTuyen"/> không có ở đây vì nó quyết
+        /// định bố cục trang chứ không đổ ra thẻ nào.
         /// </summary>
-        public static readonly IReadOnlyDictionary<string, string> ColumnToElementId =
-            new Dictionary<string, string>
+        public static readonly IReadOnlyDictionary<string, string[]> IdTheToTenCot =
+            new Dictionary<string, string[]>
             {
-                [ColHoTen] = IdName,
-                [ColCccd] = IdCccd,
-                [ColNgaySinh] = IdDob,
-                [ColHoKhau] = IdResidence,
-                [ColNganh] = IdMajor,
-                [ColKhuVuc] = IdArea,
-                [ColDoiTuongUuTien] = IdPriority,
-                [ColDiemCong] = IdBonus,
-                [ColTruongDuBi] = IdDubiSchool,
-                [ColDoiTuongTuyenThang] = IdTuyenThang,
-                [ColSoVanBan] = IdDocNo,
+                [IdName] = [ColHoTen, ColHoTenNgan],
+                [IdCccd] = [ColCccd, ColDinhDanhCaNhan],
+                [IdDob] = [ColNgaySinh],
+                [IdResidence] = [ColHoKhau],
+                [IdMajor] = [ColNganh],
+                [IdArea] = [ColKhuVuc, ColKhuVucUuTien],
+                [IdPriority] = [ColDoiTuongUuTien],
+                [IdBonus] = [ColDiemCong],
+                [IdDubiSchool] = [ColTruongDuBi],
+                [IdTuyenThang] = [ColDoiTuongTuyenThang],
+                [IdDocNo] = [ColSoVanBan],
             };
 
         /// <summary>Cột bắt buộc: thiếu tên thì không xác định được giấy báo của ai nên bỏ qua cả dòng.</summary>
+        public static string[] CotBatBuoc() => IdTheToTenCot[IdName];
+
+        /// <summary>Các tên cột chứa số định danh — dùng đặt tên file và dựng mã QR.</summary>
+        public static string[] CotDinhDanh() => IdTheToTenCot[IdCccd];
+
+        /// <summary>Tên cột bắt buộc để nêu trong thông báo lỗi cho người dùng.</summary>
         public const string RequiredColumn = ColHoTen;
 
         // ===== Nguồn dữ liệu và đầu ra =====

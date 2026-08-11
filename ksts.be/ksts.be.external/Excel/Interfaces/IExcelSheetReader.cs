@@ -24,6 +24,13 @@ namespace ksts.be.external.Excel.Interfaces
         /// <summary>Chuẩn hoá tiêu đề: bỏ dấu, bỏ ký tự không phải chữ số, về chữ thường.</summary>
         string NormalizeKey(string? text);
 
+        /// <summary>
+        /// Lấy giá trị của ô theo danh sách tên cột ứng viên, dùng cái đầu tiên có mặt và có dữ liệu.
+        /// Cùng một trường nhưng mỗi đợt kết xuất đặt tên cột một khác, nên phải nhận nhiều tên gọi thay vì
+        /// bắt người dùng sửa tiêu đề trong file. Không cột nào khớp thì trả chuỗi rỗng.
+        /// </summary>
+        string LayGiaTri(IReadOnlyDictionary<string, string> row, IEnumerable<string> tenCotUngVien);
+
         /// <summary>Mở workbook, quy mọi lỗi định dạng về một thông báo người dùng hiểu được.</summary>
         XLWorkbook MoWorkbook(Stream stream);
     }

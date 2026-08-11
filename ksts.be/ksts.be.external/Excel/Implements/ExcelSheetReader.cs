@@ -115,6 +115,20 @@ namespace ksts.be.external.Excel.Implements
             return ketQua.ToString();
         }
 
+        /// <inheritdoc/>
+        public string LayGiaTri(IReadOnlyDictionary<string, string> row, IEnumerable<string> tenCotUngVien)
+        {
+            foreach (var tenCot in tenCotUngVien)
+            {
+                if (row.TryGetValue(NormalizeKey(tenCot), out var giaTri) && !string.IsNullOrWhiteSpace(giaTri))
+                {
+                    return giaTri;
+                }
+            }
+
+            return string.Empty;
+        }
+
         /// <summary>Mở workbook, quy mọi lỗi định dạng về một thông báo người dùng hiểu được.</summary>
         public XLWorkbook MoWorkbook(Stream stream)
         {

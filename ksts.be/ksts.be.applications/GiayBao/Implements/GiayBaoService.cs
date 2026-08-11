@@ -76,16 +76,13 @@ namespace ksts.be.applications.GiayBao.Implements
             using var stream = file.OpenReadStream();
             var rows = _excelSheetReader.ReadSheet(stream, sheetName, startRow).Rows;
 
-            var khoaHoTen = _excelSheetReader.NormalizeKey(GiayBaoConstants.ColHoTen);
-            var khoaSoVanBan = _excelSheetReader.NormalizeKey(GiayBaoConstants.ColSoVanBan);
-
             return rows
-                .Where(r => r.TryGetValue(khoaHoTen, out var ten) && !string.IsNullOrWhiteSpace(ten))
                 .Select(r => new ViewThiSinhDto
                 {
-                    HoTen = r[khoaHoTen],
-                    SoVanBan = r.TryGetValue(khoaSoVanBan, out var so) ? so : string.Empty
+                    HoTen = _excelSheetReader.LayGiaTri(r, GiayBaoConstants.CotBatBuoc()),
+                    SoVanBan = _excelSheetReader.LayGiaTri(r, [GiayBaoConstants.ColSoVanBan])
                 })
+                .Where(x => !string.IsNullOrWhiteSpace(x.HoTen))
                 .ToList();
         }
 
@@ -110,9 +107,9 @@ namespace ksts.be.applications.GiayBao.Implements
                 danhSach = _excelSheetReader.ReadSheet(stream, sheetName, startRow).Rows;
             }
 
-            var khoaBatBuoc = _excelSheetReader.NormalizeKey(GiayBaoConstants.RequiredColumn);
             var hopLe = danhSach
-                .Where(r => r.TryGetValue(khoaBatBuoc, out var ten) && !string.IsNullOrWhiteSpace(ten))
+                .Where(r => !string.IsNullOrWhiteSpace(
+                    _excelSheetReader.LayGiaTri(r, GiayBaoConstants.CotBatBuoc())))
                 .ToList();
 
             if (hopLe.Count == 0)
@@ -133,9 +130,7 @@ namespace ksts.be.applications.GiayBao.Implements
         public async Task ChayLoAsync(string jobId, string template, List<Dictionary<string, string>> hopLe)
         {
             var dongHo = Stopwatch.StartNew();
-            var banDo = GiayBaoConstants.ColumnToElementId
-                .ToDictionary(x => _excelSheetReader.NormalizeKey(x.Key), x => x.Value);
-            var khoaCccd = _excelSheetReader.NormalizeKey(GiayBaoConstants.ColCccd);
+            var banDo = GiayBaoConstants.IdTheToTenCot;
             var cancellationToken = CancellationToken.None;
 
             // Giữ lại sau khi dựng xong để người dùng tải; ZipJobStore dọn khi lô hết hạn.
@@ -159,10 +154,10 @@ namespace ksts.be.applications.GiayBao.Implements
                             var giaTri = new Dictionary<string, string>();
                             foreach (var muc in banDo)
                             {
-                                giaTri[muc.Value] = row.TryGetValue(muc.Key, out var value) ? value : string.Empty;
+                                giaTri[muc.Key] = _excelSheetReader.LayGiaTri(row, muc.Value);
                             }
 
-                            var cccd = row.TryGetValue(khoaCccd, out var so) ? so : string.Empty;
+                            var cccd = _excelSheetReader.LayGiaTri(row, GiayBaoConstants.CotDinhDanh());
                             var htmlTheoId = new Dictionary<string, string>();
                             if (!string.IsNullOrWhiteSpace(cccd))
                             {
