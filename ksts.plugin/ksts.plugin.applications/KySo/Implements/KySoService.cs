@@ -2,6 +2,7 @@ using ksts.plugin.applications.KySo.Dtos;
 using ksts.plugin.applications.KySo.Interfaces;
 using ksts.plugin.external.Signing.Dtos;
 using ksts.plugin.external.Signing.Interfaces;
+using ksts.plugin.shared.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace ksts.plugin.applications.KySo.Implements
@@ -52,5 +53,9 @@ namespace ksts.plugin.applications.KySo.Implements
 
         /// <inheritdoc/>
         public void DongPhien() => _signingSession.DongPhien();
+
+        /// <inheritdoc/>
+        public DoTocDoKetQuaDto DoTocDo(DoTocDoDto input) =>
+            _signingSession.DoTocDo(input.Thumbprint, Math.Clamp(input.SoLan, 1, KySoConstants.SoLanDoToiDa));
     }
 }

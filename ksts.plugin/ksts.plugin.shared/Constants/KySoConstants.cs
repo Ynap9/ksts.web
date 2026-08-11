@@ -9,5 +9,8 @@ namespace ksts.plugin.shared.Constants
         /// tục nên không bao giờ chạm mốc này.
         /// </summary>
         public const int PhutTuDongDongPhien = 15;
+
+        /// <summary>Trần số lượt ký khi đo tốc độ: đo là chạm vào token thật, không để ai gọi thành vòng lặp vô tận.</summary>
+        public const int SoLanDoToiDa = 100;
     }
 }

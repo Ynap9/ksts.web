@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
@@ -31,6 +31,7 @@ export class KySo extends BaseComponent {
     private _loKyService = inject(LoKyService);
     private _templateService = inject(TemplateService);
     private _pluginService = inject(PluginService);
+    private _destroyRef = inject(DestroyRef);
 
     breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
     breadcrumbItems: MenuItem[] = [{ label: 'Ký số' }];
@@ -119,6 +120,23 @@ export class KySo extends BaseComponent {
         this.getTemplates();
         this.getChungThuSo();
         this.getLoDangChay();
+        this._destroyRef.onDestroy(() => this.dungLoKhiRoiMan());
+    }
+
+    /**
+     * Rời màn hình là mất người đưa thư nên lô không ký tiếp được: dừng hẳn thay vì để nó nằm lại trạng thái
+     * đang ký. Bỏ mặc thì lần đăng nhập sau lô mồ côi đó hiện lại như đang chạy, trong khi từng lượt ký chỉ
+     * đang chờ hết hạn để tính lỗi.
+     */
+    dungLoKhiRoiMan() {
+        const loKyId = this.lo()?.id;
+        if (!loKyId || !this.dangKy()) {
+            return;
+        }
+
+        this.dangKy.set(false);
+        this._pluginService.dongPhienKy().subscribe();
+        this._loKyService.huy(loKyId).subscribe();
     }
 
     getTemplates() {

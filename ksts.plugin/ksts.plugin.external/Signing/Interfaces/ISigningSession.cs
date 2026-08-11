@@ -24,5 +24,14 @@ namespace ksts.plugin.external.Signing.Interfaces
 
         /// <summary>Đóng phiên và giải phóng handle khoá, gọi tường minh khi lô xong hoặc người dùng huỷ.</summary>
         void DongPhien();
+
+        /// <summary>
+        /// Đo thời gian một lượt ký thật trên token đang cắm, kèm kích thước khoá và tên provider.
+        ///
+        /// Cần con số này trước khi bàn tối ưu: token ký TUẦN TỰ nên thời gian một lượt nhân thẳng với số
+        /// file, và nó là sàn cứng mà không dòng code nào phá được. Khoá 4096 bit trên thẻ đời cũ tốn hơn
+        /// một giây là chuyện bình thường, còn 2048 bit thường quanh 200-300 ms.
+        /// </summary>
+        DoTocDoKetQuaDto DoTocDo(string thumbprint, int soLan);
     }
 }

@@ -48,6 +48,23 @@ namespace ksts.plugin.api.Controllers.KySo
             }
         }
 
+        /// <summary>
+        /// Đo thời gian một lượt ký thật trên token. Mở phiên nên hộp PIN sẽ bật; dùng để biết sàn cứng của
+        /// thiết bị trước khi bàn tối ưu phần mềm.
+        /// </summary>
+        [HttpPost("do-toc-do")]
+        public ApiResponse DoTocDo([FromBody] DoTocDoDto dto)
+        {
+            try
+            {
+                return new(_kySoService.DoTocDo(dto));
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
         /// <summary>Đóng phiên khi lô xong hoặc người dùng huỷ.</summary>
         [HttpPost("dong-phien")]
         public ApiResponse DongPhien()

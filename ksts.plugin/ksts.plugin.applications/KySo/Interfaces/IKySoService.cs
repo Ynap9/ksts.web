@@ -22,5 +22,8 @@ namespace ksts.plugin.applications.KySo.Interfaces
 
         /// <summary>Đóng phiên, giải phóng handle khoá.</summary>
         void DongPhien();
+
+        /// <summary>Đo thời gian một lượt ký thật trên token, để biết sàn cứng trước khi bàn tối ưu.</summary>
+        DoTocDoKetQuaDto DoTocDo(DoTocDoDto input);
     }
 }
