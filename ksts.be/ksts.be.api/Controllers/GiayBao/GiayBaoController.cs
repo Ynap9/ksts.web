@@ -7,6 +7,7 @@ using ksts.be.shared.Requests;
 using ksts.be.shared.Requests.ErrorRequest;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ksts.be.api.Controllers.GiayBao
@@ -106,6 +107,14 @@ namespace ksts.be.api.Controllers.GiayBao
             if (job == null || job.TaiToken != token || !job.HoanTat)
             {
                 return NotFound();
+            }
+
+            // ZipArchive ghi header và bảng mục lục bằng lệnh ghi ĐỒNG BỘ, mà Response.Body cấm ghi đồng bộ
+            // theo mặc định - không mở cờ này thì hỏng ngay ở entry đầu tiên.
+            var dieuKhienThan = HttpContext.Features.Get<IHttpBodyControlFeature>();
+            if (dieuKhienThan != null)
+            {
+                dieuKhienThan.AllowSynchronousIO = true;
             }
 
             Response.ContentType = GiayBaoConstants.ZipContentType;
