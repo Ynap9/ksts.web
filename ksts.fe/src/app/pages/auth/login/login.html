@@ -1,0 +1,55 @@
+<div class="wrapper">
+    <div class="content-left">
+        <div style="width: 400px">
+            <div class="login-title">
+                <h2>Đăng nhập</h2>
+                <p class="login-title-sub mb-4">Đăng nhập thông tin tài khoản của bạn</p>
+            </div>
+            <div class="login-form">
+                <form [formGroup]="form" (ngSubmit)="onSubmit()">
+                    <div class="login-input-wrapper mb-1">
+                        <label for="username" class="phone_login mb-2">Tên đăng nhập</label>
+                        <input class="w-full username" id="username" placeholder="Tên đăng nhập" pInputText formControlName="username" autocomplete="new-password" (keydown.enter)="focusPassword()" />
+                        @if (getError('username')) {
+                            <small class="message-error">{{ getError('username') }}</small>
+                        }
+                    </div>
+                    <div class="login-input-wrapper mt-4">
+                        <label for="password" class="pass_login mb-2">Mật khẩu</label>
+                        <div class="password-wrapper">
+                            <input
+                                class="w-full password"
+                                [type]="showPassword ? 'text' : 'password'"
+                                id="password"
+                                pInputText
+                                placeholder="Nhập mật khẩu"
+                                formControlName="password"
+                                autocomplete="new-password"
+                                (keydown.enter)="focusLogin()"
+                            />
+                            <button type="button" class="eye-hidden" (click)="hiddenPassword()" tabindex="-1">
+                                <i [class]="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
+                            </button>
+                        </div>
+                        @if (getError('password')) {
+                            <small class="message-error">{{ getError('password') }}</small>
+                        }
+                    </div>
+                    <div class="buttons">
+                        <button class="w-full button-sb" pButton type="button" id="login" (click)="onSubmit()" label="Đăng nhập" [disabled]="loading()" [loading]="loading()"></button>
+                        <span class="w-full" pTooltip="Sắp có" tooltipPosition="bottom">
+                            <button class="w-full button-sb mt-2 flex flex-row justify-center" pButton type="button" [disabled]="true">
+                                <i class="pi pi-google"></i>
+                                <p class="ml-2">Đăng nhập Google</p>
+                            </button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-right">
+        <img class="logo-xd" src="demo/images/logo/logo-dhxd.png" alt="Trường Đại học Xây dựng Hà Nội" />
+    </div>
+</div>

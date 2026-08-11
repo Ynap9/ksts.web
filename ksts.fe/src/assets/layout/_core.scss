@@ -1,0 +1,26 @@
+html {
+    height: 100%;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+body {
+    // Be Vietnam Pro dựng riêng cho tiếng Việt: dấu đặt đúng chỗ, không bị chồng hay lệch ở ữ/ợ/ẫ như
+    // Lato - font cũ vốn chỉ ghép tạm dấu từ bộ Latin.
+    font-family: 'Be Vietnam Pro', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-color);
+    background-color: var(--surface-ground);
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    text-decoration: none;
+}
+
+.layout-wrapper {
+    min-height: 100vh;
+}

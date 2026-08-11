@@ -1,0 +1,22 @@
+<div class="flex flex-col gap-4 text-base leading-relaxed">
+    <p-message severity="warn" variant="simple" styleClass="text-base">
+        Máy của bạn chưa cài plugin ký số, hoặc plugin đang không chạy.
+    </p-message>
+
+    <div>
+        Bộ cài là file nén chứa trình cài đặt <span class="font-semibold">plugin ký số KSTS</span>; chạy trình
+        cài đặt đó sẽ cài luôn <span class="font-semibold">trình đọc token bit4id</span>. Cài xong, plugin tự
+        chạy nền; quay lại màn hình này và bấm Kiểm tra lại.
+    </div>
+
+    @if (boCai().exists === false) {
+        <p-message severity="error" variant="simple" styleClass="text-base">
+            Máy chủ chưa có bộ cài plugin. Vui lòng liên hệ quản trị hệ thống.
+        </p-message>
+    }
+
+    <div class="flex flex-row justify-end gap-2">
+        <p-button label="Kiểm tra lại" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="onRetry()" />
+        <p-button label="Tải bộ cài" icon="pi pi-download" [loading]="loading()" [disabled]="!boCai().exists" (onClick)="onDownload()" />
+    </div>
+</div>

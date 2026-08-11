@@ -1,0 +1,122 @@
+<div class="card">
+    <app-breadcrumb [home]="breadcrumbHome" [items]="breadcrumbItems" />
+    <div class="font-semibold text-xl uppercase mb-4">Import data tuyển sinh</div>
+
+    <input #inputFile type="file" accept=".xlsx" class="hidden" (change)="onChonFile($event)" />
+
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 lg:col-span-7">
+            <div class="drop-zone h-full" [class.drop-zone--active]="keoVao()" [class.drop-zone--disabled]="dangChay()"
+                (click)="!dangChay() && inputFile.click()" (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                <i class="pi pi-file-excel drop-zone__icon"></i>
+                @if (file(); as f) {
+                    <div class="font-medium">{{ f.name }}</div>
+                    <div class="text-surface-500 text-sm">Bấm hoặc kéo file khác vào đây để chọn lại</div>
+                } @else {
+                    <div class="font-medium">Kéo thả file Excel vào đây</div>
+                    <div class="text-surface-500 text-sm">hoặc bấm để chọn từ máy — chỉ nhận .xlsx</div>
+                }
+            </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Sheet dữ liệu</label>
+                <p-select [options]="sheets()" optionLabel="name" optionValue="name" [ngModel]="sheetName()"
+                    (ngModelChange)="sheetName.set($event); onDoiNguon()" [disabled]="dangChay()"
+                    [showClear]="false" styleClass="w-full" placeholder="Chọn file Excel để nạp sheet" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Dòng bắt đầu</label>
+                <p-inputnumber [ngModel]="dongBatDau()" (ngModelChange)="dongBatDau.set($event); onDoiNguon()"
+                    [min]="1" [showButtons]="true" [disabled]="dangChay()" styleClass="w-full" inputStyleClass="w-full" />
+                <small class="text-surface-500">Dòng chứa tiêu đề cột; dữ liệu đọc từ dòng kế tiếp.</small>
+            </div>
+
+            <div class="mt-auto text-surface-500">
+                @if (rows().length) {
+                    Đọc được <span class="font-semibold text-surface-900 dark:text-surface-0">{{ rows().length }}</span>
+                    thí sinh — đã dựng {{ daXong() }}/{{ rows().length }}@if (soLoi()) {, lỗi {{ soLoi() }}}
+                } @else if (file()) {
+                    Không đọc được dòng nào. Kiểm tra lại sheet và dòng bắt đầu.
+                } @else {
+                    Chưa chọn file Excel.
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 flex flex-col gap-1">
+        <div class="text-sm text-surface-500">Dựng giấy báo</div>
+        <p-progressbar [value]="phanTram()" [showValue]="true" />
+    </div>
+
+    @if (dangDay() || job()?.hoanTatDayLenKho) {
+        <div class="mt-4 flex flex-col gap-1">
+            <div class="flex items-center justify-between text-sm text-surface-500">
+                <span>Đẩy lên kho MinIO</span>
+                <span>
+                    {{ daDayLenKho() }}/{{ rows().length }} file@if (soLoiDay()) {, lỗi {{ soLoiDay() }}}
+                    @if (job()?.tienToKho) { — {{ job()?.tienToKho }} }
+                </span>
+            </div>
+            <p-progressbar [value]="phanTramDay()" [showValue]="true" />
+        </div>
+    }
+
+    <div class="mt-5">
+        <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [loading]="loading()">
+            <ng-template #header>
+                <tr>
+                    <th style="width: 6rem">STT</th>
+                    <th style="min-width: 12rem">Số văn bản</th>
+                    <th style="min-width: 18rem">Họ và tên thí sinh</th>
+                    <th style="width: 12rem">Tình trạng</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-row let-i="rowIndex">
+                <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ row.soVanBan }}</td>
+                    <td>{{ row.hoTen }}</td>
+                    <td>
+                        @switch (row.trangThai) {
+                            @case ('cho') {
+                                <span class="text-surface-500">Chờ xử lý</span>
+                            }
+                            @case ('dangXuLy') {
+                                <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang dựng</span>
+                            }
+                            @case ('xong') {
+                                <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Xong</span>
+                            }
+                            @case ('loi') {
+                                <span class="text-red-600"><i class="pi pi-times-circle mr-2"></i>Lỗi</span>
+                            }
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="4" class="text-center py-8 text-surface-500">
+                        Chọn file Excel để xem danh sách thí sinh.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <div class="mt-5 flex flex-row items-center justify-end gap-2">
+        <p-button label="Bắt đầu" icon="pi pi-play" type="button" styleClass="w-32" [disabled]="!coTheBatDau()"
+            [loading]="dangChay()" (onClick)="onBatDau()" />
+        <p-button label="Đẩy lên MinIO" icon="pi pi-cloud-upload" type="button" severity="info" styleClass="w-44"
+            [disabled]="!dayDuoc()" [loading]="dangDay()" (onClick)="onDayLenKho()" />
+        <p-button label="Tải xuống" icon="pi pi-download" type="button" severity="success" styleClass="w-36"
+            [disabled]="!taiDuoc()" (onClick)="onTaiVe()" />
+    </div>
+</div>

@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>4c938d39-8a3a-4b0c-9bb1-811383ecc443</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.16" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.8" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageReference Include="NLog" Version="6.0.6" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="6.1.0" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="6.1.0" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="7.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Chứng thư CA Ban Cơ yếu Chính phủ - copy ra output để tầng kiểm tra chữ ký nạp rồi đối chiếu pin
+         SHA-256 trong SignatureConstants (tráo file -> nạp fail, không âm thầm tin cert lạ).
+         Nhánh G1: rootca (trust anchor người ký) + cp (Sub-CA cấp cert người ký).
+         Nhánh G2: rootcag2 (trust anchor TSA) + dcscag2/cpg2 (CA trung gian Đảng/Nhà nước). -->
+    <Content Include="Cert\*.crt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <!-- Bộ cài plugin ký số. Là asset chỉ đọc đi kèm bản build, PluginConstants resolve từ
+         AppContext.BaseDirectory nên phải nằm trong thư mục output thì endpoint bo-cai mới thấy.
+         File này do lệnh publish plugin sinh ra, không phải mã nguồn - xem ksts.plugin/README.md. -->
+    <Content Include="Plugins\*.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ksts.be.applications\ksts.be.applications.csproj" />
+    <ProjectReference Include="..\ksts.be.external\ksts.be.external.csproj" />
+    <ProjectReference Include="..\ksts.be.infrastructure\ksts.be.infrastructure.csproj" />
+    <ProjectReference Include="..\ksts.be.shared\ksts.be.shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,13 @@
+/* You can add global styles to this file, and also import other style files */
+@use 'primeicons/primeicons.css';
+@use '@/assets/layout/layout.scss';
+@use '@/assets/demo/demo.scss';
+
+/**
+ * Luôn chừa sẵn máng thanh cuộn dọc. PrimeNG khoá scroll của body khi mở dialog/menu popup
+ * (class p-overflow-hidden) làm thanh cuộn biến mất, viewport rộng thêm ~15px khiến cả trang
+ * và bảng bị co giãn theo. Chừa sẵn máng thì bề rộng không đổi lúc đóng/mở.
+ */
+html {
+    scrollbar-gutter: stable;
+}

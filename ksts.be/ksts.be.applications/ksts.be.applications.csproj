@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DTO nhận IFormFile (ảnh dấu đỏ / chữ ký tươi) nên cần framework ASP.NET Core. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ksts.be.infrastructure\ksts.be.infrastructure.csproj" />
+    <!-- Application GỌI LẠI hợp đồng của External (S3, chứng thư số, đọc PDF, đo ảnh, tính vị trí).
+         Interface và DTO của phần đó thuộc về External, không nhồi ngược vào Application. -->
+    <ProjectReference Include="..\ksts.be.external\ksts.be.external.csproj" />
+  </ItemGroup>
+
+</Project>

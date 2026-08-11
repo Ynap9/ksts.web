@@ -1,0 +1,19 @@
+<div class="card">
+    <app-breadcrumb [home]="breadcrumbHome" [items]="breadcrumbItems" />
+    <div class="font-semibold text-xl uppercase mb-4">Quản lý tài khoản</div>
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+        <div class="flex flex-row flex-wrap items-center gap-2">
+            <p-iconfield>
+                <p-inputicon class="pi pi-search" />
+                <input formControlName="search" pInputText type="text" placeholder="Search" />
+            </p-iconfield>
+            <div class="ml-auto flex flex-row items-center gap-2">
+                <p-button label="Tìm kiếm" type="submit" styleClass="w-32" />
+                <p-button label="Thêm mới" type="button" styleClass="w-32" (onClick)="onOpenCreate()" />
+            </div>
+        </div>
+    </form>
+    <div class="mt-4">
+        <app-data-table [columns]="columns" [data]="data()" [loading]="loading()" (onCustomComp)="onCustomEmit($event)" [pageSize]="query.pageSize" [pageNumber]="query.pageNumber" [total]="totalRecords()" (onPageChanged)="onPageChanged($event)" />
+    </div>
+</div>

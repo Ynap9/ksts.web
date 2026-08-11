@@ -1,0 +1,203 @@
+<div class="card">
+    <app-breadcrumb [home]="breadcrumbHome" [items]="breadcrumbItems" />
+    <div class="font-semibold text-xl uppercase mb-4">{{ template().tenTemplate || 'Cấu hình template' }}</div>
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div class="flex flex-col gap-5 xl:col-span-4">
+            <div class="rounded-lg border border-slate-200 p-5">
+                <div class="mb-4 font-semibold">Chứng thư số ký</div>
+
+                @if (chungThuSo(); as cert) {
+                    <div class="flex flex-col gap-2 rounded-md bg-slate-50 p-4 text-sm">
+                        <div class="flex gap-2">
+                            <span class="w-28 shrink-0 text-slate-500">Chủ sở hữu</span>
+                            <span class="font-medium">{{ cert.commonName }}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="w-28 shrink-0 text-slate-500">Tổ chức cấp</span>
+                            <span class="font-medium">{{ cert.issuerCommonName }}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <span class="w-28 shrink-0 text-slate-500">Hiệu lực đến</span>
+                            <span class="font-medium">{{ cert.validTo }}</span>
+                        </div>
+                    </div>
+                    <p-button label="Đổi chứng thư số" icon="pi pi-id-card" size="small" severity="secondary" [outlined]="true" styleClass="mt-3" (onClick)="onChonChungThuSo()" />
+                } @else {
+                    <p-message severity="warn" variant="simple">Chưa chọn chứng thư số cho phiên làm việc này.</p-message>
+                    <p-button label="Chọn chứng thư số" icon="pi pi-id-card" size="small" styleClass="mt-3" (onClick)="onChonChungThuSo()" />
+                }
+            </div>
+
+            <div class="rounded-lg border border-slate-200 p-5">
+                <div class="mb-1 font-semibold">Mẫu chữ ký</div>
+                <div class="mb-4 text-sm text-slate-500">Kéo thẳng từng mẫu dưới đây thả vào file mẫu.</div>
+
+                <div class="flex flex-col items-center gap-3 rounded-md border border-dashed border-slate-300 bg-slate-50 p-4">
+                    @if (hienThiChuKySo()) {
+                        <div
+                            class="w-full cursor-grab rounded-sm border border-slate-300 bg-white px-3 py-2 text-center text-xs leading-5 active:cursor-grabbing"
+                            draggable="true"
+                            (dragstart)="onBatDauKeoKhoiMoi(kind.ChuKy, $event)">
+                            <div class="font-medium">{{ chungThuSo()?.commonName || template().tenChungThu || 'Tên chứng thư số' }}</div>
+                            <div class="text-slate-500">Thời gian ký</div>
+                        </div>
+                    }
+
+                    @if (anhChuKyTuoiUrl()) {
+                        <img
+                            [src]="anhChuKyTuoiUrl()"
+                            alt="Chữ ký tươi"
+                            class="max-h-24 max-w-full cursor-grab object-contain active:cursor-grabbing"
+                            draggable="true"
+                            (dragstart)="onBatDauKeoKhoiMoi(kind.ChuKyTuoi, $event)" />
+                    }
+
+                    @if (anhDauDoUrl()) {
+                        <img
+                            [src]="anhDauDoUrl()"
+                            alt="Dấu đỏ"
+                            class="max-h-24 max-w-full cursor-grab object-contain active:cursor-grabbing"
+                            draggable="true"
+                            (dragstart)="onBatDauKeoKhoiMoi(kind.DauDo, $event)" />
+                    }
+
+                    @if (!hienThiChuKySo() && !anhChuKyTuoiUrl() && !anhDauDoUrl()) {
+                        <span class="text-sm text-slate-500">Chưa có gì để hiển thị</span>
+                    }
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <input #inputDauDo type="file" class="hidden" [accept]="anhAllowedTypes" (change)="onChonAnhDauDo($event)" />
+                    <input #inputChuKyTuoi type="file" class="hidden" [accept]="anhAllowedTypes" (change)="onChonAnhChuKyTuoi($event)" />
+
+                    <p-button label="Ảnh dấu" icon="pi pi-image" size="small" severity="secondary" [outlined]="true" (onClick)="inputDauDo.click()" />
+                    @if (anhDauDoUrl()) {
+                        <p-button icon="pi pi-times" size="small" severity="danger" [text]="true" (onClick)="onXoaAnhDauDo()" />
+                    }
+
+                    <p-button label="Ảnh chữ ký tươi" icon="pi pi-pencil" size="small" severity="secondary" [outlined]="true" (onClick)="inputChuKyTuoi.click()" />
+                    @if (anhChuKyTuoiUrl()) {
+                        <p-button icon="pi pi-times" size="small" severity="danger" [text]="true" (onClick)="onXoaAnhChuKyTuoi()" />
+                    }
+                </div>
+            </div>
+
+            <div class="rounded-lg border border-slate-200 p-5">
+                <div class="mb-4 font-semibold">Tuỳ chọn</div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-start gap-3">
+                        <p-checkbox inputId="hienThiChuKySo" [binary]="true" [ngModel]="hienThiChuKySo()" (ngModelChange)="hienThiChuKySo.set($event)" />
+                        <label for="hienThiChuKySo" class="cursor-pointer text-sm leading-5">
+                            Hiển thị chữ ký số trên tài liệu
+                            <span class="block text-slate-500">Bỏ chọn thì chữ ký vẫn hợp lệ nhưng không vẽ khối chữ lên trang.</span>
+                        </label>
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <p-checkbox inputId="nhoiChuKySoVaoAnh" [binary]="true" [ngModel]="nhoiChuKySoVaoAnh()" (ngModelChange)="nhoiChuKySoVaoAnh.set($event)" />
+                        <label for="nhoiChuKySoVaoAnh" class="cursor-pointer text-sm leading-5">
+                            Nhồi chữ ký số vào ảnh chữ ký tươi và con dấu
+                            <span class="block text-slate-500">Bấm vào ảnh trong trình đọc PDF sẽ ra thông tin ký số.</span>
+                        </label>
+                    </div>
+
+                    @if (anhDauDoUrl()) {
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <label for="doDamDauDo" class="font-medium">Độ đậm dấu đỏ</label>
+                                <span class="text-slate-500">{{ doDamDauDo() }}%</span>
+                            </div>
+                            <p-slider inputId="doDamDauDo" [min]="doDamMin" [max]="doDamMax"
+                                [ngModel]="doDamDauDo()" (ngModelChange)="doDamDauDo.set($event)" />
+                        </div>
+                    }
+
+                    @if (anhChuKyTuoiUrl()) {
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <label for="doDamChuKyTuoi" class="font-medium">Độ đậm chữ ký tươi</label>
+                                <span class="text-slate-500">{{ doDamChuKyTuoi() }}%</span>
+                            </div>
+                            <p-slider inputId="doDamChuKyTuoi" [min]="doDamMin" [max]="doDamMax"
+                                [ngModel]="doDamChuKyTuoi()" (ngModelChange)="doDamChuKyTuoi.set($event)" />
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <label for="doDayNetChuKyTuoi" class="font-medium">Độ dày nét chữ ký</label>
+                                <span class="text-slate-500">{{ doDayNetChuKyTuoi() }}%</span>
+                            </div>
+                            <p-slider inputId="doDayNetChuKyTuoi" [min]="doDayNetMin" [max]="doDayNetMax"
+                                [ngModel]="doDayNetChuKyTuoi()" (ngModelChange)="doDayNetChuKyTuoi.set($event)" />
+                            <small class="text-slate-500">Nét chữ ký quét thường mảnh, in ra nhìn mờ. Thanh này làm nét to ra, khác với độ đậm chỉ làm nét sẫm màu. 0% là giữ nguyên ảnh gốc.</small>
+                        </div>
+                    }
+
+                    @if (anhDauDoUrl() || anhChuKyTuoiUrl()) {
+                        <small class="text-slate-500">Độ đậm 100% là giữ nguyên ảnh gốc. Kéo sang phải cho nét đậm hơn.</small>
+                    }
+                </div>
+            </div>
+
+            <div class="flex flex-row justify-end gap-2">
+                <p-button label="Huỷ" severity="secondary" [outlined]="true" (onClick)="onHuy()" />
+                <p-button label="Lưu" icon="pi pi-save" [loading]="loading()" (onClick)="onLuu()" />
+            </div>
+        </div>
+
+        <div class="xl:col-span-8">
+            <div class="rounded-lg border border-slate-200 p-5">
+                <div class="mb-1 font-semibold">File mẫu</div>
+                <div class="mb-4 text-sm text-slate-500">Kéo thân khối để di chuyển, kéo ô vuông góc dưới-phải để đổi cỡ.</div>
+
+                <div
+                    #pdfLop
+                    class="relative mx-auto inline-block select-none border border-slate-300 shadow-sm"
+                    (dragover)="$event.preventDefault()"
+                    (drop)="onThaKhoiMoi($event)"
+                    (mousemove)="onKeo($event)"
+                    (mouseup)="onKetThucKeo()"
+                    (mouseleave)="onKetThucKeo()">
+                    <canvas #pdfCanvas class="block bg-white"></canvas>
+
+                    @for (khoi of khoisXemTruoc(); track $index) {
+                        <div
+                            class="group absolute cursor-move"
+                            [style.left.%]="khoi.xRatio * 100"
+                            [style.top.%]="khoi.yRatio * 100"
+                            [style.width.%]="khoi.widthRatio * 100"
+                            [style.height.%]="khoi.heightRatio * 100"
+                            (mousedown)="onBatDauDiChuyen($event, $index)">
+                            @if (khoi.anhUrl) {
+                                <img [src]="khoi.anhUrl" [alt]="khoi.label" [style.filter]="khoi.boLoc"
+                                    class="pointer-events-none h-full w-full object-contain" />
+                            } @else {
+                                <div
+                                    class="pointer-events-none flex h-full w-full flex-col justify-center text-center leading-tight"
+                                    [style.font-size.px]="coChuKhoi(khoi)">
+                                    <div>{{ chungThuSo()?.commonName || template().tenChungThu || 'Tên chứng thư số' }}</div>
+                                    <div>{{ template().createdDate | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
+                                </div>
+                            }
+
+                            <span class="pointer-events-none absolute inset-0 border border-dashed border-transparent group-hover:border-blue-500"></span>
+
+                            <span
+                                class="absolute -right-2 -top-2 hidden h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-red-500 text-[10px] text-white group-hover:flex"
+                                (mousedown)="$event.stopPropagation()"
+                                (click)="onXoaKhoi($index)">×</span>
+
+                            @if (khoi.choPhepResize) {
+                                <span
+                                    class="absolute -bottom-1 -right-1 hidden h-3 w-3 cursor-nwse-resize rounded-sm bg-blue-500 group-hover:block"
+                                    (mousedown)="onBatDauResize($event, $index)"></span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

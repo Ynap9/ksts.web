@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- File PDF mẫu - đi kèm bản build để người dùng đặt thử vị trí chữ ký/dấu khi chưa có hồ sơ thật.
+         Là asset CHỈ ĐỌC nằm cạnh app nên TemplateConstants resolve nó từ AppContext.BaseDirectory. -->
+    <Content Include="Templates\**\*.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <!-- Mẫu giấy báo trúng tuyển - cũng là asset chỉ đọc, GiayBaoConstants resolve từ AppContext.BaseDirectory.
+         Chỉ lấy thư mục html: Templates\build là công cụ biên dịch CSS, node_modules trong đó cũng có .html. -->
+    <Content Include="Templates\html\*.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <!-- Công cụ build template không phải mã nguồn C#, không đưa vào biên dịch. -->
+    <Compile Remove="Templates\build\**" />
+    <Content Remove="Templates\build\**" />
+    <None Remove="Templates\build\**" />
+  </ItemGroup>
+
+</Project>

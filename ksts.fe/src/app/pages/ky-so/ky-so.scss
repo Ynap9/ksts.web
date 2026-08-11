@@ -1,0 +1,61 @@
+/* Ô nhận file: viền đứt để người dùng nhận ra đây là chỗ thả được, không phải khung trang trí. */
+.drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 13.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    border: 2px dashed var(--p-content-border-color);
+    border-radius: var(--p-content-border-radius);
+    background: var(--p-content-background);
+    transition: border-color 0.2s, background-color 0.2s;
+
+    &:hover {
+        border-color: var(--p-primary-color);
+    }
+
+    &__icon {
+        font-size: 2rem;
+        color: var(--p-primary-color);
+    }
+
+    /* Đang kéo file lên trên ô: đổi nền để phân biệt với trạng thái chỉ rê chuột qua. */
+    &--active {
+        border-color: var(--p-primary-color);
+        background: var(--p-primary-50);
+    }
+
+    &--disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+
+        &:hover {
+            border-color: var(--p-content-border-color);
+        }
+    }
+
+    /* Ô nguồn từ kho: giữ đúng khuôn ô thả để đổi chế độ không nhảy layout, nhưng bỏ mọi tín hiệu "thả được"
+       vì ở đây chỉ dán đường dẫn — viền đứt và con trỏ tay sẽ mời người dùng thả file vào chỗ không nhận.
+       Khối chữ dồn về mép trái và canh giữa theo chiều dọc để cân với cột cấu hình bên phải. */
+    &--plain {
+        cursor: default;
+        border-style: solid;
+        text-align: left;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 1.5rem;
+
+        &:hover {
+            border-color: var(--p-content-border-color);
+        }
+
+        /* Biểu tượng đứng cùng dòng với tiêu đề nên phải về cỡ chữ, không còn là hình lớn giữa ô. */
+        .drop-zone__icon {
+            font-size: 1.25rem;
+        }
+    }
+}

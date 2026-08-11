@@ -1,0 +1,6 @@
+@ksts.be.api_HostAddress = http://localhost:5009
+
+GET {{ksts.be.api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

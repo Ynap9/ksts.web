@@ -1,0 +1,15 @@
+<div class="flex flex-row items-center justify-center">
+    <p-button 
+        #actionBtn
+        icon="pi pi-cog" 
+        (onClick)="onMenuClick($event)" 
+        title="Cấu hình" 
+    />
+    <p-menu
+        #menu
+        [model]="menuItems"
+        [popup]="true"
+        appendTo="body"
+        (onShow)="setMenuPosition()"
+    />
+</div>

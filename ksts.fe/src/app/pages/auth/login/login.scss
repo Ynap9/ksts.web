@@ -1,0 +1,97 @@
+:host {
+    display: block;
+    height: 100vh;
+}
+
+.wrapper {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+
+    .content-left {
+        flex: 0 0 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 20px;
+
+        .username {
+            height: 40px;
+            border-radius: 8px;
+            width: 120%;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 120%;
+
+            .password {
+                height: 40px;
+                border-radius: 8px;
+                width: 100%;
+                padding-right: 40px;
+            }
+
+            .eye-hidden {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #6c757d;
+
+                &:hover {
+                    color: #002a5c;
+                }
+
+                i {
+                    font-size: 16px;
+                }
+            }
+        }
+
+        .button-sb {
+            margin-top: 20px;
+            height: 45px;
+            border-radius: 8px;
+            background-color: #002a5c !important;
+            border: none;
+            width: 120%;
+
+            .p-button-label {
+                font-size: 16px;
+            }
+        }
+
+        .message-error {
+            color: red;
+        }
+
+        .login-title-sub,
+        .phone_login,
+        .pass_login {
+            font-weight: 700;
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 8px;
+        }
+    }
+
+    .content-right {
+        flex: 0 0 50%;
+        background-color: #002a5c;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .logo-xd {
+            width: 75%;
+        }
+    }
+}

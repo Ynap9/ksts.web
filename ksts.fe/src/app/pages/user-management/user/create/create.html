@@ -1,0 +1,70 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="grid grid-cols-2 gap-3">
+        <div class="mb-3">
+            <label for="userName" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Tên tài khoản
+                <span class="text-red-500">*</span></label>
+            <input pInputText formControlName="userName" id="userName" type="text" class="w-full mb-2" />
+            @if (form.get('userName')?.hasError('required') && form.get('userName')?.touched) {
+            <p-message severity="error" variant="simple" size="small">{{ getError('userName') }} </p-message>
+            }
+        </div>
+        <div class="mb-3">
+            <label for="fullName" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Họ tên<span
+                    class="text-red-500">*</span></label>
+            <input pInputText formControlName="fullName" id="fullName" type="text" class="w-full mb-2" />
+            @if (form.get('fullName')?.hasError('required') && form.get('fullName')?.touched) {
+            <p-message severity="error" variant="simple" size="small">{{ getError('fullName') }} </p-message>
+            }
+        </div>
+        <div class="mb-3">
+            <label for="email" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Email <span
+                    class="text-red-500">*</span></label>
+            <input pInputText formControlName="email" id="email" type="email" class="w-full mb-2" />
+            @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <p-message severity="error" variant="simple" size="small">{{ getError('email') }} </p-message>
+            }
+        </div>
+        <div class="mb-3">
+            <label for="phoneNumber" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Số điện thoại
+                <span class="text-red-500">*</span></label>
+            <input pInputText formControlName="phoneNumber" id="phoneNumber" type="text" class="w-full mb-2" />
+            @if (form.get('phoneNumber')?.hasError('required') && form.get('phoneNumber')?.touched) {
+            <p-message severity="error" variant="simple" size="small">{{ getError('phoneNumber') }} </p-message>
+            }
+        </div>
+        @if (!isUpdate) {
+
+        <div class="mb-3">
+            <div class="flex items-center mb-2">
+                <p-checkbox inputId="isRandomPassword" name="isRandomPassword" formControlName="isRandomPassword"
+                    [binary]="true" (onChange)="onChangeIsRandomPassword($event)" />
+                <label for="isRandomPassword" class="ml-2 cursor-pointer">Tự động tạo mật khẩu</label>
+            </div>
+            <p-password formControlName="password" id="password" [toggleMask]="true" styleClass="mb-4" [fluid]="true"
+                [feedback]="false" [disabled]="form.value['isRandomPassword']"></p-password>
+            @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+            <p-message severity="error" variant="simple" size="small">{{ getError('password') }} </p-message>
+            }
+        </div>
+        }
+        <div class="mb-3">
+            <label for="msAccount" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Tài khoản
+                Microsoft Office <span class="text-red-500">*</span></label>
+            <input pInputText formControlName="msAccount" id="msAccount" type="text" class="w-full mb-2" />
+        </div>
+    </div>
+    <p-divider />
+    <div class="mb-3">
+        <label for="roleNames" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Vai trò <span
+                class="text-red-500">*</span></label>
+        <p-multiSelect id="roleNames" formControlName="roleNames" [options]="listRole" optionLabel="name"
+            optionValue="name" placeholder="Chọn vai trò" display="chip" [filter]="true" appendTo="body" class="w-full">
+        </p-multiSelect>
+        @if (form.get('roleNames')?.hasError('required') && form.get('roleNames')?.touched) {
+        <p-message severity="error" variant="simple" size="small">{{ getError('roleNames') }} </p-message>
+        }
+    </div>
+    <div class="mt-5 flex flex-row justify-end">
+        <p-button label="Lưu" icon="pi pi-save" type="submit" [loading]="loading()" />
+    </div>
+</form>

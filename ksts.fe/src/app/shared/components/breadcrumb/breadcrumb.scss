@@ -1,0 +1,75 @@
+:host {
+    display: block;
+    margin-bottom: 1.25rem;
+}
+
+:host ::ng-deep .p-breadcrumb {
+    background: transparent;
+    border: 0;
+    padding: 0;
+
+    // Khoá cỡ chữ và chiều cao ngay ở gốc: mọi phần tử bên trong kế thừa đúng một cỡ, nên breadcrumb ở
+    // trang 1 cấp và trang nhiều cấp cao bằng nhau, không nhảy khi chuyển màn.
+    .p-breadcrumb-list {
+        flex-wrap: wrap;
+        align-items: center;
+        row-gap: 0.25rem;
+        font-size: 0.9375rem;
+        line-height: 1.5rem;
+        min-height: 1.5rem;
+    }
+
+    .p-breadcrumb-item-link {
+        font-size: inherit;
+        line-height: inherit;
+        color: var(--p-text-color);
+        border-radius: 4px;
+        transition: color 0.15s ease;
+
+        .p-breadcrumb-item-icon {
+            font-size: inherit;
+            line-height: inherit;
+            color: var(--p-text-color);
+            transition: color 0.15s ease;
+        }
+
+        &:focus-visible {
+            outline: 1px solid var(--p-primary-color);
+            outline-offset: 2px;
+        }
+    }
+
+    .p-breadcrumb-item-link[href]:hover {
+        color: var(--p-primary-color);
+        cursor: pointer;
+
+        .p-breadcrumb-item-icon {
+            color: var(--p-primary-color);
+        }
+    }
+
+    .p-breadcrumb-item-link:not([href]) {
+        cursor: default;
+    }
+
+    // Trang đang đứng: đậm và đổi màu để tách hẳn khỏi các cấp cha.
+    .p-breadcrumb-list > li:last-child .p-breadcrumb-item-link {
+        color: var(--p-primary-color);
+        font-weight: 600;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .p-breadcrumb-separator {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0.5rem;
+        color: var(--p-text-muted-color);
+
+        svg,
+        .p-icon {
+            width: 0.875rem;
+            height: 0.875rem;
+        }
+    }
+}

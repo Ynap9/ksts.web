@@ -1,0 +1,18 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+        <label for="name" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Tên vai trò <span class="text-red-500">*</span></label>
+        <input pInputText formControlName="name" id="name" type="text" class="w-full mb-2" />
+        @if (form.get('name')?.hasError('required') && form.get('name')?.touched) {
+        <p-message severity="error" variant="simple" size="small">{{ getError('name') }} </p-message>
+        }
+    </div>
+    <div class="mb-3">
+        <label for="permission">Chọn quyền</label>
+        <p-picklist [source]="listPermission" [target]="selectedPermissions" filterBy="name" sourceFilterPlaceholder="Lọc theo tên" targetFilterPlaceholder="Lọc theo tên" [dragdrop]="true" [responsive]="true" breakpoint="600px" styleClass="mt-3">
+            <ng-template let-item #item> {{ item.name }} </ng-template>
+        </p-picklist>
+    </div>
+    <div class="mt-5 flex flex-row justify-end">
+        <p-button label="Lưu" icon="pi pi-save" type="submit" [loading]="loading()" />
+    </div>
+</form>

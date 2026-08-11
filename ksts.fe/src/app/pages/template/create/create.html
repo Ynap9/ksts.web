@@ -1,0 +1,13 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+        <label for="tenTemplate" class="block text-surface-900 dark:text-surface-0 font-medium mb-2">Tên template
+            <span class="text-red-500">*</span></label>
+        <input pInputText formControlName="tenTemplate" id="tenTemplate" type="text" class="w-full mb-2" />
+        @if (form.get('tenTemplate')?.hasError('required') && form.get('tenTemplate')?.touched) {
+        <p-message severity="error" variant="simple" size="small">{{ getError('tenTemplate') }} </p-message>
+        }
+    </div>
+    <div class="mt-5 flex flex-row justify-end">
+        <p-button label="Lưu" icon="pi pi-save" type="submit" [loading]="loading()" />
+    </div>
+</form>

@@ -1,0 +1,25 @@
+version: '3.4'
+
+services:
+  ksts.fe:
+    image: ksts.fe.${APP_ENV}
+    container_name: ksts.fe_c.${APP_ENV}
+    build:
+      context: ../ksts.fe
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: ${APP_FE_ENV}
+    ports:
+      - "4200:80"
+    restart: unless-stopped
+  ksts.be:
+    image: ksts.be.${APP_ENV}
+    container_name: ksts.be_c.${APP_ENV}
+    build:
+      context: ..
+      dockerfile: ./ksts.be.api/Dockerfile
+    ports:
+      - "8100:8080"
+    restart: unless-stopped
+    environment:
+      - DOTNET_ENVIRONMENT=${APP_BE_ENV}

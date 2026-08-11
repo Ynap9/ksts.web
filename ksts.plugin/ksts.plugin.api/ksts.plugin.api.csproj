@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>KstsPlugin</AssemblyName>
+    <RootNamespace>ksts.plugin.api</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ksts.plugin.applications\ksts.plugin.applications.csproj" />
+    <ProjectReference Include="..\ksts.plugin.external\ksts.plugin.external.csproj" />
+    <ProjectReference Include="..\ksts.plugin.shared\ksts.plugin.shared.csproj" />
+  </ItemGroup>
+
+</Project>

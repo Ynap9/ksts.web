@@ -1,0 +1,174 @@
+<div class="card">
+    <app-breadcrumb [home]="breadcrumbHome" [items]="breadcrumbItems" />
+    <!-- Nút chọn nguồn nằm ở hàng tiêu đề chứ không nằm trên ô nguồn: để trên ô thì cột trái bị đẩy xuống
+         một hàng nút so với cột phải, hai bên lệch mép ngay từ dòng đầu. -->
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="font-semibold text-xl uppercase">Ký số hàng loạt</div>
+
+        <div class="flex flex-row gap-2">
+            <p-button label="File từ máy" icon="pi pi-desktop" size="small" [disabled]="dangKy()"
+                [outlined]="nguon() !== 'may'" (onClick)="onDoiNguon('may')" />
+            <p-button label="Thư mục trên MinIO" icon="pi pi-cloud" size="small" [disabled]="dangKy()"
+                [outlined]="nguon() !== 'kho'" (onClick)="onDoiNguon('kho')" />
+        </div>
+    </div>
+
+    <input #inputFile type="file" accept=".pdf" multiple class="hidden" (change)="onChonFile($event)" />
+    <input #inputThuMuc type="file" webkitdirectory multiple class="hidden" (change)="onChonFile($event)" />
+
+    <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 lg:col-span-7">
+            @if (nguon() === 'kho') {
+                <div class="drop-zone drop-zone--plain h-full" [class.drop-zone--disabled]="dangKy()">
+                    <div class="flex items-center gap-2 font-medium">
+                        <i class="pi pi-cloud drop-zone__icon"></i>
+                        <span>Lấy file thẳng từ thư mục trên MinIO</span>
+                    </div>
+                    <div class="text-surface-500 text-sm">
+                        Dán đường dẫn thư mục trong bucket, hoặc dán thẳng link từ trang quản trị MinIO.
+                        File không phải tải lên lần nữa — lô ký đọc thẳng từ kho.
+                    </div>
+                    <input pInputText class="w-full" placeholder="GiayBaoTrungTuyen/a4dbc75e250f40c78973ebca1a734b88"
+                        [disabled]="dangKy()" [ngModel]="duongDanKho()" (ngModelChange)="duongDanKho.set($event)" />
+                </div>
+            } @else {
+                <div class="drop-zone h-full" [class.drop-zone--active]="keoVao()" [class.drop-zone--disabled]="dangKy()"
+                    (click)="!dangKy() && inputThuMuc.click()" (dragover)="onDragOver($event)"
+                    (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                    <i class="pi pi-folder-open drop-zone__icon"></i>
+                    @if (files().length) {
+                        <div class="font-medium">Đã nhận {{ files().length }} file PDF</div>
+                        <div class="text-surface-500 text-sm">Kéo thả thêm để nhận tiếp, file trùng tên sẽ được bỏ qua</div>
+                    } @else {
+                        <div class="font-medium">Kéo thả thư mục hoặc file PDF vào đây</div>
+                        <div class="text-surface-500 text-sm">hoặc bấm để chọn cả thư mục từ máy — chỉ nhận .pdf</div>
+                    }
+
+                    <div class="flex flex-row gap-2 mt-2" (click)="$event.stopPropagation()">
+                        <p-button label="Chọn file" icon="pi pi-file" size="small" severity="secondary" outlined
+                            [disabled]="dangKy()" (onClick)="inputFile.click()" />
+                        <p-button label="Xoá danh sách" icon="pi pi-trash" size="small" severity="secondary" outlined
+                            [disabled]="dangKy() || !files().length" (onClick)="onXoaDanhSach()" />
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-span-12 lg:col-span-5 flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Template chữ ký</label>
+                <p-select [options]="templates()" optionLabel="tenTemplate" optionValue="id"
+                    [ngModel]="templateId()" (ngModelChange)="templateId.set($event)" [disabled]="dangKy()"
+                    [filter]="true" filterBy="tenTemplate" styleClass="w-full" placeholder="Chọn template đã cấu hình" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label class="font-medium">Chứng thư số</label>
+                <div class="flex flex-row gap-2">
+                    <p-select [options]="certs()" optionLabel="commonName" optionValue="thumbprint"
+                        [ngModel]="thumbprint()" (ngModelChange)="onDoiChungThu($event)" [disabled]="dangKy()"
+                        styleClass="flex-1" placeholder="Chọn chứng thư số trên token" />
+                    <p-button label="Xác thực" icon="pi pi-key" [disabled]="!thumbprint() || dangKy()"
+                        [loading]="dangXacThuc()" (onClick)="onXacThucChungThu()" />
+                </div>
+
+                @if (tokenHopLe()) {
+                    <p-tag severity="success" icon="pi pi-check-circle" value="Đã xác thực, sẵn sàng ký" />
+                } @else {
+                    <small class="text-surface-500">
+                        Bấm Xác thực để mở khoá token — hộp nhập mã PIN của token sẽ hiện lên. Cả lô chỉ hỏi PIN một lần.
+                    </small>
+                }
+            </div>
+
+            <div class="mt-auto text-surface-500">
+                @if (dangUpload()) {
+                    Đang đẩy file lên máy chủ {{ phanTramUpload() }}%
+                } @else if (tongSo()) {
+                    Tổng <span class="font-semibold text-surface-900 dark:text-surface-0">{{ tongSo() }}</span> file —
+                    đã ký {{ daXong() }}@if (soLoi()) {, lỗi {{ soLoi() }}}
+                } @else {
+                    Chưa chọn file cần ký.
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-5 flex flex-col gap-1">
+        <div class="text-sm text-surface-500">Ký số</div>
+        <p-progressbar [value]="dangUpload() ? phanTramUpload() : phanTram()" [showValue]="true" />
+    </div>
+
+    @if (dangDayKho() || tienDo()?.hoanTatDayLenKho) {
+        <div class="mt-4 flex flex-col gap-1">
+            <div class="flex items-center justify-between text-sm text-surface-500">
+                <span>Đẩy bản đã ký lên MinIO</span>
+                <span>
+                    {{ daDayLenKho() }}/{{ daXong() }} file@if (soLoiDayKho()) {, lỗi {{ soLoiDayKho() }}}
+                    @if (tienDo()?.tienToKho) { — {{ tienDo()?.tienToKho }} }
+                </span>
+            </div>
+            <p-progressbar [value]="phanTramDayKho()" [showValue]="true" />
+        </div>
+    }
+
+    <div class="mt-5">
+        <p-table [value]="rows()" [scrollable]="true" scrollHeight="420px" [loading]="loading()">
+            <ng-template #header>
+                <tr>
+                    <th style="width: 5rem">STT</th>
+                    <th style="min-width: 22rem">Tên file</th>
+                    <th style="width: 13rem">Tình trạng</th>
+                    <th style="width: 12rem">Thời gian ký</th>
+                    <th style="min-width: 14rem">Dấu thời gian</th>
+                </tr>
+            </ng-template>
+
+            <ng-template #body let-row let-i="rowIndex">
+                <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ row.tenFile }}</td>
+                    <td>
+                        @switch (row.trangThai) {
+                            @case ('cho') {
+                                <span class="text-surface-500">Chờ ký</span>
+                            }
+                            @case ('dangKy') {
+                                <span class="text-blue-600"><i class="pi pi-spin pi-spinner mr-2"></i>Đang ký</span>
+                            }
+                            @case ('xong') {
+                                <span class="text-green-600"><i class="pi pi-check-circle mr-2"></i>Đã ký</span>
+                            }
+                            @case ('loi') {
+                                <span class="text-red-600" [pTooltip]="row.lyDoLoi" tooltipPosition="top">
+                                    <i class="pi pi-times-circle mr-2"></i>Lỗi
+                                </span>
+                            }
+                        }
+                    </td>
+                    <td>{{ row.thoiGianKy | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                    <td>{{ row.dauThoiGian | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+                </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+                <tr>
+                    <td colspan="5" class="text-center py-8 text-surface-500">
+                        Kéo thả thư mục PDF vào ô bên trên để bắt đầu.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <div class="mt-5 flex flex-row items-center justify-end gap-2">
+        <p-button label="Bắt đầu ký" icon="pi pi-play" type="button" styleClass="w-36" [disabled]="!coTheBatDau()"
+            [loading]="dangKy() || dangUpload()" (onClick)="onBatDau()" />
+        <p-button label="Huỷ" icon="pi pi-times" type="button" severity="secondary" styleClass="w-28"
+            [disabled]="!dangKy()" (onClick)="onHuy()" />
+        <p-button label="Đẩy lên MinIO" icon="pi pi-cloud-upload" type="button" severity="info" styleClass="w-44"
+            [disabled]="!dayKhoDuoc()" [loading]="dangDayKho()" (onClick)="onDayLenKho()" />
+        <p-button label="Tải zip" icon="pi pi-download" type="button" severity="success" styleClass="w-32"
+            [disabled]="!taiDuoc()" (onClick)="onTaiZip()" />
+    </div>
+</div>
