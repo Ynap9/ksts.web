@@ -64,11 +64,12 @@ Dò không thấy plugin thì FE mở popup và tải bộ cài qua **BE** (yêu
 
 | Method | Route | `data` trả về |
 |---|---|---|
-| GET | `api/core/plugin/bo-cai` | `{ "fileName": "ksts-plugin-setup.zip", "exists": true }` |
-| GET | `api/core/plugin/bo-cai/noi-dung` | **bytes zip thô, không envelope** |
+| GET | `api/core/plugin/bo-cai` | `{ "fileName": "KstsPlugin.exe", "exists": true }` |
+| GET | `api/core/plugin/bo-cai/noi-dung` | **bytes exe thô, không envelope** |
 
-Bộ cài là **file nén** chứa trình cài đặt; chạy trình cài đặt đó là cài luôn middleware **bit4id**, người dùng
-chỉ tải một file. File nằm cạnh bản build BE tại `Plugins/ksts-plugin-setup.zip`.
+Bộ cài là **một file exe tự cài**: bấm đúp vào nó là cài luôn middleware **bit4id** đã nhúng sẵn bên trong,
+chép plugin vào `%LocalAppData%` rồi chạy nền. Không giải nén, không có file phụ nào để chạy nhầm. File nằm
+cạnh bản build BE tại `Plugins/KstsPlugin.exe`.
 
 `exists = false` **không** phải lỗi — FE khoá nút tải kèm lời nhắn liên hệ quản trị. Chỉ khi gọi
 `bo-cai/noi-dung` mà thiếu file mới ném `1080 PluginSetupMissing`.

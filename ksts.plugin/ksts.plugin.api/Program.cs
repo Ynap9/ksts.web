@@ -1,10 +1,57 @@
+using ksts.plugin.applications.CaiDat.Implements;
+using ksts.plugin.applications.CaiDat.Interfaces;
 using ksts.plugin.applications.ChungThuSo.Implements;
 using ksts.plugin.applications.ChungThuSo.Interfaces;
 using ksts.plugin.applications.Plugin.Implements;
 using ksts.plugin.applications.Plugin.Interfaces;
 using ksts.plugin.external.Certificates.Implements;
 using ksts.plugin.external.Certificates.Interfaces;
+using ksts.plugin.external.Setup.Implements;
 using ksts.plugin.shared.Constants;
+using System.Text;
+
+// Cửa sổ console mặc định dùng bảng mã cũ, tiếng Việt ra dấu hỏi. Đặt trước mọi dòng in ra.
+Console.OutputEncoding = Encoding.UTF8;
+
+// Một file exe đóng hai vai. Dựng tay ba service này thay vì qua DI vì phải phân vai XONG rồi mới biết có
+// cần web host hay không.
+ICaiDatService caiDat = new CaiDatService(new MiddlewareService(), new TuCaiDatService());
+
+if (args.Contains(CaiDatConstants.ThamSoGoCaiDat))
+{
+    caiDat.ChayLuotGoCaiDat();
+    return;
+}
+
+// Tiến trình con chạy quyền quản trị: mã thoát đã nói lên thành hay bại, không dừng chờ ai bấm phím.
+if (args.Contains(CaiDatConstants.ThamSoCaiMiddleware))
+{
+    caiDat.ChayLuotCaiMiddleware();
+    return;
+}
+
+if (!caiDat.LaLuotChayPlugin())
+{
+    try
+    {
+        caiDat.ChayLuotCaiDat();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine();
+        Console.WriteLine($"LỖI: {ex.Message}");
+    }
+
+    // Người dùng bấm đúp từ Explorer thì cửa sổ đóng ngay khi tiến trình thoát, không kịp đọc gì.
+    if (!Console.IsInputRedirected)
+    {
+        Console.WriteLine();
+        Console.WriteLine("Bấm phím bất kỳ để đóng cửa sổ này.");
+        Console.ReadKey(intercept: true);
+    }
+
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +61,12 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenLocalhost(PluginConstants.Port);
 });
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? Array.Empty<string>();
+// Danh sách ghim trong mã là nguồn chính vì bản phát hành không kèm file cấu hình; appsettings.json chỉ để
+// bổ sung origin khi phát triển.
+var allowedOrigins = PluginConstants.OriginMacDinh
+    .Concat(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
 
 builder.Services.AddCors(options =>
 {

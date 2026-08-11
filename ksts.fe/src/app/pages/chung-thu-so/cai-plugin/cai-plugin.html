@@ -4,10 +4,15 @@
     </p-message>
 
     <div>
-        Bộ cài là file nén chứa trình cài đặt <span class="font-semibold">plugin ký số KSTS</span>; chạy trình
-        cài đặt đó sẽ cài luôn <span class="font-semibold">trình đọc token bit4id</span>. Cài xong, plugin tự
-        chạy nền; quay lại màn hình này và bấm Kiểm tra lại.
+        Bộ cài là một file <span class="font-semibold">KstsPlugin.exe</span> duy nhất. Tải về rồi bấm đúp vào
+        nó: nó tự cài <span class="font-semibold">trình đọc token bit4id</span> nếu máy chưa có, rồi cài
+        plugin và chạy nền. Xong quay lại màn hình này và bấm Kiểm tra lại.
     </div>
+
+    <p-message severity="secondary" variant="simple" styleClass="text-base">
+        Trình duyệt có thể cảnh báo file lạ khi tải — chọn <span class="font-semibold">Giữ lại</span> để tiếp
+        tục. Bước cài trình đọc token sẽ hỏi quyền quản trị.
+    </p-message>
 
     @if (boCai().exists === false) {
         <p-message severity="error" variant="simple" styleClass="text-base">

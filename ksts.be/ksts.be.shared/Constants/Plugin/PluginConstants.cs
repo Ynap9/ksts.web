@@ -1,8 +1,9 @@
 namespace ksts.be.shared.Constants.Plugin
 {
     /// <summary>
-    /// Hằng số cho bộ cài plugin ký số ở máy người dùng. Bộ cài là file NÉN chứa trình cài đặt; chạy trình
-    /// cài đặt đó là cài luôn cả middleware bit4id, nên người dùng chỉ tải đúng một file.
+    /// Hằng số cho bộ cài plugin ký số ở máy người dùng. Bộ cài là MỘT file exe tự cài: chạy nó là cài luôn
+    /// middleware bit4id đã nhúng sẵn bên trong, chép plugin vào máy rồi chạy nền. Không giải nén, không có
+    /// file phụ nào để chạy nhầm.
     /// </summary>
     public static class PluginConstants
     {
@@ -13,8 +14,8 @@ namespace ksts.be.shared.Constants.Plugin
         public static string GetSetupPath() =>
             Path.Combine(AppContext.BaseDirectory, "Plugins", SetupFileName);
 
-        public const string SetupFileName = "ksts-plugin-setup.zip";
+        public const string SetupFileName = "KstsPlugin.exe";
 
-        public const string SetupContentType = "application/zip";
+        public const string SetupContentType = "application/octet-stream";
     }
 }

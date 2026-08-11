@@ -9,6 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!--
+      Bộ cài trình đọc token của hãng nhúng thẳng vào exe: người dùng tải một file, chạy một file, không có
+      đường chạy nhầm. File nằm ngoài repo (phần mềm bên thứ ba) nên thiếu nó vẫn build được, chỉ là bản ra
+      không tự cài được middleware. Tên logic khớp CaiDatConstants.TaiNguyenMiddleware*.
+    -->
+    <EmbeddedResource Include="..\vendor\bit4id\*.exe" LogicalName="bit4id-setup.exe" />
+    <EmbeddedResource Include="..\vendor\bit4id\*.msi" LogicalName="bit4id-setup.msi" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ksts.plugin.applications\ksts.plugin.applications.csproj" />
     <ProjectReference Include="..\ksts.plugin.external\ksts.plugin.external.csproj" />
     <ProjectReference Include="..\ksts.plugin.shared\ksts.plugin.shared.csproj" />

@@ -42,8 +42,8 @@ namespace ksts.be.api.Controllers.Plugin
         }
 
         /// <summary>
-        /// Nội dung bộ cài để trình duyệt tải về. KHÔNG bọc ApiResponse - đầu ra là file nén, bọc JSON vào
-        /// thì tải về không giải nén được.
+        /// Nội dung bộ cài để trình duyệt tải về. KHÔNG bọc ApiResponse - đầu ra là file thực thi, bọc JSON
+        /// vào thì tải về không chạy được.
         /// </summary>
         [HttpGet("bo-cai/noi-dung")]
         public IActionResult GetBoCaiContent()

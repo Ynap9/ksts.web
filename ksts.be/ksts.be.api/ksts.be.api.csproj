@@ -37,7 +37,7 @@
     <!-- Bộ cài plugin ký số. Là asset chỉ đọc đi kèm bản build, PluginConstants resolve từ
          AppContext.BaseDirectory nên phải nằm trong thư mục output thì endpoint bo-cai mới thấy.
          File này do lệnh publish plugin sinh ra, không phải mã nguồn - xem ksts.plugin/README.md. -->
-    <Content Include="Plugins\*.zip">
+    <Content Include="Plugins\*.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
