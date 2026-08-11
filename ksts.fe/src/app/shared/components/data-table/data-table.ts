@@ -22,22 +22,22 @@ export class DataTable implements OnInit, AfterViewInit {
     injector = inject(Injector);
     private el = inject(ElementRef);
 
-    columns  = input.required<IColumn[]>();
-    data     = input.required<any[]>();
-    pageSize   = input<number>(10);
+    columns = input.required<IColumn[]>();
+    data = input.required<any[]>();
+    pageSize = input<number>(10);
     pageNumber = input<number>(1);
-    total      = input<number>(100);
-    loading    = input<boolean>(false);
-    tableKey   = input<string>('');
+    total = input<number>(100);
+    loading = input<boolean>(false);
+    tableKey = input<string>('');
 
     @Output() onPageChanged = new EventEmitter<any>();
-    @Output() customEmit    = new EventEmitter<any>();
-    @Output() onCustomComp  = new EventEmitter<any>();
-    @Output() onError       = new EventEmitter<any>();
+    @Output() customEmit = new EventEmitter<any>();
+    @Output() onCustomComp = new EventEmitter<any>();
+    @Output() onError = new EventEmitter<any>();
 
-    cellViewTypes   = CellViewTypes;
-    sanitizer       = inject(DomSanitizer);
-    customInjector! : Injector;
+    cellViewTypes = CellViewTypes;
+    sanitizer = inject(DomSanitizer);
+    customInjector!: Injector;
     revealedSecrets = new Set<string>();
     @ViewChild(Paginator) paginator!: Paginator;
 
@@ -142,7 +142,7 @@ export class DataTable implements OnInit, AfterViewInit {
 
     getIndexValue(rowIndex: number): number {
         const currentPage = this.pageNumber();
-        const pageSize    = this.pageSize();
+        const pageSize = this.pageSize();
         return (currentPage * pageSize) - (pageSize - rowIndex) + 1;
     }
 
@@ -174,5 +174,9 @@ export class DataTable implements OnInit, AfterViewInit {
         } else {
             this.revealedSecrets.add(key);
         }
+    }
+    getSeverity(col: IColumn, row: any): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | undefined {
+        if (!col.statusSeverityFunction) return undefined;
+        return col.statusSeverityFunction(row) as any;
     }
 }

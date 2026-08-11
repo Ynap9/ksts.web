@@ -1,4 +1,7 @@
+export type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined;
+
 export type IColumn = {
+  
   header: string,
   field?: string,
   headerContainerClass?: string,

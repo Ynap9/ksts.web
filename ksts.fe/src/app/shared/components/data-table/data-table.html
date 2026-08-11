@@ -46,7 +46,7 @@
                 }
                 @else if (col.cellViewType === cellViewTypes.STATUS && col.statusSeverityFunction) {
                     <div class="flex justify-center">
-                        <p-tag [value]="get(row, col.field || '')" [severity]="col.statusSeverityFunction(row)"></p-tag>
+                        <p-tag [value]="get(row, col.field || '')" [severity]="getSeverity(col, row)"></p-tag>
                     </div>
                 }
                 @else if (col.cellViewType === cellViewTypes.SECRET) {
