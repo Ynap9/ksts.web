@@ -241,7 +241,7 @@ namespace ksts.be.api.Controllers.LoKy
 
                 Response.ContentType = LoKyConstants.ZipContentType;
                 Response.Headers.ContentDisposition =
-                    $"attachment; filename=\"lo-ky-{id}-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";
+                    $"attachment; filename=\"giay-bao-trung-tuyen-da-ky-so-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";
 
                 await _loKyService.GhiNenAsync(id, token, Response.Body, HttpContext.RequestAborted);
                 return new EmptyResult();
