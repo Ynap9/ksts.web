@@ -334,14 +334,14 @@
             display: none !important;
         }
 
-        /* Chỗ ký: dấu đỏ nằm lớp dưới, chữ ký chồng lên trên, cả hai cùng chung
-           trục giữa với dòng chức danh và dòng họ tên bên dưới. */
-        /* Cao hơn đường kính con dấu (36mm ~ 136px) để dấu nằm lọt giữa hai khối
-           chữ, không trùm lên chức danh phía trên lẫn họ tên phía dưới. */
+        /* Chỗ đóng dấu, nằm giữa dòng chức danh và dòng họ tên. */
+        /* Khung THẤP HƠN đường kính con dấu (36mm ~ 136px) là cố ý: khung cao bằng
+           cả con dấu thì thừa quá nhiều khoảng trắng giữa hai khối chữ. Dấu tràn ra
+           ngoài khung vài mm, đúng kiểu đóng dấu thật trên giấy. */
         .signature-area {
             position: relative;
-            height: 140px;      /* dấu cao 36,5mm ~ 138px, chỉ chừa 1px mỗi đầu */
-            margin: 6px 0 5px;
+            height: 100px;
+            margin: 2px 0;
         }
 
         /* Căn đúng giữa khối: khối đã đủ cao nên không cần nhích lên như trước. */
@@ -360,6 +360,23 @@
         .signature-stamp {
             width: 36mm;
             mix-blend-mode: multiply;
+        }
+
+        /* Dấu KHÔNG canh giữa cột mà lấy chỗ ký tay làm chuẩn: giấy in ra còn được
+           ký tay lên, nên mép phải dấu phải ăn 1/3 vào bề rộng chữ ký đúng lối đóng
+           dấu của văn bản hành chính. Chữ ký rộng 158px, dấu và chữ ký cùng canh
+           giữa khối nên suy ra được khoảng dịch:
+               mép phải dấu = mép trái chữ ký + rộng_chữ_ký/3
+           =>  dịch = -(rộng_chữ_ký/6 + đường_kính_dấu/2)
+           Giữ nguyên dạng biểu thức theo 158px và 36mm để đổi cỡ ảnh nào thì khoảng
+           dịch tự tính lại theo. Cần hai lớp chọn vì .signature-area img đã đặt sẵn
+           transform canh giữa, chọn một lớp không đè được.
+
+           Theo chiều dọc, dấu nhích lên 3mm cho cân mắt: vành dưới con dấu dày hơn
+           vành trên nên để đúng tâm sẽ trông như bị trĩu xuống. */
+        .signature-area .signature-stamp {
+            transform: translate(calc(-50% - 158px / 6 - 36mm / 2),
+                                 calc(-50% - 3mm));
         }
 
         /* Ô mã QR: SVG do BE nhồi vào, ràng kích thước tại đây để mã luôn vừa ô
