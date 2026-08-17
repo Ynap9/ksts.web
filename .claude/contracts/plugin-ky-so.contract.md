@@ -3,10 +3,11 @@
 Plugin chạy trên máy người dùng, nghe **`http://127.0.0.1:17739`**. FE gọi thẳng, không qua BE. Không có
 Bearer token — plugin không biết gì về tài khoản. Mã nguồn: `ksts.plugin/`.
 
-> ⚠️ Topology này là **A** (agent mở listener loopback), khác khuyến nghị B ở
-> [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §2. Hệ quả phải nắm: trang `https://` gọi
-> `http://127.0.0.1` **không** dính mixed content, nhưng Private Network Access của Chrome đã đổi cơ chế vài
-> lần — phải test lại trên đúng bản trình duyệt đang dùng. `Origin` **không** phải hàng rào bảo mật.
+> Topology **A** (plugin mở listener loopback) là cái **đang chạy**; topology B (plugin tự gọi ra qua WSS) để
+> **tối ưu sau**, xem [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §2. Hệ quả phải nắm: trang
+> `https://` gọi `http://127.0.0.1` **không** dính mixed content, nhưng Private Network Access của Chrome đã
+> đổi cơ chế vài lần — phải test lại trên đúng bản trình duyệt đang dùng. `Origin` **không** phải hàng rào
+> bảo mật.
 
 ## Routes
 
@@ -24,6 +25,7 @@ Envelope giống hệt BE: `{ "status": 1, "data": …, "code": 200, "message": 
 |---|---|---|---|
 | POST | `ky-so/mo-phien` | `{ thumbprint }` | `{ thumbprint, commonName, chungThuBase64 }` |
 | POST | `ky-so/ky` | `{ yeuCau: [{ yeuCauId, duLieuBase64 }] }` | `[{ yeuCauId, chuKyBase64, loi }]` |
+| POST | `ky-so/do-toc-do` | `{ thumbprint, soLan }` (mặc định 20, trần 100) | `DoTocDoKetQua` |
 | POST | `ky-so/dong-phien` | — | `true` |
 
 `mo-phien` là **chỗ duy nhất hộp PIN bật lên** trong luồng ký: nó mở khoá rồi GIỮ handle cho cả lô. Giữ handle
@@ -37,7 +39,22 @@ file, gom đợt là cách duy nhất chia nhỏ khoản đó. Một yêu cầu 
 lại vẫn ký.
 
 `duLieuBase64` là **SignedAttributes** do máy chủ dựng — plugin không cần biết nội dung file vẫn ký được, và
-cũng không nhận file nào.
+cũng không nhận file nào. Đổi lại, plugin **không tự kiểm được mình đang ký gì** (WYSIWYS ở
+[docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §5 chưa thi công) — phải nói thẳng khi bàn giao.
+
+## `do-toc-do` — đo sàn cứng của token
+
+```jsonc
+// { "thumbprint": "A1B2…", "soLan": 20 }  ->
+{
+  "soLan": 20, "trungBinhMs": 0, "nhanhNhatMs": 0, "chamNhatMs": 0,
+  "kichThuocKhoaBit": 2048, "thuatToan": "RSA", "tenProvider": "bit4id xPKI CSP"
+}
+```
+
+Mở phiên thật nên **hộp PIN sẽ bật**. Đây là chỗ duy nhất đo được `T` — thời gian một lượt ký qua token — con
+số quyết định thời lượng của cả lô, vì token ký tuần tự (5000 × `T` không rút ngắn được bằng thêm luồng). Trần
+`SoLanDoToiDa = 100` để không ai biến nó thành vòng lặp vô tận chạm vào token thật.
 
 ## Dò plugin đã cài hay chưa
 
@@ -50,7 +67,10 @@ Endpoint này **không** chạm tới chứng thư hay token nên không bao gi�
 { "ten": "KSTS Plugin ký số", "phienBan": "1.0.0", "sanSang": true }
 ```
 
-## TokenVerify — và đây là chỗ DUY NHẤT hộp PIN bật lên
+## TokenVerify — kiểm token cắm thật hay chưa
+
+> Ba route bật hộp PIN, và chỉ ba: `chung-thu-so/kiem-tra-token`, `ky-so/mo-phien`, `ky-so/do-toc-do`. Đều vì
+> cùng một lý do — chúng **chạm vào khoá bí mật**. Mọi phép đọc metadata thì không.
 
 ```jsonc
 {
@@ -69,9 +89,13 @@ nhất rằng token đang cắm thật và PIN dùng được — mọi phép đ
 - **PIN không đi qua tiến trình plugin** — đi thẳng từ bàn phím vào middleware qua CNG/minidriver. Plugin
   không tự vẽ ô nhập PIN, xem [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §4.
 - Kết quả chỉ là **một cờ `valid`** kèm `reason` hiển thị được: không trả số lần thử PIN còn lại.
-- Plugin **không giữ handle khoá** sau khi kiểm: mỗi lần kiểm là một lần hỏi PIN. Khi làm luồng ký cả lô sẽ
-  phải xem lại điểm này (giữ handle một phiên là thứ khiến N file chỉ hỏi PIN một lần — đó *không* phải
-  cache PIN).
+- Plugin **không giữ handle khoá** sau khi kiểm: mỗi lần kiểm là một lần hỏi PIN. Luồng ký cả lô đi đường
+  khác — `ky-so/mo-phien` giữ handle cho cả phiên nên N file chỉ hỏi PIN một lần; giữ handle **không** phải
+  cache PIN.
+- ⚠️ Màn ký số hiện **bắt xác thực chứng thư trước khi mở nút Bắt đầu**, nên người dùng nhập PIN **hai lần**
+  cho một lô: một lần ở `kiem-tra-token`, một lần ở `ky-so/mo-phien`. Đổi được bằng cách coi `mo-phien` chính
+  là phép xác thực (nó cũng chạm khoá thật), nhưng khi đó lỗi cert sai sẽ hiện muộn hơn — sau khi đã tải file
+  lên. Chưa quyết.
 - FE **không đặt timeout** cho lời gọi này: người dùng cần thời gian nhập PIN.
 
 > ⚠️ Còn phải kiểm trên máy thật: plugin chạy nền, **không sở hữu cửa sổ nào**, nên hộp PIN có thể hiện chìm

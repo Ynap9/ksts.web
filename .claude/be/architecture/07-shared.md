@@ -3,14 +3,19 @@
 `ksts.be.shared` giữ thứ mọi tầng dùng chung. **Không có nghiệp vụ ở đây.**
 
 ```
+Constants/            DateTimeConstants
 Constants/Auth/       CustomClaimTypes, PermissionKeys, RoleConstants, ProgramExtensions
 Constants/Db/         DbSchemas
-Constants/Signing/    SigningConstants, SignatureConstants, SealPlacementConstants
+Constants/Signing/    SigningConstants, SignatureConstants, SealPlacementConstants, SigningQueueConstants
 Constants/Template/   TemplateConstants, TemplatePositionKind
+Constants/LoKy/       LoKyConstants, TrangThaiLoKy, TrangThaiFileKy
+Constants/GiayBao/    GiayBaoConstants, LoaiTrungTuyenConstants
+Constants/Plugin/     PluginConstants
 Interfaces/           IFullAudited, ISoftDeleted, ICreatedBy, IModifiedBy
 Requests/             ApiResponse, AppException, BaseRequest, ErrorRequest
-Settings/             AuthServerSettings, S3Settings, FileSettings
+Settings/             AuthServerSettings, S3Settings, FileSettings, ConvertFileSettings
 Templates/sample/     file-mau-ky-so.pdf (copy ra output)
+Templates/html/       giay-bao-trung-tuyen.html — mẫu TỰ CHỨA, không gọi CDN
 Utils/                CryptoUtils
 ```
 
@@ -32,6 +37,11 @@ Mọi REST trả **HTTP 200**; trạng thái thật nằm ở `Status`. FE phả
 | `1020–1039` | Chứng thư số |
 | `1040–1059` | Lưu trữ file / MinIO |
 | `1060–1079` | Đặt dấu & chữ ký tươi |
+| `1080–1099` | Plugin ký số ở máy người dùng |
+| `1100–1119` | Mã QR tra cứu trên giấy báo |
+| `1120–1139` | In giấy báo trúng tuyển hàng loạt (`1127`, `1128` **đã khai tử**, không cấp lại) |
+| `1140–1159` | Ký số PDF |
+| `1160–1179` | Lô ký số hàng loạt |
 
 Thêm mã mới phải thêm câu tiếng Việt tương ứng vào `ErrorMessages._messages` — thiếu thì FE nhận
 `"Unknown error."`.
@@ -62,6 +72,18 @@ thật** chứ không tự chọn. Đừng sửa nếu không đo lại trên fi
 
 `SealPlacementConstants` là của KSTS: chuỗi mốc chức danh / tên người ký, dung sai canh cột, DPI mặc định khi
 ảnh thiếu metadata.
+
+`SigningQueueConstants` là **ba con số quyết định lô 5000 file chạy bao lâu** — `SoYeuCauMoiDot = 8`,
+`GiayChoLayViec = 25`, `GiaySongCuaYeuCau = 120`. Đổi cái nào cũng phải đo lại; lý do từng con số ghi ngay
+trong file.
+
+## Hằng số nghiệp vụ giấy báo
+
+`GiayBaoConstants` và `LoaiTrungTuyenConstants` là **chỗ duy nhất** mô tả quan hệ cột Excel ⇄ thẻ HTML ⇄ câu
+chữ trên giấy. Sửa câu chữ phải sửa ở đây, không rải vào mẫu HTML hay service.
+
+⚠️ `NamTuyenSinh` và `Khoa` phải đổi **mỗi mùa tuyển sinh**, đồng thời với năm và khoá ghi cứng trong
+`Templates/html/giay-bao-trung-tuyen.html`. Thiếu một chỗ là giấy sai năm.
 
 ## File PDF mẫu
 

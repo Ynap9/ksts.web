@@ -52,9 +52,12 @@ export class TemplateService {
         formData.append('noiKy', body.noiKy ?? '');
         formData.append('hienThiChuKySo', `${body.hienThiChuKySo}`);
         formData.append('nhoiChuKySoVaoAnh', `${body.nhoiChuKySoVaoAnh}`);
+        formData.append('kyDe', `${body.kyDe}`);
         formData.append('doDamDauDo', `${body.doDamDauDo}`);
         formData.append('doDamChuKyTuoi', `${body.doDamChuKyTuoi}`);
         formData.append('doDayNetChuKyTuoi', `${body.doDayNetChuKyTuoi}`);
+        formData.append('mauChuKySo', body.mauChuKySo);
+        formData.append('mauChuKyTuoi', body.mauChuKyTuoi ?? '');
         formData.append('xoaAnhDauDo', `${!!body.xoaAnhDauDo}`);
         formData.append('xoaAnhChuKyTuoi', `${!!body.xoaAnhChuKyTuoi}`);
 

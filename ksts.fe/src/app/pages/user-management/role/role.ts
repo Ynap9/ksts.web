@@ -76,7 +76,7 @@ export class Role extends BaseComponent {
     }
 
     onOpenCreate() {
-        const ref = this._dialogService.open(Create, { header: 'Tạo vai trò', closable: true, modal: true, styleClass: 'w-[1000px]', focusOnShow: false });
+        const ref = this._dialogService.open(Create, { header: 'Tạo vai trò', closable: true, modal: true, draggable: false, styleClass: 'w-[1000px]', focusOnShow: false });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();
@@ -85,7 +85,7 @@ export class Role extends BaseComponent {
     }
 
     onOpenUpdate(data: IViewRowRole) {
-        const ref = this._dialogService.open(Create, { header: 'Cập nhật vai trò', closable: true, modal: true, styleClass: 'w-[1000px]', focusOnShow: false, data });
+        const ref = this._dialogService.open(Create, { header: 'Cập nhật vai trò', closable: true, modal: true, draggable: false, styleClass: 'w-[1000px]', focusOnShow: false, data });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();

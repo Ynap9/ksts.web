@@ -1,4 +1,8 @@
-# Plan — Lấy và chọn chứng thư số
+# Plan — Lấy và chọn chứng thư số (phía BE)
+
+> **Trạng thái: ✅ đã thi công.** Nhưng **màn ký số không dùng đường này** — nó lấy chứng thư từ **plugin** ở
+> máy người dùng. Đường BE còn lại phục vụ cấu hình template trên máy dev và trường hợp
+> `Signing:Nguon = store`. Xem [../../contracts/chung-thu-so.contract.md](../../contracts/chung-thu-so.contract.md).
 
 ## Requirements
 

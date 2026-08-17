@@ -14,6 +14,8 @@ using ksts.be.applications.Template.Implements;
 using ksts.be.applications.Template.Interfaces;
 using ksts.be.external.Certificates.Implements;
 using ksts.be.external.Certificates.Interfaces;
+using ksts.be.external.Colors.Implements;
+using ksts.be.external.Colors.Interfaces;
 using ksts.be.external.Images.Implements;
 using ksts.be.external.Images.Interfaces;
 using ksts.be.external.Pdf.Implements;
@@ -255,11 +257,13 @@ builder.Services.AddSingleton<IGotenbergConverter, GotenbergConverter>();
 builder.Services.AddSingleton<ITimestampClient, TimestampClient>();
 builder.Services.AddSingleton<IZipJobStore, ZipJobStore>();
 builder.Services.AddSingleton<ICmsAssembler, CmsAssembler>();
+builder.Services.AddSingleton<IHexColorReader, HexColorReader>();
 builder.Services.AddSingleton<IPdfRevisionReader, PdfRevisionReader>();
 builder.Services.AddSingleton<IPdfObjectWriter, PdfObjectWriter>();
 builder.Services.AddSingleton<IPdfAppearanceBuilder, PdfAppearanceBuilder>();
 builder.Services.AddSingleton<IPdfPreparer, PdfPreparer>();
 builder.Services.AddSingleton<IPdfContentWriter, PdfContentWriter>();
+builder.Services.AddSingleton<IPdfSignatureInspector, PdfSignatureInspector>();
 // Hàng đợi chờ chữ ký giữ trạng thái phiên của từng lô nên phải là Singleton.
 builder.Services.AddSingleton<IHangDoiKy, HangDoiKy>();
 

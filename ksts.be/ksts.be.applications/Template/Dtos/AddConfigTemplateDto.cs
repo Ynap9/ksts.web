@@ -19,11 +19,17 @@ namespace ksts.be.applications.Template.Dtos
 
         public bool NhoiChuKySoVaoAnh { get; set; }
 
+        public bool KyDe { get; set; }
+
         public int DoDamDauDo { get; set; } = TemplateConstants.DoDamMacDinh;
 
         public int DoDamChuKyTuoi { get; set; } = TemplateConstants.DoDamMacDinh;
 
         public int DoDayNetChuKyTuoi { get; set; } = TemplateConstants.DoDayNetMacDinh;
+
+        public string MauChuKySo { get; set; } = TemplateConstants.MauMacDinh;
+
+        public string? MauChuKyTuoi { get; set; }
 
         public IFormFile? AnhDauDo { get; set; }
 

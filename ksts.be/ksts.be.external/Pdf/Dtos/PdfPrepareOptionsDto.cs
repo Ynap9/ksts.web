@@ -22,6 +22,10 @@ namespace ksts.be.external.Pdf.Dtos
 
         public int DoDayNetChuKyTuoi { get; set; } = TemplateConstants.DoDayNetMacDinh;
 
+        public string MauChuKySo { get; set; } = TemplateConstants.MauMacDinh;
+
+        public string? MauChuKyTuoi { get; set; }
+
         public List<PdfPlacementDto> ViTri { get; set; } = new();
     }
 }

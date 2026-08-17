@@ -9,6 +9,8 @@ Một DbContext duy nhất, kế thừa `IdentityDbContext<AppUser>`, dùng chun
 ```csharp
 public DbSet<Template> Template { get; set; }
 public DbSet<TemplatePosition> TemplatePosition { get; set; }
+public DbSet<LoKy> LoKy { get; set; }
+public DbSet<LoKyFile> LoKyFile { get; set; }
 ```
 
 `OnModelCreating` phải giữ đúng thứ tự đang có:
@@ -26,7 +28,11 @@ Cấu hình `Template`:
 - Index `(IdUser, Deleted)`: mọi truy vấn danh sách đều lọc theo hai cột này.
 - Index `(IdUser, TenTemplate)`: phục vụ kiểm trùng tên trong phạm vi một người dùng.
 
-Kết nối: `ConnectionStrings:KY_SO_TUYEN_SINH`, SQL Server, `CommandTimeout(600)`.
+Cấu hình `LoKy` / `LoKyFile`: `Files` quan hệ 1-n cascade; index `(IdUser, Deleted)` cho lô,
+`(LoKyId, TrangThai, ThuTu)` để **lấy việc kế tiếp** — truy vấn đó chạy một lần cho *mỗi* file của lô 5000
+file — và `(LoKyId, TenFile)` để khử trùng khi upload gửi lại một đợt.
+
+Kết nối: `ConnectionStrings:KY_SO_WEB`, SQL Server, `CommandTimeout(600)`.
 
 ## Migration
 

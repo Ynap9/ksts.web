@@ -8,6 +8,7 @@ import { IViewFileKy, IViewLoKy, IViewTienDoLoKy } from '@/app/models/lo-ky.mode
 import { IViewSignCert } from '@/app/models/plugin.models';
 import { IViewRowTemplate } from '@/app/models/template.models';
 import { LoKyService } from '@/app/service/lo-ky.service';
+import { NhacCaiPluginService } from '@/app/service/nhac-cai-plugin.service';
 import { PluginService } from '@/app/service/plugin.service';
 import { TemplateService } from '@/app/service/template.service';
 import { BaseComponent } from '@/app/shared/components/base/base-component';
@@ -31,6 +32,7 @@ export class KySo extends BaseComponent {
     private _loKyService = inject(LoKyService);
     private _templateService = inject(TemplateService);
     private _pluginService = inject(PluginService);
+    private _nhacCaiPluginService = inject(NhacCaiPluginService);
     private _destroyRef = inject(DestroyRef);
 
     breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
@@ -166,11 +168,29 @@ export class KySo extends BaseComponent {
         });
     }
 
-    onOpenCaiPlugin() {
+    onMoChungThuSo() {
+        this._pluginService.getTrangThai().subscribe({
+            next: (res) => {
+                if (res?.status !== 1 || !res.data?.sanSang) {
+                    this.onOpenCaiPlugin(true);
+                }
+            },
+            error: () => {
+                this.onOpenCaiPlugin(true);
+            }
+        });
+    }
+
+    onOpenCaiPlugin(batBuoc = false) {
+        if (!batBuoc && this._nhacCaiPluginService.daTat()) {
+            return;
+        }
+
         const ref = this._dialogService.open(CaiPlugin, {
             header: 'Chưa có plugin ký số',
             closable: true,
             modal: true,
+            draggable: false,
             styleClass: 'w-[700px]',
             focusOnShow: false
         });

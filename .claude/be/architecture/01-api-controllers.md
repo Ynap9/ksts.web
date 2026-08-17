@@ -7,8 +7,12 @@
 | Controller | Route gốc |
 |---|---|
 | `AuthorizationController` | `` (OpenIddict: `~/connect/token`, `~/connect/authorize`) |
+| `UsersController` · `RolesController` · `PermissionController` | `api/core/…` |
 | `TemplateController` | `api/core/template-chu-ky` |
 | `CertificateController` | `api/core/chung-thu-so` |
+| `PluginController` | `api/core/plugin` — phát bộ cài plugin |
+| `GiayBaoController` | `api/core/giay-bao` — dựng giấy báo trúng tuyển hàng loạt |
+| `LoKyController` | `api/core/lo-ky` — ký số hàng loạt |
 
 Route **kebab-case tiếng Việt**, khớp vốn từ nghiệp vụ.
 
@@ -71,6 +75,16 @@ FE gửi `multipart/form-data`. Trường ảnh **nullable** — template không
 ```
 
 Segment cố định vẫn thắng route tham số nên không có xung đột, nhưng viết theo thứ tự này dễ đọc hơn.
+
+## Ngoại lệ: trả bytes thô
+
+Bốn action trả thẳng `IActionResult` thay vì `ApiResponse` (file mẫu PDF, bộ cài plugin, hai đường zip). Riêng
+hai đường **zip** còn `[AllowAnonymous]`: trình duyệt điều hướng tới đó thì không gắn được header
+`Authorization`, nên chặn bằng token phát riêng cho lô và kiểm trong service. Sai token ⇒ trả **404 trơn**,
+lý do thật chỉ ghi vào log — phân biệt "sai token" với "lô chưa xong" là chỉ điểm cho người dò.
+
+Ghi vào `Response.Body` thì phải bật `IHttpBodyControlFeature.AllowSynchronousIO`: `ZipArchive` ghi header và
+bảng mục lục bằng lệnh **đồng bộ**, không mở cờ này là hỏng ngay ở entry đầu tiên.
 
 ## Phân trang
 

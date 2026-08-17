@@ -62,6 +62,7 @@ namespace ksts.be.shared.Requests.ErrorRequest
         public const int PdfLocked = 1145;
         public const int SignatureTooLarge = 1146;
         public const int AppearanceBuildFailed = 1147;
+        public const int PdfAlreadySigned = 1148;
 
         //Lô ký số hàng loạt: 1160 - 1179
         public const int LoKyNotFound = 1160;

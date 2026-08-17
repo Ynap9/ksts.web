@@ -3,6 +3,7 @@ using ksts.be.applications.Base;
 using ksts.be.applications.Template.Dtos;
 using ksts.be.applications.Template.Interfaces;
 using ksts.be.domain.Auth;
+using ksts.be.external.Colors.Interfaces;
 using ksts.be.external.Images.Dtos;
 using ksts.be.external.Images.Interfaces;
 using ksts.be.external.Placement.Interfaces;
@@ -27,6 +28,7 @@ namespace ksts.be.applications.Template.Implements
         private readonly ITemplateImageStorage _imageStorage;
         private readonly IImageSizeReader _imageSizeReader;
         private readonly ISealPlacementResolver _placementResolver;
+        private readonly IHexColorReader _hexColorReader;
         private readonly UserManager<AppUser> _userManager;
 
         public TemplateService(
@@ -37,12 +39,14 @@ namespace ksts.be.applications.Template.Implements
             ITemplateImageStorage imageStorage,
             IImageSizeReader imageSizeReader,
             ISealPlacementResolver placementResolver,
+            IHexColorReader hexColorReader,
             UserManager<AppUser> userManager
         ) : base(kstsDbContext, logger, httpContextAccessor, mapper)
         {
             _imageStorage = imageStorage;
             _imageSizeReader = imageSizeReader;
             _placementResolver = placementResolver;
+            _hexColorReader = hexColorReader;
             _userManager = userManager;
         }
 
@@ -152,6 +156,7 @@ namespace ksts.be.applications.Template.Implements
             entity.NoiKy = input.NoiKy;
             entity.HienThiChuKySo = input.HienThiChuKySo;
             entity.NhoiChuKySoVaoAnh = input.NhoiChuKySoVaoAnh;
+            entity.KyDe = input.KyDe;
 
             // Kẹp về khoảng cho phép thay vì ném lỗi: giá trị này đến từ thanh trượt nên ra ngoài khoảng chỉ
             // xảy ra khi client gửi sai, mà đánh trượt cả lần lưu cấu hình vì một con số hiển thị là quá tay.
@@ -161,6 +166,8 @@ namespace ksts.be.applications.Template.Implements
                 TemplateConstants.DoDamMin, TemplateConstants.DoDamMax);
             entity.DoDayNetChuKyTuoi = Math.Clamp(input.DoDayNetChuKyTuoi,
                 TemplateConstants.DoDayNetMin, TemplateConstants.DoDayNetMax);
+            entity.MauChuKySo = _hexColorReader.Normalize(input.MauChuKySo) ?? TemplateConstants.MauMacDinh;
+            entity.MauChuKyTuoi = _hexColorReader.Normalize(input.MauChuKyTuoi);
 
             entity.ModifiedBy = getCurrentName();
             entity.ModifiedDate = GetVietnamTime();

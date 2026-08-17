@@ -1,11 +1,15 @@
 # Plan — Template cấu hình chữ ký
 
+> **Trạng thái: ✅ đã thi công.** Hợp đồng đang chạy (có thêm `cau-hinh`, `vi-tri-goi-y` dạng POST, ba thanh
+> trượt độ đậm / độ dày): [../../contracts/template-chu-ky.contract.md](../../contracts/template-chu-ky.contract.md)
+> — đọc contract chứ đừng đọc bảng API dưới đây, nó là bản dự kiến ban đầu.
+
 ## Requirements
 
 CRUD bộ cấu hình chữ ký dựng sẵn để người dùng không phải kéo thả lại mỗi lần ký: chứng thư số, lý do/nơi ký,
 ảnh dấu đỏ, ảnh chữ ký tươi, toạ độ từng khối.
 
-- Ảnh upload lên **MinIO** (bucket `ksts`), DB lưu **URL + object key**.
+- Ảnh upload lên **kho object** (bucket khai ở `S3:S3_BUCKET`), DB lưu **URL + object key**.
 - Dấu đỏ và chữ ký tươi **tuỳ chọn** — có thể không có cái nào.
 - Template thuộc về **người dùng đang đăng nhập**; admin xem hết.
 - Trả thêm **vị trí gợi ý** cho dấu / chữ ký tươi tính từ file PDF mẫu.

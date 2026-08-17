@@ -1,3 +1,4 @@
+using ksts.be.external.Colors.Dtos;
 using ksts.be.external.Pdf.Dtos;
 using PdfSharp.Drawing;
 
@@ -18,19 +19,19 @@ namespace ksts.be.external.Pdf.Interfaces
         /// khổ chuẩn nên ô to thì chữ to theo, không bị chữ giữ nguyên cỡ rồi lọt thỏm hoặc tràn khỏi hộp.
         /// </summary>
         PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
-            double height);
+            double height, string mau);
 
         /// <summary>
         /// Mặt chữ ký là chính ẢNH CHỮ KÝ TƯƠI, không vẽ chữ. Ảnh được vẽ kín ô đã tính sẵn theo đúng tỉ lệ
         /// khung hình của nó ở tầng trên, ở đây chỉ vẽ trải đúng khổ ô.
         /// </summary>
         PdfAppearanceDto BuildImage(byte[] anh, int doDamPhanTram, int doDayNetPhanTram, int firstObjectNumber,
-            double width, double height);
+            double width, double height, string? mau);
 
         /// <summary>
         /// Các lớp ảnh cần vẽ để nong nét chữ ký dày lên: một vòng lớp lệch quanh tâm rồi lớp lõi vẽ sau cùng.
         ///
-        /// Đây là phần "nét đậm" mà <see cref="ApDoDam"/> không làm được: /Decode ánh xạ lại độ sáng từng
+        /// Đây là phần "nét đậm" mà <see cref="ApDoDamVaMau"/> không làm được: /Decode ánh xạ lại độ sáng từng
         /// pixel TẠI CHỖ nên nét mảnh chỉ sẫm màu hơn chứ không dày thêm. Muốn dày thì mực phải lan sang pixel
         /// bên cạnh, và cách rẻ nhất trong PDF là vẽ lại chính ảnh đó vài lần lệch đi một chút — mọi lệnh vẽ
         /// đều trỏ về cùng một XObject nên file không phình.
@@ -41,13 +42,41 @@ namespace ksts.be.external.Pdf.Interfaces
         IReadOnlyList<PdfRectPointsDto> TinhLopNongNet(double width, double height, int doDayNetPhanTram);
 
         /// <summary>
-        /// Chỉnh độ đậm ảnh bằng mảng /Decode của chính PDF thay vì xử lý từng pixel rồi mã hoá lại ảnh:
-        /// không kéo thêm thư viện ảnh, không tốn CPU, và ảnh gốc giữ nguyên từng byte nên không mất nét.
+        /// Chỉnh độ đậm VÀ màu mực của ảnh bằng chính siêu dữ liệu ảnh trong PDF thay vì xử lý từng pixel rồi
+        /// mã hoá lại: không kéo thêm thư viện ảnh, không tốn CPU, và byte ảnh gốc giữ nguyên nên không mất nét.
         ///
-        /// /Decode ánh xạ tuyến tính mỗi thành phần màu, đặt [(1-f)/2, (1+f)/2] với f là hệ số đậm thì ra
-        /// đúng phép tăng tương phản quanh mức xám giữa — cùng công thức bản xem trước bên FE đang dùng.
+        /// Độ đậm đi bằng mảng /Decode — nó ánh xạ tuyến tính mỗi thành phần màu, đặt [(1-f)/2, (1+f)/2] với f
+        /// là hệ số đậm thì ra đúng phép tăng tương phản quanh mức xám giữa, cùng công thức bản xem trước FE
+        /// đang dùng. Màu mực đi kèm trong cùng phép tuyến tính đó: điểm tối nhất kéo về màu đã chọn, điểm
+        /// sáng nhất vẫn là trắng, nên nền trắng của ảnh quét không bị nhuộm theo.
+        ///
+        /// CHƯA CHỌN màu (chuỗi rỗng hoặc null) nghĩa là giữ nguyên mực của ảnh gốc: phép ánh xạ khi đó rút
+        /// gọn về đúng phần độ đậm. Đen là một màu thật như mọi màu khác, không phải cờ giữ nguyên.
         /// </summary>
-        void ApDoDam(PdfAppearanceDto appearance, int doDamPhanTram);
+        void ApDoDamVaMau(PdfAppearanceDto appearance, int doDamPhanTram, string? mau);
+
+        /// <summary>
+        /// Mảng /Decode cho ảnh có <paramref name="soThanhPhan"/> kênh màu: kênh nào cũng đi từ điểm tối (đã
+        /// nhuộm màu) tới điểm sáng. Ảnh CMYK chỉ nhận phần độ đậm vì ở đó giá trị 0 là KHÔNG mực chứ không
+        /// phải màu tối, nhuộm theo cùng công thức sẽ ra ảnh âm bản.
+        /// </summary>
+        string BuildDecodeArray(double can, double tran, int soThanhPhan, RgbColorDto? mau);
+
+        /// <summary>
+        /// Bảng màu /Indexed thay cho /DeviceGray khi ảnh thang xám cần nhuộm màu: /Decode một kênh chỉ ra
+        /// được sắc xám, muốn ra màu thì phải đổi hẳn không gian màu. Mỗi ô của bảng là một mức xám gốc đã
+        /// đi qua cả độ đậm lẫn màu mực, nên ảnh vẫn giữ nguyên byte dữ liệu và không cần /Decode nữa.
+        /// </summary>
+        string BuildIndexedPalette(double can, double tran, int hival, RgbColorDto mau);
+
+        /// <summary>Số bit mỗi thành phần màu của ảnh; mặc định 8 khi dict không khai.</summary>
+        int ReadBitsPerComponent(string dictText);
+
+        /// <summary>
+        /// Ghi một thành phần màu ra chuỗi cho PDF: kẹp về 0..1 và dùng dấu chấm thập phân bất kể máy chủ đặt
+        /// vùng nào — dấu phẩy lọt vào mảng /Decode là hỏng cú pháp file.
+        /// </summary>
+        string FormatColorValue(double giaTri);
 
         /// <summary>
         /// Số thành phần màu của một ảnh theo /ColorSpace. Trả 0 khi không chắc (bảng màu /Indexed, hoặc

@@ -45,6 +45,8 @@
                     }
 
                     <div class="flex flex-row gap-2 mt-2" (click)="$event.stopPropagation()">
+                        <p-button label="Chọn thư mục" icon="pi pi-folder" size="small" severity="secondary" outlined
+                            [disabled]="dangKy()" (onClick)="inputThuMuc.click()" />
                         <p-button label="Chọn file" icon="pi pi-file" size="small" severity="secondary" outlined
                             [disabled]="dangKy()" (onClick)="inputFile.click()" />
                         <p-button label="Xoá danh sách" icon="pi pi-trash" size="small" severity="secondary" outlined
@@ -67,6 +69,7 @@
                 <div class="flex flex-row gap-2">
                     <p-select [options]="certs()" optionLabel="commonName" optionValue="thumbprint"
                         [ngModel]="thumbprint()" (ngModelChange)="onDoiChungThu($event)" [disabled]="dangKy()"
+                        (onShow)="onMoChungThuSo()"
                         styleClass="flex-1" placeholder="Chọn chứng thư số trên token" />
                     <p-button label="Xác thực" icon="pi pi-key" [disabled]="!thumbprint() || dangKy()"
                         [loading]="dangXacThuc()" (onClick)="onXacThucChungThu()" />

@@ -25,9 +25,12 @@ export interface IViewTemplate extends IViewRowTemplate {
   anhChuKyTuoiUrl?: string | null;
   hienThiChuKySo?: boolean;
   nhoiChuKySoVaoAnh?: boolean;
+  kyDe?: boolean;
   doDamDauDo?: number;
   doDamChuKyTuoi?: number;
   doDayNetChuKyTuoi?: number;
+  mauChuKySo?: string;
+  mauChuKyTuoi?: string | null;
   positions?: ITemplatePosition[];
 }
 
@@ -44,9 +47,12 @@ export interface IConfigTemplate {
   noiKy?: string | null;
   hienThiChuKySo: boolean;
   nhoiChuKySoVaoAnh: boolean;
+  kyDe: boolean;
   doDamDauDo: number;
   doDamChuKyTuoi: number;
   doDayNetChuKyTuoi: number;
+  mauChuKySo: string;
+  mauChuKyTuoi: string | null;
   anhDauDo?: File | null;
   anhChuKyTuoi?: File | null;
   xoaAnhDauDo?: boolean;

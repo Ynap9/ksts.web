@@ -30,11 +30,17 @@ namespace ksts.be.applications.Template.Dtos
 
         public bool NhoiChuKySoVaoAnh { get; set; }
 
+        public bool KyDe { get; set; }
+
         public int DoDamDauDo { get; set; }
 
         public int DoDamChuKyTuoi { get; set; }
 
         public int DoDayNetChuKyTuoi { get; set; }
+
+        public string MauChuKySo { get; set; } = string.Empty;
+
+        public string? MauChuKyTuoi { get; set; }
 
         public List<TemplatePositionDto> Positions { get; set; } = new();
     }

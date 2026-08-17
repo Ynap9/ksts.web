@@ -1,3 +1,5 @@
+using ksts.be.external.Colors.Dtos;
+using ksts.be.external.Colors.Interfaces;
 using ksts.be.external.Pdf.Dtos;
 using ksts.be.external.Pdf.Interfaces;
 using ksts.be.shared.Constants.Signing;
@@ -17,6 +19,7 @@ namespace ksts.be.external.Pdf.Implements
     public class PdfAppearanceBuilder : IPdfAppearanceBuilder
     {
         private readonly IPdfRevisionReader _revisionReader;
+        private readonly IHexColorReader _hexColorReader;
 
         /// <summary>
         /// Khoá quanh phần dùng PDFsharp. Nhiều file ký song song, mà PDFsharp giữ bộ nhớ đệm font dùng chung
@@ -25,9 +28,10 @@ namespace ksts.be.external.Pdf.Implements
         /// </summary>
         private static readonly object _khoaPdfSharp = new();
 
-        public PdfAppearanceBuilder(IPdfRevisionReader revisionReader)
+        public PdfAppearanceBuilder(IPdfRevisionReader revisionReader, IHexColorReader hexColorReader)
         {
             _revisionReader = revisionReader;
+            _hexColorReader = hexColorReader;
 
             // PDFsharp 6 không tự tìm font hệ thống; thiếu cờ này thì vẽ tên người ký ném lỗi thiếu font.
             // Cờ là biến toàn cục của thư viện, đặt lại nhiều lần vô hại.
@@ -36,20 +40,27 @@ namespace ksts.be.external.Pdf.Implements
 
         /// <inheritdoc/>
         public PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
-            double height)
+            double height, string mau)
         {
             // Tỉ lệ lấy theo CHIỀU CAO: hai dòng chữ xếp dọc nên chiều cao mới là chiều quyết định cỡ chữ;
             // lấy theo bề rộng thì ô rộng-thấp sẽ có chữ cao hơn cả hộp.
             var scale = height / SigningConstants.AppearanceHeight;
+            var mauChu = _hexColorReader.Read(mau);
 
             var tempPdf = Draw(width, height, (gfx, box) =>
             {
                 var font = new XFont(SigningConstants.AppearanceFontFamily,
                     SigningConstants.AppearanceFontSize * scale);
+                var but = new XSolidBrush(mauChu == null
+                    ? XColors.Black
+                    : XColor.FromArgb(
+                        (int)Math.Round(mauChu.Red * 255),
+                        (int)Math.Round(mauChu.Green * 255),
+                        (int)Math.Round(mauChu.Blue * 255)));
 
-                gfx.DrawString(dong1, font, XBrushes.Black,
+                gfx.DrawString(dong1, font, but,
                     new XRect(0, 0, box.Width, box.Height / 2), XStringFormats.Center);
-                gfx.DrawString(dong2, font, XBrushes.Black,
+                gfx.DrawString(dong2, font, but,
                     new XRect(0, box.Height / 2, box.Width, box.Height / 2), XStringFormats.Center);
             });
 
@@ -58,7 +69,7 @@ namespace ksts.be.external.Pdf.Implements
 
         /// <inheritdoc/>
         public PdfAppearanceDto BuildImage(byte[] anh, int doDamPhanTram, int doDayNetPhanTram,
-            int firstObjectNumber, double width, double height)
+            int firstObjectNumber, double width, double height, string? mau)
         {
             if (anh.Length == 0)
             {
@@ -81,7 +92,7 @@ namespace ksts.be.external.Pdf.Implements
             });
 
             var appearance = Transplant(tempPdf, firstObjectNumber, width, height);
-            ApDoDam(appearance, doDamPhanTram);
+            ApDoDamVaMau(appearance, doDamPhanTram, mau);
             return appearance;
         }
 
@@ -283,10 +294,13 @@ namespace ksts.be.external.Pdf.Implements
         }
 
         /// <inheritdoc/>
-        public void ApDoDam(PdfAppearanceDto appearance, int doDamPhanTram)
+        public void ApDoDamVaMau(PdfAppearanceDto appearance, int doDamPhanTram, string? mau)
         {
             var heSo = doDamPhanTram / 100d;
-            if (Math.Abs(heSo - 1d) < 0.001)
+            var mauMuc = _hexColorReader.Read(mau);
+
+            // Độ đậm bằng 100% và chưa chọn màu nghĩa là không phải sửa gì: ảnh giữ đúng từng byte bản gốc.
+            if (Math.Abs(heSo - 1d) < 0.001 && mauMuc == null)
             {
                 return;
             }
@@ -312,9 +326,6 @@ namespace ksts.be.external.Pdf.Implements
             var d0 = doSang * (1 - heSo) / 2;
             var d1 = d0 + doSang * heSo;
 
-            var can = d0.ToString("0.####", CultureInfo.InvariantCulture);
-            var tran = d1.ToString("0.####", CultureInfo.InvariantCulture);
-
             foreach (var obj in appearance.Objects)
             {
                 if (matNa.Contains(obj.Number)
@@ -331,12 +342,75 @@ namespace ksts.be.external.Pdf.Implements
                     continue;
                 }
 
-                var decode = "/Decode [" + string.Join(" ",
-                    Enumerable.Repeat($"{can} {tran}", soThanhPhan)) + "]";
+                var soBit = ReadBitsPerComponent(obj.DictText);
+
+                // Ảnh thang xám muốn ra MÀU thì phải đổi hẳn không gian màu sang bảng màu: /Decode một kênh
+                // chỉ ánh xạ được sắc xám. Bảng màu đã gánh cả độ đậm nên tuyệt đối không thêm /Decode nữa —
+                // với /Indexed thì /Decode đánh vào CHỈ SỐ ô màu, sai một cái là loạn màu cả ảnh.
+                if (soThanhPhan == 1 && mauMuc != null && soBit <= 8)
+                {
+                    var hival = (1 << soBit) - 1;
+                    obj.DictText = Regex.Replace(obj.DictText, @"/ColorSpace\s*/DeviceGray",
+                        "/ColorSpace " + BuildIndexedPalette(d0, d1, hival, mauMuc));
+                    continue;
+                }
+
+                var decode = BuildDecodeArray(d0, d1, soThanhPhan, mauMuc);
                 var dong = obj.DictText.LastIndexOf(">>", StringComparison.Ordinal);
                 obj.DictText = obj.DictText[..dong] + decode + obj.DictText[dong..];
             }
         }
+
+        /// <inheritdoc/>
+        public string BuildDecodeArray(double can, double tran, int soThanhPhan, RgbColorDto? mau)
+        {
+            // Ảnh CMYK: 0 là KHÔNG mực chứ không phải điểm tối, nhuộm theo cùng công thức sẽ ra ảnh âm bản.
+            // Nên ở đó chỉ giữ phần độ đậm, đúng như trước khi có tuỳ chọn màu.
+            var nhuom = mau != null && soThanhPhan == 3;
+            var kenh = new[] { mau?.Red ?? 0d, mau?.Green ?? 0d, mau?.Blue ?? 0d };
+            var moc = new List<string>();
+
+            for (var i = 0; i < soThanhPhan; i++)
+            {
+                // Điểm tối kéo về màu đã chọn, điểm sáng vẫn là trắng: c + (1 - c) * x. Chưa chọn màu thì
+                // c = 0 nên công thức rút gọn về đúng phần độ đậm, ảnh giữ nguyên sắc mực gốc.
+                var c = nhuom ? kenh[i] : 0d;
+                moc.Add(FormatColorValue(c + (1 - c) * can));
+                moc.Add(FormatColorValue(c + (1 - c) * tran));
+            }
+
+            return "/Decode [" + string.Join(" ", moc) + "]";
+        }
+
+        /// <inheritdoc/>
+        public string BuildIndexedPalette(double can, double tran, int hival, RgbColorDto mau)
+        {
+            var bang = new StringBuilder();
+            for (var i = 0; i <= hival; i++)
+            {
+                var xam = (double)i / hival;
+                var sauDoDam = Math.Clamp(can + xam * (tran - can), 0d, 1d);
+
+                foreach (var c in new[] { mau.Red, mau.Green, mau.Blue })
+                {
+                    var giaTri = Math.Clamp(c + (1 - c) * sauDoDam, 0d, 1d);
+                    bang.Append(((int)Math.Round(giaTri * 255)).ToString("X2", CultureInfo.InvariantCulture));
+                }
+            }
+
+            return $"[/Indexed /DeviceRGB {hival} <{bang}>]";
+        }
+
+        /// <inheritdoc/>
+        public int ReadBitsPerComponent(string dictText)
+        {
+            var match = Regex.Match(dictText, @"/BitsPerComponent\s+(\d+)");
+            return match.Success ? int.Parse(match.Groups[1].Value) : 8;
+        }
+
+        /// <inheritdoc/>
+        public string FormatColorValue(double giaTri) =>
+            Math.Clamp(giaTri, 0d, 1d).ToString("0.####", CultureInfo.InvariantCulture);
 
         /// <inheritdoc/>
         public int DemThanhPhanMau(string dictText)

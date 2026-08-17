@@ -76,7 +76,7 @@ export class User extends BaseComponent {
     }
 
     onOpenCreate() {
-        const ref = this._dialogService.open(Create, { header: 'Tạo tài khoản', closable: true, modal: true, styleClass: 'w-[700px]', focusOnShow: false });
+        const ref = this._dialogService.open(Create, { header: 'Tạo tài khoản', closable: true, modal: true, draggable: false, styleClass: 'w-[700px]', focusOnShow: false });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();
@@ -85,7 +85,7 @@ export class User extends BaseComponent {
     }
 
     onOpenUpdate(data: IViewRowUser) {
-        const ref = this._dialogService.open(Create, { header: 'Cập nhật tài khoản', closable: true, modal: true, styleClass: 'w-[700px]', focusOnShow: false, data });
+        const ref = this._dialogService.open(Create, { header: 'Cập nhật tài khoản', closable: true, modal: true, draggable: false, styleClass: 'w-[700px]', focusOnShow: false, data });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();

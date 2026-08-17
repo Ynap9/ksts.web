@@ -657,9 +657,23 @@ namespace ksts.be.infrastructure.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("KyDe")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LyDoKy")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("MauChuKySo")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)")
+                        .HasDefaultValue("#000000");
+
+                    b.Property<string>("MauChuKyTuoi")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
 
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(450)

@@ -41,6 +41,10 @@ namespace ksts.be.infrastructure.Persistence
                 entity.Property(x => x.DoDamChuKyTuoi).HasDefaultValue(TemplateConstants.DoDamMacDinh);
                 entity.Property(x => x.DoDayNetChuKyTuoi).HasDefaultValue(TemplateConstants.DoDayNetMacDinh);
 
+                // Khối chữ ký số vốn vẽ chữ đen nên cột này có mặc định; còn màu mực chữ ký tươi để TRỐNG
+                // nghĩa là chưa chọn, giữ nguyên mực ảnh gốc - đặt mặc định ở đó là mất hẳn trạng thái đó.
+                entity.Property(x => x.MauChuKySo).HasDefaultValue(TemplateConstants.MauMacDinh);
+
                 entity.HasMany(x => x.Positions)
                       .WithOne(x => x.Template!)
                       .HasForeignKey(x => x.TemplateId)

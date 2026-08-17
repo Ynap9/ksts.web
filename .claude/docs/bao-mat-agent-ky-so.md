@@ -1,7 +1,24 @@
 # Thiết kế bảo mật agent ký số
 
-> Kết quả nghiên cứu đã chốt hướng, **chưa thi công**. Nguồn: session nghiên cứu web ký số trên repo Sip
-> (2026-08). Đọc cùng [ky-so-web-vs-desktop.md](ky-so-web-vs-desktop.md).
+> **Loại tài liệu: NGHIÊN CỨU — tối ưu sau.** Nguồn: session nghiên cứu web ký số trên repo Sip (2026-08).
+> Đọc cùng [ky-so-web-vs-desktop.md](ky-so-web-vs-desktop.md) và [luong-ky-so-hang-loat.md](luong-ky-so-hang-loat.md).
+>
+> Bản chạy thật đi một đường **nhẹ hơn** thiết kế này: plugin nghe loopback, trang web làm người đưa thư, phiên
+> ký do chính người dùng mở bằng PIN. Bảng dưới nói rõ mảnh nào đã có, mảnh nào chưa.
+
+## Đã thi công tới đâu
+
+| Mục | Trạng thái |
+|---|---|
+| §4 PIN không vào process — middleware tự bật dialog | ✅ Đang chạy (`SigningSession` giữ handle khoá) |
+| §6 Phiên tự đóng sau 15 phút không dùng | ✅ `KySoConstants.PhutTuDongDongPhien` |
+| §7 Server tự dựng chain, không tin cờ client gửi | ✅ `ICertificateTrustValidator`, kiểm ở `lo-ky/{id}/mo-phien` |
+| §7 Không cache danh sách cert | ✅ Enumerate lại mỗi lần |
+| §2 Topology B (plugin gọi ra qua WSS) | ❌ Đang dùng A — xem mục §2 |
+| §3 Job ticket server ký + nonce | ❌ Chưa có |
+| §5 WYSIWYS (plugin tự tính digest, render trang) | ❌ Chưa có |
+| §6 Consent dialog native + rate limit | ❌ Chưa có |
+| §8 Pairing bằng one-time token, gỡ cài đặt báo server | ❌ Chưa có |
 
 ## 1. Threat model
 
@@ -21,16 +38,20 @@ ký số VN dừng ở đúng mức này.
 **Nguyên tắc gốc: agent không được là signing oracle.** API kiểu `POST /sign {hash} → signature` nghĩa là ai
 chạm được cũng ký được mọi thứ; hash là **mù**, agent không biết đang ký gì, người dùng càng không.
 
-## 2. Topology — chọn B
+## 2. Topology — đang dùng A, B để tối ưu sau
 
-**A — agent mở listener `127.0.0.1`** (cách phổ biến VN): kéo theo mixed content (`ws://` từ trang `https://`
-**bị chặn**, `http://127.0.0.1` thì không), Private Network Access của Chrome (đã đổi cơ chế vài lần, **phải
-test lại trên đúng bản đang dùng**), TLS localhost, xung đột port, và một bề mặt tấn công thường trực.
+**A — agent mở listener `127.0.0.1`** (cách phổ biến VN) ✅ **đang chạy**: plugin nghe
+`http://127.0.0.1:17739`, FE gọi thẳng. Kéo theo Private Network Access của Chrome (đã đổi cơ chế vài lần,
+**phải test lại trên đúng bản đang dùng**), xung đột port, và một bề mặt tấn công thường trực. Trang `https://`
+gọi `http://127.0.0.1` **không** dính mixed content (`ws://` thì có), nên chỗ này không vướng.
+
+Chọn A vì ít việc hơn hẳn và kịp cho bản chạy thật. Rủi ro T1 hiện chặn bằng **CORS + phiên do người dùng tự
+mở bằng PIN**, không phải bằng job ticket — `Origin` không phải hàng rào bảo mật, xem cảnh báo ở §1.
 
 > Tuyệt đối **không** ship cert Let's Encrypt thật cho `local.domain.vn → 127.0.0.1`: private key nằm trong
 > mọi bản cài = coi như công khai, vi phạm CA/B Forum và **sẽ bị thu hồi**.
 
-**B — agent chỉ gọi ra, không mở cổng nào** ✅ **khuyến nghị**
+**B — agent chỉ gọi ra, không mở cổng nào** 🔬 **nghiên cứu, tối ưu sau**
 
 ```
 Browser (FE) ──HTTPS──> Server <──WSS outbound── Agent ──> Token
@@ -41,7 +62,11 @@ FE **không bao giờ nói chuyện với agent**, chỉ poll trạng thái job 
 listener → không website nào gọi được), hết mixed content, hết PNA/CORS, hết TLS localhost, hết xung đột
 port, hết cảnh báo firewall. Giá phải trả: cần pairing UX + job queue ở server.
 
-## 3. Job ticket — server ký, agent xác minh
+Lợi ích nghiệp vụ quyết định việc có làm hay không: **đóng tab mà lô vẫn ký tiếp**. Đường đang chạy không làm
+được điều đó. Đổi sang B **không phải viết lại phần lõi** — `IHangDoiKy` và `PluginSigningKey` giữ nguyên, chỉ
+thay lớp vận chuyển.
+
+## 3. Job ticket — server ký, agent xác minh 🔬 chưa thi công
 
 Server có keypair riêng (không liên quan chứng thư người dùng); **public key ghim cứng vào agent lúc build**.
 
@@ -78,7 +103,7 @@ Hai cạm bẫy: **(a)** middleware có thể tự cache PIN theo cấu hình ri
 kiểm cấu hình middleware. **(b)** phân biệt **cache PIN** với **giữ key handle**: giữ handle một phiên là thứ
 khiến N file chỉ hỏi PIN một lần, đó **không phải** cache PIN.
 
-## 5. WYSIWYS — agent tự biết mình ký gì
+## 5. WYSIWYS — agent tự biết mình ký gì 🔬 chưa thi công
 
 Chống T3. Agent nhận luôn **PDF đã prepare** (có `/ByteRange` placeholder) rồi tự: tính digest hai dải
 `/ByteRange` từ bytes thật → so với `messageDigest` trong `SignedAttributes` (lệch là từ chối) → kiểm
@@ -134,9 +159,17 @@ crypto token + kết nối ra ngoài là chân dung malware sách giáo khoa v�
 
 ## 10. Còn phải chốt
 
-1. Topology **A hay B** (đang nghiêng hẳn về B).
-2. PIN **một lần/lô** hay một lần/file → quyết định có giữ key handle không.
-3. Agent nhận **cả PDF** (WYSIWYS, tốn băng thông) hay chỉ `SignedAttributes`.
+Ba câu hỏi đầu đã có lời giải khi thi công:
+
+1. ~~Topology **A hay B**~~ → **A**, xem §2. B để tối ưu sau, khi nghiệp vụ cần đóng tab mà lô vẫn chạy.
+2. ~~PIN một lần/lô hay một lần/file~~ → **một lần/lô**, giữ key handle suốt phiên (`ISigningSession`).
+3. ~~Agent nhận cả PDF hay chỉ `SignedAttributes`~~ → **chỉ `SignedAttributes`**. Nhẹ hơn hẳn, nhưng đổi lại
+   **bỏ WYSIWYS**: plugin không nhìn thấy nội dung nên không tự kiểm được digest. Lấy lại được nếu sau này gửi
+   kèm PDF đã prepare.
+
+Còn treo:
+
 4. Có nhắm **GPO/SCCM** không → cần MSI ngay từ đầu (NSIS không sinh MSI; cân nhắc WiX, nhớ kiểm license).
 5. **Có cần macOS/Linux không** — nếu có thì phải đi PKCS#11, và khi đó "middleware tự hiện PIN dialog"
    **không còn đúng**, buộc phải tự nhận PIN → mâu thuẫn trực tiếp với nguyên tắc §4.
+6. **Code signing (tối thiểu OV)** trước khi rollout thật — xem §8.

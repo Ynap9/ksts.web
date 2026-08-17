@@ -1,6 +1,7 @@
 ﻿
 import { ICertRow, IViewSignCert } from '@/app/models/plugin.models';
 import { ChungThuSoDaChonService } from '@/app/service/chung-thu-so-da-chon.service';
+import { NhacCaiPluginService } from '@/app/service/nhac-cai-plugin.service';
 import { PluginService } from '@/app/service/plugin.service';
 import { Breadcrumb } from '@/app/shared/components/breadcrumb/breadcrumb';
 import { BaseComponent } from '@/app/shared/components/base/base-component';
@@ -31,6 +32,7 @@ import { CaiPlugin } from './cai-plugin/cai-plugin';
 export class ChungThuSo extends BaseComponent {
     private _pluginService = inject(PluginService);
     private _chungThuSoDaChonService = inject(ChungThuSoDaChonService);
+    private _nhacCaiPluginService = inject(NhacCaiPluginService);
 
     breadcrumbHome: MenuItem = { icon: 'pi pi-home', routerLink: '/' };
     breadcrumbItems: MenuItem[] = [{ label: 'Chứng thư số' }];
@@ -110,11 +112,16 @@ export class ChungThuSo extends BaseComponent {
             });
     }
 
-    onOpenCaiPlugin() {
+    onOpenCaiPlugin(batBuoc = false) {
+        if (!batBuoc && this._nhacCaiPluginService.daTat()) {
+            return;
+        }
+
         const ref = this._dialogService.open(CaiPlugin, {
             header: 'Chưa có plugin ký số',
             closable: true,
             modal: true,
+            draggable: false,
             styleClass: 'w-[700px]',
             focusOnShow: false
         });

@@ -12,5 +12,7 @@ namespace ksts.be.applications.LoKy.Dtos
         public IReadOnlyList<X509Certificate2> ChuoiChungThu { get; set; } = Array.Empty<X509Certificate2>();
 
         public PdfPrepareOptionsDto TuyChonMau { get; set; } = new();
+
+        public bool KyDe { get; set; }
     }
 }

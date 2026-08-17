@@ -1,4 +1,16 @@
 <div class="card">
+    <!-- Nhuộm màu mực chữ ký tươi trên bản xem trước bằng đúng phép tuyến tính BE ghi vào /Decode. CSS filter
+         không có phép nào làm được việc này, còn feComponentTransfer thì ánh xạ được từng kênh màu. -->
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0">
+        <filter [attr.id]="mauFilterId" color-interpolation-filters="sRGB">
+            <feComponentTransfer>
+                <feFuncR type="linear" [attr.slope]="heSoNhuom()[0].doDoc" [attr.intercept]="heSoNhuom()[0].chan" />
+                <feFuncG type="linear" [attr.slope]="heSoNhuom()[1].doDoc" [attr.intercept]="heSoNhuom()[1].chan" />
+                <feFuncB type="linear" [attr.slope]="heSoNhuom()[2].doDoc" [attr.intercept]="heSoNhuom()[2].chan" />
+            </feComponentTransfer>
+        </filter>
+    </svg>
+
     <app-breadcrumb [home]="breadcrumbHome" [items]="breadcrumbItems" />
     <div class="font-semibold text-xl uppercase mb-4">{{ template().tenTemplate || 'Cấu hình template' }}</div>
 
@@ -38,9 +50,10 @@
                         <div
                             class="w-full cursor-grab rounded-sm border border-slate-300 bg-white px-3 py-2 text-center text-xs leading-5 active:cursor-grabbing"
                             draggable="true"
+                            [style.color]="mauChuKySo()"
                             (dragstart)="onBatDauKeoKhoiMoi(kind.ChuKy, $event)">
                             <div class="font-medium">{{ chungThuSo()?.commonName || template().tenChungThu || 'Tên chứng thư số' }}</div>
-                            <div class="text-slate-500">Thời gian ký</div>
+                            <div>Thời gian ký</div>
                         </div>
                     }
 
@@ -103,6 +116,42 @@
                         </label>
                     </div>
 
+                    <div class="flex items-start gap-3">
+                        <p-checkbox inputId="kyDe" [binary]="true" [disabled]="!fileCoChuKy()"
+                            [ngModel]="kyDe()" (ngModelChange)="kyDe.set($event)" />
+                        <label for="kyDe" class="text-sm leading-5" [class.cursor-pointer]="fileCoChuKy()"
+                            [class.text-slate-400]="!fileCoChuKy()">
+                            Cho phép ký đè lên file đã có chữ ký
+                            @if (fileCoChuKy()) {
+                                <span class="block text-slate-500">File đang xem đã có chữ ký. Bỏ chọn thì lô ký sẽ đánh trượt mọi file đã ký thay vì ký thêm; chữ ký cũ luôn được giữ nguyên.</span>
+                            } @else {
+                                <span class="block text-slate-400">Mở một file đã có chữ ký để bật tuỳ chọn này.</span>
+                            }
+                        </label>
+                    </div>
+
+                    @if (hienThiChuKySo()) {
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                            <label for="mauChuKySo" class="font-medium">Màu chữ ký số</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-500">{{ mauChuKySo() }}</span>
+                                <p-colorpicker inputId="mauChuKySo" format="hex"
+                                    [ngModel]="mauChuKySo()" (ngModelChange)="mauChuKySo.set($event)" />
+                            </div>
+                        </div>
+                    }
+
+                    @if (anhChuKyTuoiUrl()) {
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                            <label for="mauChuKyTuoi" class="font-medium">Màu mực chữ ký tươi</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-500">{{ pickerInkColor() }}</span>
+                                <p-colorpicker inputId="mauChuKyTuoi" format="hex"
+                                    [ngModel]="pickerInkColor()" (ngModelChange)="mauChuKyTuoi.set($event)" />
+                            </div>
+                        </div>
+                    }
+
                     @if (anhDauDoUrl()) {
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center justify-between text-sm">
@@ -149,53 +198,90 @@
 
         <div class="xl:col-span-8">
             <div class="rounded-lg border border-slate-200 p-5">
-                <div class="mb-1 font-semibold">File mẫu</div>
+                <div class="mb-1 font-semibold">File xem trước</div>
                 <div class="mb-4 text-sm text-slate-500">Kéo thân khối để di chuyển, kéo ô vuông góc dưới-phải để đổi cỡ.</div>
 
-                <div
-                    #pdfLop
-                    class="relative mx-auto inline-block select-none border border-slate-300 shadow-sm"
-                    (dragover)="$event.preventDefault()"
-                    (drop)="onThaKhoiMoi($event)"
-                    (mousemove)="onKeo($event)"
-                    (mouseup)="onKetThucKeo()"
-                    (mouseleave)="onKetThucKeo()">
-                    <canvas #pdfCanvas class="block bg-white"></canvas>
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <input #inputFilePdf type="file" class="hidden" accept=".pdf" (change)="onChonFilePdf($event)" />
+                    <input #inputThuMucPdf type="file" class="hidden" webkitdirectory multiple (change)="onChonThuMucPdf($event)" />
 
-                    @for (khoi of khoisXemTruoc(); track $index) {
-                        <div
-                            class="group absolute cursor-move"
-                            [style.left.%]="khoi.xRatio * 100"
-                            [style.top.%]="khoi.yRatio * 100"
-                            [style.width.%]="khoi.widthRatio * 100"
-                            [style.height.%]="khoi.heightRatio * 100"
-                            (mousedown)="onBatDauDiChuyen($event, $index)">
-                            @if (khoi.anhUrl) {
-                                <img [src]="khoi.anhUrl" [alt]="khoi.label" [style.filter]="khoi.boLoc"
-                                    class="pointer-events-none h-full w-full object-contain" />
-                            } @else {
-                                <div
-                                    class="pointer-events-none flex h-full w-full flex-col justify-center text-center leading-tight"
-                                    [style.font-size.px]="coChuKhoi(khoi)">
-                                    <div>{{ chungThuSo()?.commonName || template().tenChungThu || 'Tên chứng thư số' }}</div>
-                                    <div>{{ template().createdDate | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
-                                </div>
-                            }
+                    <input pInputText class="min-w-0 flex-1" [value]="duongDan()" readonly
+                        placeholder="File mẫu mặc định của hệ thống" />
 
-                            <span class="pointer-events-none absolute inset-0 border border-dashed border-transparent group-hover:border-blue-500"></span>
+                    <p-button label="Chọn file" icon="pi pi-file" size="small" severity="secondary" [outlined]="true"
+                        (onClick)="inputFilePdf.click()" />
+                    <p-button label="Chọn thư mục" icon="pi pi-folder-open" size="small" severity="secondary" [outlined]="true"
+                        (onClick)="inputThuMucPdf.click()" />
 
-                            <span
-                                class="absolute -right-2 -top-2 hidden h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-red-500 text-[10px] text-white group-hover:flex"
-                                (mousedown)="$event.stopPropagation()"
-                                (click)="onXoaKhoi($index)">×</span>
-
-                            @if (khoi.choPhepResize) {
-                                <span
-                                    class="absolute -bottom-1 -right-1 hidden h-3 w-3 cursor-nwse-resize rounded-sm bg-blue-500 group-hover:block"
-                                    (mousedown)="onBatDauResize($event, $index)"></span>
-                            }
+                    @if (filesXemTruoc().length > 1) {
+                        <div class="flex items-center gap-2">
+                            <p-button icon="pi pi-chevron-left" size="small" severity="secondary" [outlined]="true"
+                                [disabled]="!coFileTruoc()" (onClick)="onFileTruoc()" />
+                            <span class="text-sm text-slate-500">{{ fileIndex() + 1 }} / {{ filesXemTruoc().length }}</span>
+                            <p-button icon="pi pi-chevron-right" size="small" severity="secondary" [outlined]="true"
+                                [disabled]="!coFileSau()" (onClick)="onFileSau()" />
                         </div>
                     }
+                </div>
+
+                <div #khungCuon class="max-h-[75vh] overflow-auto rounded-md bg-slate-100 p-3" style="scrollbar-gutter: stable"
+                    (dragover)="onKeoQua($event)"
+                    (mousemove)="onKeoTrongKhung($event)"
+                    (mouseup)="onKetThucKeo()"
+                    (mouseleave)="onKetThucKeo()">
+                    <div #pdfKhung class="flex flex-col items-center gap-4">
+                        @for (trang of trangs(); track trang.khoa) {
+                            <div
+                                #lopTrang
+                                class="relative select-none border border-slate-300 shadow-sm"
+                                (dragover)="onKeoQua($event)"
+                                (drop)="onThaKhoiMoi($event, trang.soTrang, lopTrang)">
+                                <canvas #pdfCanvas class="block bg-white"></canvas>
+
+                                @for (khoi of khoisXemTruoc(); track $index) {
+                                    @if (khoi.pageNumber === trang.soTrang) {
+                                        <div
+                                            class="group absolute cursor-move"
+                                            [style.left.%]="khoi.xRatio * 100"
+                                            [style.top.%]="khoi.yRatio * 100"
+                                            [style.width.%]="khoi.widthRatio * 100"
+                                            [style.height.%]="khoi.heightRatio * 100"
+                                            (mousedown)="onBatDauDiChuyen($event, $index, lopTrang)">
+                                            @if (khoi.anhUrl) {
+                                                <img [src]="khoi.anhUrl" [alt]="khoi.label" [style.filter]="khoi.boLoc"
+                                                    class="pointer-events-none h-full w-full object-contain" />
+                                            } @else {
+                                                <div
+                                                    class="pointer-events-none flex h-full w-full flex-col justify-center text-center leading-tight"
+                                                    [style.font-size.px]="coChuKhoi(khoi)"
+                                                    [style.color]="mauChuKySo()">
+                                                    <div>{{ chungThuSo()?.commonName || template().tenChungThu || 'Tên chứng thư số' }}</div>
+                                                    <div>{{ template().createdDate | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
+                                                </div>
+                                            }
+
+                                            <span class="pointer-events-none absolute inset-0 border border-dashed border-transparent group-hover:border-blue-500"></span>
+
+                                            <span
+                                                class="absolute -right-2 -top-2 hidden h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-red-500 text-[10px] text-white group-hover:flex"
+                                                (mousedown)="$event.stopPropagation()"
+                                                (click)="onXoaKhoi($index)">×</span>
+
+                                            @if (khoi.choPhepResize) {
+                                                <span
+                                                    class="absolute -bottom-1 -right-1 hidden h-3 w-3 cursor-nwse-resize rounded-sm bg-blue-500 group-hover:block"
+                                                    (mousedown)="onBatDauResize($event, $index, lopTrang)"></span>
+                                            }
+                                        </div>
+                                    }
+                                }
+
+                                <span class="absolute right-2 top-2 rounded-sm bg-slate-900/60 px-2 py-0.5 text-xs text-white">
+                                    Trang {{ trang.soTrang }}/{{ trangs().length }}
+                                </span>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>

@@ -47,12 +47,20 @@ Thiết kế bảo mật đầy đủ: [bao-mat-agent-ky-so.md](bao-mat-agent-ky
 
 ## Trạng thái hiện tại của phần cert
 
-**Agent chưa làm.** Để phần "lấy / chọn chứng thư số" chạy và test được ngay, `ICertificateProvider` hiện đọc
-cert store của **máy đang chạy API** — đúng như SIP. Trên máy dev (BE + trình duyệt cùng máy) nó hoạt động
-bình thường; deploy lên server thật thì nó đọc cert của server, **không phải của người dùng**.
+**Plugin đã làm** (`ksts.plugin/`) và là nguồn ký mặc định: FE gọi plugin liệt kê chứng thư, mở phiên ký, rồi
+làm người đưa thư mang `SignedAttributes` xuống và chữ ký thô lên. Xem
+[luong-ky-so-hang-loat.md](luong-ky-so-hang-loat.md).
 
-Interface nằm riêng ở `ksts.be.external` chính là để đổi nguồn: thêm một implement đọc từ payload agent gửi
-lên, đăng ký DI khác đi, **không phải sửa service lẫn controller**.
+Seam đổi nguồn nằm ở `ISigningKey` phía BE, chọn bằng cấu hình `Signing:Nguon`:
+
+| Giá trị | Implement | Dùng khi |
+|---|---|---|
+| bỏ trống (mặc định) | `PluginSigningKey` | Khoá nằm ở token máy người dùng — đường chạy thật |
+| `store` | `StoreSigningKey` | API và token **cùng một máy Windows** — chỉ tiện cho máy dev |
+
+`ICertificateProvider` của BE (`api/core/chung-thu-so`) vẫn đọc cert store của **máy chạy API**. Nó chỉ còn
+dùng cho màn cấu hình template trên máy dev; màn ký số lấy danh sách chứng thư **từ plugin**, không qua đường
+này. Deploy lên server thật thì đường này đọc cert của server, không phải của người dùng.
 
 `ICertificateTrustValidator` được tách riêng ngay từ bây giờ vì một lý do bảo mật, không phải cho gọn: khi
 cert đến từ agent, **server bắt buộc phải tự dựng chain** về Root G1/G2 đã ghim và **không được tin cờ
@@ -64,5 +72,6 @@ cert đến từ agent, **server bắt buộc phải tự dựng chain** về Ro
 - `Cert/*.crt` (rootca, cp, rootcag2, cpg2, dcscag2) — đã có sẵn trong `ksts.be.api/Cert`.
 - Nhận diện cert nằm trên token qua tên CSP/KSP (`HardwareKeyProviderMarkers`).
 - Toạ độ theo **tỉ lệ 0..1** thay vì point — vốn sinh ra để một lựa chọn áp được cho nhiều khổ giấy.
-- Về sau: `PdfIncrementalSigner`, `TimestampClient`, `SignatureVerifier`, `PdfFormatInspector` đều giữ
-  nguyên phía server. Chỉ `StoreSigningKey.Sign(hash)` và `CertificateProvider` là phải chuyển sang agent.
+- `TimestampClient` và phần dựng bản ký nối đã bê sang, giữ nguyên phía server (`external/Tsa`,
+  `external/Pdf`). Đúng như dự đoán, chỉ `StoreSigningKey.Sign(hash)` và `CertificateProvider` là hai mảnh
+  phải chuyển sang máy người dùng — nay là `PluginSigningKey` + `ICertificateProvider` của `ksts.plugin`.

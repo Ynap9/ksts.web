@@ -7,10 +7,10 @@
 ```
 ksts.be.api             Controllers + Program.cs (composition root) + BaseController + Cert/*.crt
 ksts.be.applications    BaseService, MappingProfile, {Feature}/{Interfaces,Implements,Dtos}
-ksts.be.domain          Entity thuần: AppUser, Template, TemplatePosition
+ksts.be.domain          Entity thuần: AppUser, Template, TemplatePosition, LoKy, LoKyFile
 ksts.be.infrastructure  KstsDbContext, Migrations, Seeder
-ksts.be.shared          ApiResponse, ErrorCodes/Messages, Constants, Settings, Templates/sample
-ksts.be.external        Dịch vụ bên thứ ba / dùng chung: S3, đọc PDF, đo ảnh, cert, tính vị trí
+ksts.be.shared          ApiResponse, ErrorCodes/Messages, Constants, Settings, Templates/{sample,html}
+ksts.be.external        Dịch vụ bên thứ ba / dùng chung: S3, PDF, ký số, TSA, Excel, Gotenberg, QR…
 ```
 
 Chiều phụ thuộc:
@@ -44,5 +44,8 @@ external → shared          ← TỰ CHỨA: sở hữu cả interface lẫn DT
 - Service dùng `KstsDbContext` trực tiếp, **không có repository layer**.
 - Mọi REST trả **HTTP 200**, trạng thái thật nằm trong `ApiResponse.Status` (`1` = ok, `0` = lỗi).
 - Lỗi nghiệp vụ ⇒ `throw new UserFriendlyException(ErrorCodes.X, "…")`, controller bắt bằng `OkException(ex)`.
-- Giờ giấc: dùng `BaseService.GetVietnamTime()`, **không** `DateTime.Now`.
-- Comment và XML `<summary>` viết **tiếng Việt** — nghiệp vụ là tiếng Việt.
+- Giờ giấc: service dùng `BaseService.GetVietnamTime()`; lớp chạy nền ngoài scope dùng
+  `DateTimeConstants.VietnamNow`. **Không bao giờ** `DateTime.Now`.
+- Comment và XML `<summary>` viết **tiếng Anh**, ngắn, chỉ ở đầu class/method public. Tên method **ưu tiên
+  tiếng Anh**; câu cho người dùng và tài liệu `.claude/` vẫn tiếng Việt. Xem
+  [08-conventions.md](08-conventions.md).

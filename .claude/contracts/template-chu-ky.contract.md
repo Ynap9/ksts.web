@@ -44,6 +44,12 @@ Phần cấu hình ký của màn chi tiết, chạy trên template **đã tạo
 | `noiKy` | string | — |
 | `hienThiChuKySo` | bool | — (mặc định `true`) |
 | `nhoiChuKySoVaoAnh` | bool | — |
+| `kyDe` | bool | — (mặc định `false`) |
+| `mauChuKySo` | string `#RRGGBB` | — (mặc định `#000000`) |
+| `mauChuKyTuoi` | string `#RRGGBB`, **rỗng = chưa chọn** | — (mặc định rỗng) |
+| `doDamDauDo` | int, 40–250 | — (mặc định 140) |
+| `doDamChuKyTuoi` | int, 40–250 | — (mặc định 140) |
+| `doDayNetChuKyTuoi` | int, 0–200 | — (mặc định 100) |
 | `anhDauDo` | file (.png/.jpg/.jpeg, ≤ 5 MB) | — |
 | `anhChuKyTuoi` | file | — |
 | `positions[i].kind` … | xem dưới | — |
@@ -62,6 +68,20 @@ Mỗi phần tử `positions` gửi dạng `positions[0].kind`, `positions[0].pa
 | Không gửi file, cờ xoá = `true` | Bỏ ảnh |
 
 Cần cờ xoá riêng vì `multipart` không phân biệt được "không gửi trường" với "gửi null" như JSON.
+
+### Ba cờ và hai màu
+
+`kyDe` là **chốt cửa lúc ký**, không phải hình thức: tắt thì lô ký đánh trượt mọi file nguồn **đã có chữ ký**
+(mã `1148`), bật thì ký thêm bình thường và chữ ký cũ vẫn giữ nguyên. FE chỉ mở ô này khi file đang xem trước
+thật sự có chữ ký.
+
+Màu ghi dạng `#RRGGBB`. `mauChuKySo` mặc định `#000000` là **chữ đen thật**. `mauChuKyTuoi` nhuộm **ảnh chữ ký
+tươi** và **gửi rỗng nghĩa là chưa chọn ⇒ giữ nguyên mực ảnh gốc**; gửi `#000000` là nhuộm đen thật, không còn
+là cờ giữ nguyên như bản trước. Giá trị sai khuôn bị BE lùi về "chưa chọn" (`mauChuKySo` lùi về `#000000`) chứ
+không đánh trượt cả lần lưu. Ảnh dấu đỏ không có tuỳ chọn màu.
+
+FE lấy giá trị khởi đầu của bảng màu bằng **màu mực trích từ chính ảnh chữ ký tươi**, không phải đen: hiện đen
+cho một chữ ký mực xanh là nói dối, và người dùng chọn đen sẽ tưởng vừa đổi màu trong khi không đổi gì.
 
 ### PUT `cau-hinh` ghi đè toàn bộ
 
@@ -83,6 +103,12 @@ Cần cờ xoá riêng vì `multipart` không phân biệt được "không gử
   "anhChuKyTuoiUrl": null,
   "hienThiChuKySo": true,
   "nhoiChuKySoVaoAnh": false,
+  "kyDe": false,
+  "mauChuKySo": "#000000",
+  "mauChuKyTuoi": null,
+  "doDamDauDo": 140,
+  "doDamChuKyTuoi": 140,
+  "doDayNetChuKyTuoi": 100,
   "createdBy": "Nguyễn Văn A",
   "createdDate": "2026-08-10T14:30:00",
   "modifiedDate": null,

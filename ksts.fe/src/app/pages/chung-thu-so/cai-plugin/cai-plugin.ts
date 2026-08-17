@@ -1,5 +1,6 @@
 
 import { IViewBoCaiPlugin } from '@/app/models/plugin.models';
+import { NhacCaiPluginService } from '@/app/service/nhac-cai-plugin.service';
 import { PluginService } from '@/app/service/plugin.service';
 import { BaseComponent } from '@/app/shared/components/base/base-component';
 import { SharedImports } from '@/app/shared/import.shared';
@@ -15,6 +16,7 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 export class CaiPlugin extends BaseComponent {
     private _ref = inject(DynamicDialogRef);
     private _pluginService = inject(PluginService);
+    private _nhacCaiPluginService = inject(NhacCaiPluginService);
 
     boCai = signal<IViewBoCaiPlugin>({});
 
@@ -56,5 +58,10 @@ export class CaiPlugin extends BaseComponent {
 
     onRetry() {
         this._ref?.close(true);
+    }
+
+    onKhongNhacLai() {
+        this._nhacCaiPluginService.tat();
+        this._ref?.close(false);
     }
 }

@@ -3,7 +3,7 @@
         Máy của bạn chưa cài plugin ký số, hoặc plugin đang không chạy.
     </p-message>
 
-    <div>
+    <div class="rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800 p-4">
         Bộ cài là một file <span class="font-semibold">KstsPlugin.exe</span> duy nhất. Tải về rồi bấm đúp vào
         nó: nó tự cài <span class="font-semibold">trình đọc token bit4id</span> nếu máy chưa có, rồi cài
         plugin và chạy nền. Xong quay lại màn hình này và bấm Kiểm tra lại.
@@ -20,8 +20,13 @@
         </p-message>
     }
 
-    <div class="flex flex-row justify-end gap-2">
-        <p-button label="Kiểm tra lại" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="onRetry()" />
-        <p-button label="Tải bộ cài" icon="pi pi-download" [loading]="loading()" [disabled]="!boCai().exists" (onClick)="onDownload()" />
+    <div class="flex flex-col gap-3 border-t border-surface-200 dark:border-surface-700 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p-button label="Đã đọc thông báo, không nhắc lại" icon="pi pi-bell-slash" severity="warn"
+            size="small" [text]="true" styleClass="px-0 font-medium" (onClick)="onKhongNhacLai()" />
+
+        <div class="flex flex-row justify-end gap-2">
+            <p-button label="Kiểm tra lại" icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="onRetry()" />
+            <p-button label="Tải bộ cài" icon="pi pi-download" [loading]="loading()" [disabled]="!boCai().exists" (onClick)="onDownload()" />
+        </div>
     </div>
 </div>

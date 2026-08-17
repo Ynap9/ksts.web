@@ -66,6 +66,12 @@ namespace ksts.be.shared.Constants.Signing
         // coi là cùng một ô và chữ ký mới ĐÈ CHẾT chữ ký cũ. Ghép thêm số hiệu object là chắc chắn không trùng.
         public const string SignatureFieldNamePrefix = "KSTS_Signature_";
 
+        // Dấu hiệu nhận ra file ĐÃ có chữ ký, dùng để chặn ký lại khi template không bật cờ ký đè.
+        // Bắt /ByteRange chứ không bắt /FT /Sig: ô chữ ký để trống cũng có /FT /Sig nhưng chưa ai ký, còn
+        // /ByteRange chỉ xuất hiện trong dictionary chữ ký đã điền. Kèm /Type /Sig vì khoá /Type là TUỲ CHỌN
+        // với dictionary chữ ký, file của bộ ký khác có thể lược đi.
+        public const string SignatureValueMarker = @"/ByteRange\s*\[|/Type\s*/Sig\b";
+
         // ===== Hình thức chữ ký hiển thị =====
         // Số đo TRÍCH TỪ FILE THẬT, không phải tự chọn cho đẹp.
         // Khối 170x30pt; 2 dòng chữ: dòng 1 = CN người ký, dòng 2 = giờ ký ISO 8601.

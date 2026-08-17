@@ -1,45 +1,59 @@
 # Plan — FE màn ký số hàng loạt
 
-Nền: [../../docs/luong-ky-so-hang-loat.md](../../docs/luong-ky-so-hang-loat.md).
-API: [../../be/plans/ky-so-lo-va-job.plan.md](../../be/plans/ky-so-lo-va-job.plan.md).
+> **Trạng thái: ✅ đã thi công** (`pages/ky-so`, cập nhật 2026-08-14). Hợp đồng:
+> [../../contracts/lo-ky.contract.md](../../contracts/lo-ky.contract.md) +
+> [../../contracts/plugin-ky-so.contract.md](../../contracts/plugin-ky-so.contract.md).
+> Nền: [../../docs/luong-ky-so-hang-loat.md](../../docs/luong-ky-so-hang-loat.md).
 
-## Input
+## Vai của FE — NGƯỜI ĐƯA THƯ
 
-- Thư mục PDF trên máy người dùng.
-- Danh sách template (DB) và danh sách chứng thư số (plugin).
+Đây là thay đổi lớn nhất so với bản plan đầu. Trang web **không chỉ** xem tiến độ: nó là đường duy nhất nối
+máy chủ với token, chạy một vòng lặp suốt lô.
 
-## Steps
+```
+vongDuaThu(loKyId):
+    GET  lo-ky/{id}/cho-ky          <- lời gọi bị GIỮ tới khi có việc, tối đa 25s
+    POST plugin ky-so/ky            <- token ký, không hỏi PIN lại
+    POST lo-ky/{id}/chu-ky
+    lặp cho tới khi lô hoàn tất
+```
 
-1. **Scaffold** — `ng generate component pages/ky-so` + `ky-so.routes.ts`, thêm vào `app.routes.ts` và menu.
-   Không tạo tay từng file.
-2. **Models / Service** — `giay-ky.models.ts`, `lo-ky.service.ts` gọi 5 endpoint của `api/core/lo-ky`.
-3. **Chọn nguồn** — ô kéo thả nhận **cả thư mục** (`webkitdirectory`), lọc `.pdf`, hiện số file đã nhận.
-   Tạo lô rỗng rồi đẩy file **theo từng đợt** (~50 file/đợt); đợt hỏng thì gửi lại đúng đợt đó.
-4. **Chọn template** — `p-select` lấy từ API template; hiện kiểu hiển thị (A/B) để người dùng biết trước.
-5. **Chọn chứng thư** — gọi plugin liệt kê (**không** hỏi PIN). Chưa cài plugin ⇒ popup tải bộ cài.
-6. **Bảng file** — cột STT · tên file · tình trạng (`Chờ` / `Đang ký` / `Xong` / `Lỗi` + lý do).
-   Scroll **trong bảng**, không scroll trang.
-7. **Tiến độ** — thanh process theo `đã xong / tổng`, poll `lo-ky/{id}/trang-thai` theo nhịp cố định.
-8. **Nút** — Bắt đầu · Huỷ · Tải zip (chỉ mở khi lô đã xong).
-9. **Mở lại màn** — còn lô đang chạy thì tự nạp lại tiến độ, **không** bắt tạo lô mới.
+⚠️ **Đóng tab là lô dừng.** Phải nói rõ trên màn hình. File đã ký giữ nguyên; bấm Bắt đầu lại chạy tiếp từ file
+dở.
 
-## Output mong muốn
+## Đã làm
 
-- Chọn thư mục → chọn template → chọn cert → Bắt đầu → bảng chạy dần, thanh tiến độ tăng.
-- **Đóng tab rồi mở lại vẫn thấy đúng tiến độ** (lô chạy nền ở server + plugin).
-- Rút token giữa chừng ⇒ màn báo dừng, nêu rõ số file đã ký; bấm Bắt đầu lại thì chạy tiếp phần còn lại.
-- File lỗi hiện lý do đọc được, ký lại được riêng phần lỗi.
-- `ng build` sạch.
+1. **Scaffold** — `pages/ky-so` + `ky-so.routes.ts`, `lo-ky.service.ts`, `plugin.service.ts`.
+2. **Chọn nguồn** — hai đường: kéo thả **cả thư mục** (`webkitdirectory`, lọc `.pdf`, đẩy ~50 file/đợt), hoặc
+   **dán đường dẫn thư mục trên kho** (`them-tu-kho`) — đường này không tải lên byte nào và là đường dùng thật
+   cho giấy báo vừa dựng.
+3. **Chọn template** — lấy từ API template.
+4. **Chọn chứng thư** — gọi **plugin** liệt kê (không hỏi PIN). Chưa cài plugin ⇒ popup tải bộ cài qua BE.
+5. **Xác thực chứng thư** — nút riêng, gọi `kiem-tra-token` (hộp PIN bật).
+6. **Bảng file** — nạp một lần bằng `danh-sach-file`, rồi vá dần bằng `filesVuaXong` / `filesLoi` của tiến độ.
+   Cột STT · tên file · tình trạng · thời gian ký · dấu thời gian.
+7. **Tiến độ** — hỏi `lo-ky/{id}/trang-thai` theo nhịp, **tách khỏi** vòng đưa thư.
+8. **Nút** — Bắt đầu · Huỷ · Tải zip (điều hướng thẳng `window.location` kèm `taiToken`).
+9. **Mở lại màn** — `lo-ky/dang-chay` nạp lại tiến độ, không bắt tạo lô mới.
 
 ## Điểm cần chú ý
 
-- Theo khuôn sakai: breadcrumb **trong** page, tiêu đề ngay dưới, tất cả bọc trong một `<div class="card">`.
-- **FE không nói chuyện với plugin trong lúc ký.** Topology B: plugin tự nhận việc từ server. FE chỉ gọi
-  plugin đúng một chỗ là **liệt kê chứng thư**, và chỉ để hiển thị.
-- Bước liệt kê chứng thư **không bao giờ** hỏi PIN — PIN chỉ bật khi plugin mở phiên ký.
+- **Vòng đưa thư và vòng hỏi tiến độ là hai vòng riêng.** Gộp làm một thì mỗi nhịp tiến độ lại chặn một lượt
+  ký, hoặc ngược lại.
+- `cho-ky` **không đặt timeout ngắn** và gọi lại **ngay** khi nó trả về — đừng chờ thêm giữa hai lượt: token ký
+  tuần tự nên mọi khoảng chờ nhân thẳng với số file.
 - Không đặt timeout cho lời gọi cần người dùng thao tác (nhập PIN).
-- Upload vài GB: hiện tiến độ upload riêng, tách khỏi tiến độ ký — hai việc khác nhau, gộp một thanh là
-  người dùng hiểu nhầm. Đợt hỏng thì thử lại đúng đợt, **không** bắt chọn lại cả thư mục.
-- Chỉ mở nút Bắt đầu khi đã đẩy xong toàn bộ đợt.
-- Poll trạng thái phải **nhẹ**: chỉ xin số đếm + danh sách file đổi trạng thái, không tải lại cả 5000 dòng.
 - Danh sách chứng thư **không cache** — token có thể vừa cắm hoặc vừa rút.
+- Poll tiến độ phải **nhẹ**: BE chỉ trả file lỗi + tối đa 100 file vừa xong, không bao giờ cả 5000 dòng.
+- Tải zip **phải điều hướng thẳng**, không `HttpClient` + blob: lô vài GB vào bộ nhớ trang là hết bộ nhớ.
+- Upload chia đợt: đợt hỏng thì thử lại **đúng đợt đó**, không bắt chọn lại cả thư mục. Tiến độ upload hiện
+  riêng, tách khỏi tiến độ ký.
+- Theo khuôn sakai: breadcrumb **trong** page, tiêu đề ngay dưới, bọc trong một `<div class="card">`.
+
+## Còn treo
+
+- **Nối lại vòng đưa thư** khi mở lại màn giữa lô: hiện thấy tiến độ nhưng không ai mang chữ ký đi, các lượt
+  ký hết hạn sau 120 giây và file tính lỗi. Vướng ở chỗ nối lại thì phải hỏi PIN lần nữa — cần quyết định giao
+  diện trước.
+- **Người dùng nhập PIN hai lần** một lô (xác thực chứng thư, rồi mở phiên ký). Bỏ bước xác thực thì lỗi cert
+  sai hiện muộn hơn, sau khi đã tải file lên. Chưa quyết.

@@ -102,6 +102,24 @@ namespace ksts.be.shared.Constants.Template
         /// </summary>
         public const int DoDayNetSoHuong = 8;
 
+        // ===== Màu chữ ký =====
+        /// <summary>
+        /// Màu mặc định của KHỐI CHỮ KÝ SỐ, dạng "#RRGGBB". Ở đó đen là màu thật: khối chữ ký số vẽ chữ đen
+        /// khi người dùng chưa chọn màu nào khác.
+        ///
+        /// Mực chữ ký tươi thì KHÔNG dùng hằng số này làm mặc định: MauChuKyTuoi để TRỐNG mang nghĩa "chưa
+        /// chọn màu, giữ nguyên mực của ảnh gốc". Trước đây đen gánh luôn nghĩa đó, hệ quả là bảng màu trên
+        /// màn cấu hình luôn hiện đen dù mực ảnh màu xanh, và chọn đen thì không nhuộm được thành đen. Nay
+        /// FE trích màu mực thật từ chính ảnh để hiện lên bảng màu, còn đen là một màu chọn được như mọi màu.
+        /// </summary>
+        public const string MauMacDinh = "#000000";
+
+        /// <summary>
+        /// Khuôn màu chấp nhận: đúng sáu chữ số hex có dấu # ở đầu. Chỉ nhận đúng một dạng vì chuỗi này đi
+        /// thẳng vào phép dựng /Decode và bảng màu của PDF, nơi một giá trị lạ làm hỏng màu cả ảnh.
+        /// </summary>
+        public const string MauPattern = "^#[0-9A-Fa-f]{6}$";
+
         // ===== File PDF mẫu =====
         /// <summary>
         /// Đường dẫn file PDF mẫu đi kèm bản build, để người dùng đặt thử vị trí khi chưa có hồ sơ thật.

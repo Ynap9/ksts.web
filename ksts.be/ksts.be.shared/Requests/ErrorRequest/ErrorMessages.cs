@@ -42,6 +42,7 @@ namespace ksts.be.shared.Requests.ErrorRequest
             { ErrorCodes.PdfLocked, "File PDF bị khoá không cho ký thêm" },
             { ErrorCodes.SignatureTooLarge, "Khối chữ ký vượt quá chỗ trống đã chừa trong file" },
             { ErrorCodes.AppearanceBuildFailed, "Không dựng được khối chữ ký hiển thị" },
+            { ErrorCodes.PdfAlreadySigned, "File đã có chữ ký số, template chưa bật cho phép ký đè" },
 
             { ErrorCodes.LoKyNotFound, "Không tìm thấy lô ký" },
             { ErrorCodes.LoKyAccessDenied, "Không có quyền truy cập lô ký này" },

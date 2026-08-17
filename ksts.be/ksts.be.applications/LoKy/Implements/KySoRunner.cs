@@ -25,6 +25,7 @@ namespace ksts.be.applications.LoKy.Implements
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPdfPreparer _pdfPreparer;
         private readonly IPdfContentWriter _pdfContentWriter;
+        private readonly IPdfSignatureInspector _pdfSignatureInspector;
         private readonly ICmsAssembler _cmsAssembler;
         private readonly ISigningKey _signingKey;
         private readonly ITimestampClient _timestampClient;
@@ -41,6 +42,7 @@ namespace ksts.be.applications.LoKy.Implements
             IServiceScopeFactory scopeFactory,
             IPdfPreparer pdfPreparer,
             IPdfContentWriter pdfContentWriter,
+            IPdfSignatureInspector pdfSignatureInspector,
             ICmsAssembler cmsAssembler,
             ISigningKey signingKey,
             ITimestampClient timestampClient,
@@ -51,6 +53,7 @@ namespace ksts.be.applications.LoKy.Implements
             _scopeFactory = scopeFactory;
             _pdfPreparer = pdfPreparer;
             _pdfContentWriter = pdfContentWriter;
+            _pdfSignatureInspector = pdfSignatureInspector;
             _cmsAssembler = cmsAssembler;
             _signingKey = signingKey;
             _timestampClient = timestampClient;
@@ -150,6 +153,7 @@ namespace ksts.be.applications.LoKy.Implements
                 Cert = cert,
                 ChuoiChungThu = _signingKey.LayChuoiChungThu(cert),
                 TuyChonMau = DungTuyChon(template, tenNguoiKy, anhChuKyTuoi),
+                KyDe = template.KyDe,
             };
         }
 
@@ -222,6 +226,14 @@ namespace ksts.be.applications.LoKy.Implements
             {
                 var pdf = await _loKyFileStorage.TaiAsync(file.ObjectKeyNguon, cancellationToken);
                 msTai = dongHo.ElapsedMilliseconds;
+
+                // Chốt cửa trước khi dựng bản ký: file đã có chữ ký chỉ được ký thêm khi template bật cờ ký
+                // đè. Đánh trượt RIÊNG file này để người dùng thấy đúng file nào bị chặn, cả lô vẫn chạy tiếp.
+                if (!phien.KyDe && _pdfSignatureInspector.HasSignature(pdf))
+                {
+                    throw new UserFriendlyException(ErrorCodes.PdfAlreadySigned,
+                        "File đã có chữ ký số. Bật \"Cho phép ký đè\" ở template nếu vẫn muốn ký thêm.");
+                }
 
                 var signedAt = DateTimeConstants.VietnamNow;
                 var prepared = _pdfPreparer.Prepare(pdf, NhanBanTuyChon(phien.TuyChonMau, signedAt));
@@ -330,6 +342,8 @@ namespace ksts.be.applications.LoKy.Implements
                 AnhChuKyTuoi = anhChuKyTuoi,
                 DoDamChuKyTuoi = template.DoDamChuKyTuoi,
                 DoDayNetChuKyTuoi = template.DoDayNetChuKyTuoi,
+                MauChuKySo = template.MauChuKySo,
+                MauChuKyTuoi = template.MauChuKyTuoi,
                 ViTri = template.Positions.Select(p => new PdfPlacementDto
                 {
                     Kind = p.Kind,
@@ -356,6 +370,8 @@ namespace ksts.be.applications.LoKy.Implements
                 AnhChuKyTuoi = mau.AnhChuKyTuoi,
                 DoDamChuKyTuoi = mau.DoDamChuKyTuoi,
                 DoDayNetChuKyTuoi = mau.DoDayNetChuKyTuoi,
+                MauChuKySo = mau.MauChuKySo,
+                MauChuKyTuoi = mau.MauChuKyTuoi,
                 ViTri = mau.ViTri,
             };
         }

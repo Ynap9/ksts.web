@@ -47,11 +47,19 @@ namespace ksts.be.domain.Template
 
         public bool NhoiChuKySoVaoAnh { get; set; }
 
+        public bool KyDe { get; set; }
+
         public int DoDamDauDo { get; set; } = TemplateConstants.DoDamMacDinh;
 
         public int DoDamChuKyTuoi { get; set; } = TemplateConstants.DoDamMacDinh;
 
         public int DoDayNetChuKyTuoi { get; set; } = TemplateConstants.DoDayNetMacDinh;
+
+        [MaxLength(7)]
+        public string MauChuKySo { get; set; } = TemplateConstants.MauMacDinh;
+
+        [MaxLength(7)]
+        public string? MauChuKyTuoi { get; set; }
 
         public List<TemplatePosition> Positions { get; set; } = new();
 

@@ -75,7 +75,7 @@ export class Template extends BaseComponent {
     }
 
     onOpenCreate() {
-        const ref = this._dialogService.open(Create, { header: 'Tạo template', closable: true, modal: true, styleClass: 'w-[700px]', focusOnShow: false });
+        const ref = this._dialogService.open(Create, { header: 'Tạo template', closable: true, modal: true, draggable: false, styleClass: 'w-[700px]', focusOnShow: false });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();
@@ -84,7 +84,7 @@ export class Template extends BaseComponent {
     }
 
     onOpenUpdate(data: IViewRowTemplate) {
-        const ref = this._dialogService.open(Create, { header: 'Cập nhật template', closable: true, modal: true, styleClass: 'w-[700px]', focusOnShow: false, data });
+        const ref = this._dialogService.open(Create, { header: 'Cập nhật template', closable: true, modal: true, draggable: false, styleClass: 'w-[700px]', focusOnShow: false, data });
         ref?.onClose.subscribe((result) => {
             if (result) {
                 this.getData();

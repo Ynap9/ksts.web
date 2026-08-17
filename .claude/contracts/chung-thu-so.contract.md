@@ -2,9 +2,12 @@
 
 Gốc: `api/core/chung-thu-so`. Yêu cầu Bearer token. Xem luật chung ở [README.md](README.md).
 
-> ⚠️ **Giới hạn giai đoạn này:** nguồn chứng thư là cert store của **máy chạy API**, không phải máy người dùng.
-> Trên máy dev (BE và trình duyệt cùng máy) chạy đúng; lên server thật thì đọc cert của server. Agent phía
-> client chưa làm — xem `.claude/docs/ky-so-web-vs-desktop.md`.
+> ⚠️ **Đây KHÔNG phải đường mà màn ký số dùng.** Nguồn chứng thư ở đây là cert store của **máy chạy API**;
+> trên máy dev (BE và trình duyệt cùng máy) chạy đúng, lên server thật thì đọc cert của server.
+>
+> Màn ký số lấy danh sách chứng thư **từ plugin ở máy người dùng** —
+> [plugin-ky-so.contract.md](plugin-ky-so.contract.md). Giữ đường này vì nó vẫn tiện cho cấu hình template
+> trên máy dev và là seam đối chứng khi `Signing:Nguon = store`.
 
 ## Routes
 

@@ -417,10 +417,11 @@ namespace ksts.be.external.Pdf.Implements
 
                 var appearance = veKhoiChu
                     ? _appearanceBuilder.BuildText(options.TenNguoiKy, signedAtText, plan.NextObjectNumber,
-                        rect.Width, rect.Height)
+                        rect.Width, rect.Height, options.MauChuKySo)
                     : anh != null
                         ? _appearanceBuilder.BuildImage(anh, options.DoDamChuKyTuoi,
-                            options.DoDayNetChuKyTuoi, plan.NextObjectNumber, rect.Width, rect.Height)
+                            options.DoDayNetChuKyTuoi, plan.NextObjectNumber, rect.Width, rect.Height,
+                            options.MauChuKyTuoi)
                         : _appearanceBuilder.Transplant(
                             _appearanceBuilder.Draw(rect.Width, rect.Height, (_, _) => { }),
                             plan.NextObjectNumber, rect.Width, rect.Height);

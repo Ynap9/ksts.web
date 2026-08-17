@@ -5,8 +5,10 @@ Hợp đồng API do BE công bố, FE cài đặt theo. **BE là nguồn chân 
 | File | Nội dung |
 |---|---|
 | [template-chu-ky.contract.md](template-chu-ky.contract.md) | CRUD template cấu hình chữ ký + vị trí gợi ý |
-| [chung-thu-so.contract.md](chung-thu-so.contract.md) | Lấy và chọn chứng thư số |
-| [plugin-ky-so.contract.md](plugin-ky-so.contract.md) | Plugin ở máy người dùng: dò đã cài chưa + đọc chứng thư thật |
+| [chung-thu-so.contract.md](chung-thu-so.contract.md) | Lấy và chọn chứng thư số **từ máy chạy API** |
+| [plugin-ky-so.contract.md](plugin-ky-so.contract.md) | Plugin ở máy người dùng: dò đã cài, đọc chứng thư thật, ký hộ |
+| [lo-ky.contract.md](lo-ky.contract.md) | **Ký số hàng loạt** — lô, vòng đưa thư, tiến độ, tải zip |
+| [giay-bao.contract.md](giay-bao.contract.md) | Dựng giấy báo trúng tuyển hàng loạt từ Excel |
 
 ## Luật chung
 
@@ -25,7 +27,14 @@ Hợp đồng API do BE công bố, FE cài đặt theo. **BE là nguồn chân 
 - Toạ độ luôn là **tỉ lệ 0..1** so với khổ trang, gốc **trên-trái**, **Y hướng xuống**.
 - Mọi endpoint yêu cầu **Bearer token**.
 
-## Ngoại lệ duy nhất không bọc envelope
+## Ngoại lệ không bọc envelope
 
-`GET api/core/template-chu-ky/file-mau/noi-dung` trả bytes PDF thô — trình xem PDF cần nội dung, không cần
-envelope.
+| Route | Trả về | Vì sao |
+|---|---|---|
+| `GET template-chu-ky/file-mau/noi-dung` | bytes PDF | Trình xem PDF cần nội dung, không cần envelope |
+| `GET core/plugin/bo-cai/noi-dung` | bytes exe | Bộ cài plugin |
+| `GET lo-ky/{id}/zip?token=…` | bytes zip | Vài GB, trình duyệt tải thẳng xuống đĩa |
+| `GET giay-bao/tao-zip/{jobId}/tai-ve?token=…` | bytes zip | Như trên |
+
+Hai đường zip cũng là **hai đường duy nhất không đòi Bearer**: trình duyệt điều hướng tới đó thì không gắn
+được header `Authorization`, nên chặn bằng token phát riêng cho lô. Sai token ⇒ **404 trơn**, không nêu lý do.

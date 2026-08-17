@@ -20,3 +20,5 @@ export const CERT_SIGNABLE_LABEL = 'Ký được';
 export const CERT_NOT_SIGNABLE_LABEL = 'Không ký được';
 
 export const PLUGIN_PROBE_TIMEOUT_MS = 2000;
+
+export const PLUGIN_KHONG_NHAC_LAI_KEY = 'kstsKhongNhacCaiPlugin';

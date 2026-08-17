@@ -1,7 +1,20 @@
-# Lưu trữ ảnh trên MinIO
+# Lưu trữ trên MinIO
 
-Ảnh dấu đỏ và chữ ký tươi của template được đẩy lên **MinIO** (S3-compatible); DB chỉ lưu **URL công khai** và
-**object key**.
+Kho object (S3-compatible) là **chỗ duy nhất** hệ thống giữ file: ảnh template, giấy báo dựng ra, bản nguồn của
+lô ký và bản đã ký. DB chỉ lưu **URL công khai** và **object key**.
+
+## Bản đồ tiền tố
+
+| Tiền tố | Nội dung | Ai ghi |
+|---|---|---|
+| `AnhDauVaChuKyTuoi/{templateId}/` | Ảnh dấu đỏ, ảnh chữ ký tươi của template | `TemplateService` |
+| `GiayBaoTrungTuyen/{khoá}/GiayBaoTrungTuyen/` | Giấy báo **chưa ký**, tên file là số CCCD | `GiayBaoService` |
+| `GiayBaoTrungTuyen/{khoá}/GiayBaoTrungTuyenDaKySo/` | Giấy báo **đã ký**, cùng tên file với bản gốc | `KySoRunner` |
+| `lo-ky/{loKyId}/nguon/` | Bản nguồn của lô nhận file **tải lên**; dọn khi lô chạy trọn | `LoKyService` |
+
+Khoá tuyển sinh (`GiayBaoConstants.Khoa`, đang là `K71`) tách theo năm nên giấy báo các khoá không lẫn nhau và
+dọn theo năm chỉ là xoá một tiền tố. Lô ký lấy file bằng `them-tu-kho` thì **không chép gì** vào `lo-ky/` — nó
+trỏ thẳng vào object đang có, nên `lo-ky/` chỉ dùng cho đường tải lên từ máy người dùng.
 
 ## Vì sao không lưu đường dẫn ổ đĩa như SIPPACK
 
@@ -13,9 +26,9 @@ instance nhìn thấy chung.
 
 ```jsonc
 "S3": {
-  "S3_URL":        "https://api.minio.yna.io.vn",
+  "S3_URL":        "https://s3-2.huce.edu.vn:9000",   // kho thật của trường
   "S3_REGION":     "us-east-1",
-  "S3_BUCKET":     "ksts",
+  "S3_BUCKET":     "ehuce",
   "S3_ACCESS_KEY": "…",
   "S3_SECRET_KEY": "…"
 },

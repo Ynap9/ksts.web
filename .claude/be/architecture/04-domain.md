@@ -9,6 +9,8 @@
 | `AppUser` | Identity | Kế thừa `IdentityUser` |
 | `Template` | `Template` | Bộ cấu hình chữ ký dựng sẵn của một người dùng |
 | `TemplatePosition` | `TemplatePosition` | Toạ độ một khối, thuộc về một `Template` |
+| `LoKy` | `LoKy` | Một lô ký số hàng loạt |
+| `LoKyFile` | `LoKyFile` | Một file trong lô, kèm trạng thái ký |
 
 ## Template
 
@@ -49,6 +51,38 @@ toạ độ tuyệt đối sẽ tràn ở trang nhỏ và teo ở trang lớn.
 
 `Kind` là `TemplatePositionKind` — **đánh số tường minh, cấm chèn/đảo** (xem
 [03-dtos-mapping.md](03-dtos-mapping.md)).
+
+## LoKy / LoKyFile
+
+```csharp
+public class LoKy : ISoftDeleted
+{
+    public int Id { get; set; }
+    public string IdUser { get; set; }        // chủ lô, lấy từ token
+    public int TemplateId { get; set; }
+    public string? Thumbprint { get; set; }   // chứng thư dùng cho lô này
+    public string TaiToken { get; set; }      // bí mật chặn đường tải zip, phát ngay lúc tạo lô
+    public TrangThaiLoKy TrangThai { get; set; }   // MoiTao | DangKy | Xong | Huy | Loi
+    public int TongSo { get; set; }
+    public int DaXong { get; set; }
+    public int SoLoi { get; set; }
+    public string? LoiChung { get; set; }     // sự cố làm dừng CẢ lô, khác lỗi từng file
+    public DateTime? ThoiDiemBatDau { get; set; }
+    public DateTime? ThoiDiemXong { get; set; }
+    public string? TienToKho { get; set; }    // nơi bản ký nằm trên kho, để FE chỉ đường
+    public List<LoKyFile> Files { get; set; }
+}
+```
+
+`LoKyFile` giữ `ThuTu`, `TenFile`, `ObjectKeyNguon`, `ObjectKeyDaKy`, `TrangThai` (`Cho`/`DangKy`/`Xong`/
+`Loi`), `LyDoLoi`, `ThoiGianKy`, `DauThoiGian`.
+
+**Ba bộ đếm `TongSo`/`DaXong`/`SoLoi` nằm trên `LoKy`** thay vì đếm lại bảng file mỗi lần hỏi: 8 luồng cùng
+đếm sẽ ghi đè kết quả của nhau, và đếm lại là hai lần quét bảng cho mỗi file. Cộng dồn bằng một câu
+`ExecuteUpdateAsync`.
+
+`ObjectKeyNguon` có thể trỏ vào **thư mục dùng chung trên kho** (lô lấy từ `them-tu-kho`) chứ không nhất thiết
+nằm trong `lo-ky/{id}/nguon/` — đó là lý do dọn file nguồn phải chịu được trường hợp không có gì để dọn.
 
 ## Soft delete & audit
 
