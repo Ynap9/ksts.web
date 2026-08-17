@@ -38,8 +38,9 @@ import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 
 // pdf.js giải mã PDF trong worker riêng; không trỏ workerSrc thì thư viện tự chặn với lỗi
-// "No GlobalWorkerOptions.workerSrc specified". File worker được angular.json copy ra gốc thư mục build.
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.mjs', document.baseURI).toString();
+// "No GlobalWorkerOptions.workerSrc specified". File worker do scripts/copy-pdf-worker.mjs chép sang public/
+// dưới đuôi .js - KHÔNG dùng .mjs của pdfjs-dist, xem bẫy MIME ở fe/architecture/04-man-hinh-dac-thu.md.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.js', document.baseURI).toString();
 
 interface IKhoi extends ITemplatePosition {
     label: string;

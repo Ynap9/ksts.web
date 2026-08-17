@@ -1,6 +1,9 @@
 /dist
 /tmp
 /out-tsc
+
+# Bản sao worker pdf.js do scripts/copy-pdf-worker.mjs sinh ra trước mỗi lần build
+/public/pdf.worker.min.js
 /bazel-out
 /.angular/cache
 *.tsbuildinfo

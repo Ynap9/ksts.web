@@ -19,6 +19,10 @@ Còn phải mắt thấy: nhuộm ảnh chữ ký tươi **thang xám** (đườ
 chiếu bản xem trước FE với bản in ra, và **màu trích ra có đúng không** — cả lúc vừa chọn ảnh (blob cùng gốc)
 lẫn lúc mở lại template (ảnh từ kho object; kho thiếu tiêu đề CORS thì canvas bị nhiễm và bảng màu lùi về đen).
 
+Sửa kèm: **worker pdf.js phát dưới đuôi `.js`** thay cho `.mjs` — trên prod host không map `.mjs` nên trả
+`application/octet-stream` và ô xem trước PDF trắng trơn. Phải **build lại và deploy lại FE** thì màn cấu hình
+template mới xem được PDF; chi tiết ở [fe/architecture/04-man-hinh-dac-thu.md](fe/architecture/04-man-hinh-dac-thu.md).
+
 ## Việc kế tiếp
 
 **Chạy thử một lô thật trên prod với token cắm ở máy người dùng.** Toàn bộ đường ký đã chạy được từ đầu tới

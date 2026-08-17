@@ -2,9 +2,8 @@
 
 > **Phần 4/5** · trước: [03-components-state.md](03-components-state.md) · mục lục: [README.md](README.md)
 >
-> Đây là hai chỗ FE không còn là "màn CRUD gọi API". Luồng nghiệp vụ ở
-> [../plans/ky-so-man-hinh.plan.md](../plans/ky-so-man-hinh.plan.md) và
-> [../../docs/luong-ky-so-hang-loat.md](../../docs/luong-ky-so-hang-loat.md).
+> Hai chỗ FE không còn là "màn CRUD gọi API". Luồng nghiệp vụ:
+> [../plans/ky-so-man-hinh.plan.md](../plans/ky-so-man-hinh.plan.md) · [../../docs/luong-ky-so-hang-loat.md](../../docs/luong-ky-so-hang-loat.md).
 
 ## Màn ký số (`pages/ky-so`) — trang web là NGƯỜI ĐƯA THƯ
 
@@ -19,9 +18,8 @@ async vongDuaThu(loKyId) {        // vòng 1: mang chữ ký, KHÔNG nghỉ gi�
     }
 }
 
-hoiTienDo() {                     // vòng 2: setTimeout tự hẹn lại mỗi NHIP_HOI_TIEN_DO = 2000ms
-    …  if (!tienDo.hoanTat && tienDo.dangChay) setTimeout(() => this.hoiTienDo(), NHIP_HOI_TIEN_DO);
-}
+// vòng 2: setTimeout tự hẹn lại mỗi NHIP_HOI_TIEN_DO = 2000ms
+hoiTienDo() { … if (!tienDo.hoanTat && tienDo.dangChay) setTimeout(() => this.hoiTienDo(), NHIP_HOI_TIEN_DO); }
 ```
 
 ⚠️ **Gộp hai vòng là hỏng cả hai**: mỗi nhịp tiến độ sẽ chặn một lượt ký, hoặc ngược lại. Và vòng đưa thư
@@ -43,10 +41,9 @@ tài nguyên rồi chết giữa lô. BE cũng chỉ trả file lỗi + tối đ
 
 ### Rời màn là dừng lô
 
-`_destroyRef.onDestroy(() => this.dungLoKhiRoiMan())`: đóng phiên plugin **và** gọi `huy` lô.
-
-Bỏ mặc thì lô mồ côi vẫn mang trạng thái `DangKy` — lần sau nó hiện lại như đang chạy, trong khi mọi lượt ký chỉ
-đang đợi hết hạn 120 giây để tính lỗi. File đã ký vẫn hợp lệ; bấm Bắt đầu lại thì chạy tiếp từ file dở.
+`_destroyRef.onDestroy(() => this.dungLoKhiRoiMan())`: đóng phiên plugin **và** gọi `huy` lô. Bỏ mặc thì lô mồ
+côi vẫn mang trạng thái `DangKy` — lần sau hiện lại như đang chạy, trong khi mọi lượt ký chỉ đợi hết hạn 120
+giây để tính lỗi. File đã ký vẫn hợp lệ; bấm Bắt đầu lại thì chạy tiếp từ file dở.
 
 ### Nạp file — hai đường
 
@@ -58,8 +55,8 @@ Bỏ mặc thì lô mồ côi vẫn mang trạng thái `DangKy` — lần sau n�
 ### Chứng thư và plugin
 
 Danh sách chứng thư **không cache**, gọi lại mỗi lần mở màn (token có thể vừa cắm hoặc vừa rút). Gọi hỏng ⇒ mở
-popup `CaiPlugin`, trừ khi người dùng đã tắt nhắc (`NhacCaiPluginService`); bấm thẳng vào ô chứng thư thì
-**luôn** hiện popup (`batBuoc = true`).
+popup `CaiPlugin` trừ khi người dùng đã tắt nhắc (`NhacCaiPluginService`); bấm thẳng vào ô chứng thư thì **luôn**
+hiện popup (`batBuoc = true`).
 
 ⚠️ Người dùng đang nhập PIN **hai lần** một lô: một lần ở `kiem-tra-token` (nút Xác thực), một lần ở
 `ky-so/mo-phien`. Đã biết, chưa quyết bỏ bước nào — xem [../../dang-lam.md](../../dang-lam.md).
@@ -69,11 +66,14 @@ popup `CaiPlugin`, trừ khi người dùng đã tắt nhắc (`NhacCaiPluginSer
 Bản xem trước PDF dựng bằng **pdf.js** (`pdfjs-dist`), người dùng kéo thả khối lên trang.
 
 ```ts
-pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.mjs', document.baseURI).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.js', document.baseURI).toString();
 ```
 
-⚠️ Thiếu dòng đó thư viện tự chặn với `No GlobalWorkerOptions.workerSrc specified`. File worker do
-`angular.json` copy ra gốc thư mục build — đổi cách đóng gói thì phải kiểm lại đường dẫn này.
+⚠️ Thiếu dòng đó thư viện tự chặn với `No GlobalWorkerOptions.workerSrc specified`. **Phải là đuôi `.js`**:
+pdfjs-dist chỉ phát worker `.mjs`, máy chủ không map đuôi đó trả `application/octet-stream` ⇒ trình duyệt từ
+chối module script, ô xem trước trắng trơn với `Setting up fake worker failed` — **đã sập trên prod**, trong khi
+chunk `.js` của Angular vẫn tải bình thường. Nay `scripts/copy-pdf-worker.mjs` chép worker sang `public/` dưới
+đuôi `.js` ở `prebuild`; **đừng chỉ thêm MIME `.mjs` cho nginx** — deploy có thể đứng sau máy chủ khác.
 
 - **Bộ đếm `lanMo`** tăng mỗi lần mở tài liệu và ghép vào khoá từng trang: đổi file là canvas dựng lại kể cả khi
   trùng số trang, và vòng vẽ bất đồng bộ tự bỏ dở khi `lanMo` đã đổi — không thì trang file cũ đè lên file mới.
@@ -91,9 +91,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.min.mjs', document.bas
   trỏ đi đâu cũng quy về đúng trang đó. Con trỏ vào vùng `CUON_VUNG_MEP_PX` thì một vòng `requestAnimationFrame`
   cuộn tiếp **cả khi chuột đứng yên**, và mỗi nhịp phải **tính lại khối** vì trang đang trượt dưới con trỏ.
 - **Màu**: khối chữ ký số đổi bằng `[style.color]`; ảnh chữ ký tươi nhuộm bằng bộ lọc SVG
-  `feComponentTransfer type="linear"` — chuỗi filter đúng thứ tự BE áp: **đậm nhạt → nhuộm → nong nét**. Bảng
-  màu mực **khởi đầu bằng màu trích từ chính ảnh** (`InkColorService` đọc pixel qua canvas) chứ không phải đen;
-  chưa chọn thì không nhuộm gì, chọn đen là nhuộm đen thật, và quầng nong nét cũng lấy màu đó.
+  `feComponentTransfer type="linear"` — chuỗi filter đúng thứ tự BE áp: **đậm nhạt → nhuộm → nong nét**. Bảng màu
+  mực **khởi đầu bằng màu trích từ chính ảnh** (`InkColorService`) chứ không phải đen; chưa chọn thì không nhuộm
+  gì, chọn đen là nhuộm đen thật, quầng nong nét cũng lấy màu đó.
 - **Ô "ký đè" chỉ bật khi file xem trước có chữ ký thật** (`pdfDoc.getSignatures()`); ô chữ ký trống không tính.
 - **Lưu là PUT ghi đè toàn bộ**: luôn gửi trạng thái đầy đủ đang hiển thị, kể cả `positions` — vá từng phần sẽ
   để sót khối người dùng vừa xoá.
