@@ -15,10 +15,13 @@ namespace ksts.be.shared.Constants.LoKy
         /// <summary>Đã chạy hết lô. Vẫn có thể còn file lỗi.</summary>
         Xong = 2,
 
-        /// <summary>Người dùng dừng giữa chừng. File đã ký xong vẫn giữ nguyên và vẫn hợp lệ.</summary>
+        /// <summary>Cancelled for good: signed files stay on the store, but the batch never resumes.</summary>
         Huy = 3,
 
         /// <summary>Lô dừng vì sự cố chung (rút token, mất kết nối), không phải lỗi của một file cụ thể.</summary>
         Loi = 4,
+
+        /// <summary>Paused: files left mid-signing go back to Cho so the next start resumes where it stopped.</summary>
+        TamDung = 5,
     }
 }

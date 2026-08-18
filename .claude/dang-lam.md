@@ -1,9 +1,24 @@
 # Đang làm dở — đọc file này đầu phiên
 
-> Cập nhật 2026-08-17. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
+> Cập nhật 2026-08-18. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
 > và `be/architecture/`, đừng chép lại vào đây.
 
-## Vừa xong (2026-08-17 → 18), chưa chạy thử trên máy thật
+## Vừa xong (2026-08-18): tách Tạm dừng khỏi Huỷ, ký tiếp được từ file kế tiếp
+
+BE ✅ + FE ✅, **chưa chạy thử trên máy thật**. Plan:
+[be/plans/dung-va-huy-lo-ky.plan.md](be/plans/dung-va-huy-lo-ky.plan.md) ·
+[fe/plans/dung-va-huy-lo-ky.plan.md](fe/plans/dung-va-huy-lo-ky.plan.md). Không cần migration.
+
+- **Tạm dừng** (`lo-ky/{id}/dung`, trạng thái `TamDung`): file đang ký dở về `Cho`, giữ bản nguồn, vẫn tải zip
+  được, hiện lại ở `dang-chay`. Bấm **Ký tiếp** là chạy tiếp từ file kế tiếp, không upload lại.
+- **Huỷ** (`Huy`): bản đã ký giữ nguyên trên kho, nhưng lô không ký tiếp và không hiện lại; bản nguồn được dọn.
+- Rời màn hình nay là **tạm dừng**, không còn là huỷ.
+
+Bẫy sửa kèm, đáng nhớ: hạn 120 giây của một lượt ký dựng bằng **linked token** với token của lô, nên lô bị dừng
+cũng ném `TimeoutException` ⇒ file đang chờ chữ ký bị ghi **Lỗi** thay vì trả về `Cho`. Nghĩa là nhánh "trả file
+về hàng đợi" **chưa từng chạy**. Chi tiết ở [docs/luong-ky-so-hang-loat.md](docs/luong-ky-so-hang-loat.md).
+
+## Trước đó (2026-08-17 → 18), chưa chạy thử trên máy thật
 
 Ba tuỳ chọn mới của template — migration `ThemKyDeVaMauChuKy` và `MauChuKyTuoiChoPhepTrong` **đã sinh, chưa
 `database update`**:
@@ -44,6 +59,7 @@ Ba việc đi kèm, làm ngay trong lần chạy thử đó:
 |---|---|
 | Bất cứ thứ gì thuộc luồng ký | [docs/luong-ky-so-hang-loat.md](docs/luong-ky-so-hang-loat.md) |
 | Sửa API lô ký / màn ký số | [contracts/lo-ky.contract.md](contracts/lo-ky.contract.md) |
+| Tách Dừng khỏi Huỷ, làm đường ký tiếp | [be/plans/dung-va-huy-lo-ky.plan.md](be/plans/dung-va-huy-lo-ky.plan.md) · [fe/plans/](fe/plans/dung-va-huy-lo-ky.plan.md) |
 | Sửa plugin | [contracts/plugin-ky-so.contract.md](contracts/plugin-ky-so.contract.md) · [plugin/plans/](plugin/plans/) |
 | Sửa luồng dựng giấy báo | [docs/dung-giay-bao-tuyen-sinh.md](docs/dung-giay-bao-tuyen-sinh.md) |
 | Sửa bất cứ màn hình FE nào | [fe/architecture/](fe/architecture/README.md) |
@@ -53,11 +69,11 @@ Ba việc đi kèm, làm ngay trong lần chạy thử đó:
 ## Hai giới hạn đã biết, phải nói với người dùng
 
 ⚠️ **Đóng tab là lô dừng.** Trang web là người đưa thư giữa máy chủ và token. File đã ký giữ nguyên và vẫn hợp
-lệ; bấm Bắt đầu lại thì chạy tiếp từ file dở.
+lệ.
 
 ⚠️ **Mở lại màn hình giữa lô thì chưa nối lại được vòng đưa thư** — thấy đúng tiến độ nhưng không ai mang chữ
-ký đi, các lượt ký hết hạn sau 120 giây và file tính lỗi. Chưa làm nút nối lại vì phải hỏi PIN lần nữa; cần
-quyết định giao diện trước.
+ký đi. Nay có đường đi vòng: bấm **Ký tiếp** để chạy tiếp từ file kế tiếp (hỏi PIN lại một lần), thay vì phải
+lập lô mới và ký lại từ đầu.
 
 ## Việc treo, chưa tới lượt
 

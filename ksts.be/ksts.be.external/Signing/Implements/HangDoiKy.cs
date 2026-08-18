@@ -76,8 +76,19 @@ namespace ksts.be.external.Signing.Implements
             using var quaHan = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             quaHan.CancelAfter(TimeSpan.FromSeconds(SigningQueueConstants.GiaySongCuaYeuCau));
 
-            await using (quaHan.Token.Register(() => cho.TrySetException(
-                new TimeoutException("Không nhận được chữ ký từ máy người dùng."))))
+            // Phân biệt HAI lý do cùng làm token này bật: lô bị dừng, và lượt ký quá hạn. Token của lô là
+            // token cha nên cả hai đều đi qua đây; gộp chúng lại thành TimeoutException là file đang chờ chữ
+            // ký bị ghi LỖI thay vì được trả về hàng đợi, và đúng ngần ấy file không bao giờ ký tiếp được.
+            await using (quaHan.Token.Register(() =>
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    cho.TrySetCanceled(cancellationToken);
+                    return;
+                }
+
+                cho.TrySetException(new TimeoutException("Không nhận được chữ ký từ máy người dùng."));
+            }))
             {
                 try
                 {

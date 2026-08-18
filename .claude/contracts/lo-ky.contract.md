@@ -20,8 +20,9 @@ Trang web là **người đưa thư** giữa máy chủ và token: nó vừa g�
 | POST | `lo-ky/{id}/dong-phien` | — | `true` |
 | GET | `lo-ky/{id}/danh-sach-file` | — | `ViewFileKy[]` |
 | GET | `lo-ky/{id}/trang-thai` | — | `ViewTienDo` |
-| GET | `lo-ky/dang-chay` | — | `ViewLoKy` hoặc `null` |
-| POST | `lo-ky/{id}/huy` | — | `null` |
+| GET | `lo-ky/dang-chay` | — | `ViewLoKy` hoặc `null` — trả cả lô `DangKy` lẫn `TamDung` |
+| POST | `lo-ky/{id}/dung` | — | `null` — **tạm dừng**, ký tiếp được |
+| POST | `lo-ky/{id}/huy` | — | `null` — **huỷ hẳn**, không ký tiếp |
 | GET | `lo-ky/{id}/zip?token=…` | — | **bytes zip thô, không envelope** |
 
 ## Thứ tự gọi bắt buộc
@@ -66,7 +67,7 @@ Cả hai đường chỉ gọi được khi lô còn ở trạng thái `MoiTao`;
   "templateId": 3,
   "thumbprint": "A1B2…",
   "taiToken": "9F3C…",          // dùng cho đường tải zip, phát ngay lúc tạo lô
-  "trangThai": "DangKy",        // MoiTao | DangKy | Xong | Huy | Loi — CHUỖI, không phải số
+  "trangThai": "DangKy",        // MoiTao | DangKy | Xong | Huy | Loi | TamDung — CHUỖI, không phải số
   "tongSo": 5000,
   "daXong": 1234,
   "soLoi": 2,
@@ -81,7 +82,8 @@ Cả hai đường chỉ gọi được khi lô còn ở trạng thái `MoiTao`;
   "id": 12, "trangThai": "DangKy", "taiToken": "9F3C…",
   "tongSo": 5000, "daXong": 1234, "soLoi": 2,
   "dangChay": true,             // tiến trình ký còn sống trong bộ nhớ máy chủ
-  "hoanTat": false,             // lô đã chốt: Xong | Huy | Loi
+  "hoanTat": false,             // lô đã chốt: Xong | Huy | Loi — TamDung KHÔNG tính là chốt
+  "coTheTaiZip": false,         // BE tính; lô TamDung vẫn tải được dù chưa hoàn tất
   "loiChung": null,             // sự cố làm dừng CẢ lô, khác với lỗi từng file
   "tienToKho": "GiayBaoTrungTuyen/K71/GiayBaoTrungTuyenDaKySo/",
   "filesLoi": [ /* ViewFileKy */ ],
@@ -95,6 +97,8 @@ rồi vá dần bằng `filesVuaXong` và `filesLoi`.
 
 `dangChay` và `hoanTat` là hai câu hỏi khác nhau: lô đóng tab giữa chừng có `hoanTat = false` mà
 `dangChay = false`.
+
+**`coTheTaiZip` do BE tính, FE đừng suy lại từ `hoanTat`** — lô `TamDung` chưa hoàn tất mà vẫn tải được.
 
 ## ViewFileKy
 
@@ -151,9 +155,26 @@ request chưa đăng nhập; phân biệt "sai token" với "lô chưa xong" là
 | `1003` | Không tải được ảnh chữ ký tươi của template (dừng cả lô) |
 | `1148` | File nguồn đã có chữ ký mà template chưa bật `kyDe` — **lỗi của riêng file đó**, lô vẫn chạy tiếp |
 
+## Dừng khác Huỷ
+
+| | `dung` | `huy` |
+|---|---|---|
+| Trạng thái lô | `TamDung` | `Huy` |
+| File đang ký dở | trả về `Cho` | để nguyên |
+| `bat-dau` lại được | ✅ chạy tiếp từ file kế tiếp | ❌ |
+| Bản đã ký trên kho | giữ | **giữ** |
+| File nguồn `lo-ky/{id}/nguon/` | giữ, còn cần | dọn |
+| Hiện ở `lo-ky/dang-chay` | ✅ | ❌ |
+| `coTheTaiZip` | ✅ | bản ghi còn nhưng FE không còn đường bấm |
+
 ## FE phải nắm
 
-- **Đóng tab là lô dừng.** File đã ký giữ nguyên; bấm Bắt đầu lại thì chạy tiếp từ file dở.
+- **`bat-dau` không kiểm trạng thái lô** nên gọi lại trên lô `TamDung` là chạy tiếp ngay; lấy việc luôn lọc
+  `TrangThai = Cho` nên không bao giờ ký đè file đã `Xong`.
+
+- **Đóng tab là lô dừng.** File đã ký giữ nguyên; bấm bắt đầu lại thì chạy tiếp từ file kế tiếp.
 - **Mở lại màn hình giữa lô**: `lo-ky/dang-chay` cho thấy đúng tiến độ, nhưng vòng đưa thư **chưa nối lại
   được** — phải hỏi PIN lần nữa, chưa có giao diện cho việc đó.
+- **Gọi `dung`/`huy` XONG rồi mới `dong-phien`.** Ngược lại là các lượt đang chờ nhận lỗi "phiên đã đóng" và
+  file rơi vào nhánh lỗi thay vì được trả về hàng đợi — đúng ngần ấy file không ký tiếp được.
 - Bản đã ký nằm sẵn trên kho tại `tienToKho`; zip chỉ là đường tải cho người dùng, không phải nơi lưu.

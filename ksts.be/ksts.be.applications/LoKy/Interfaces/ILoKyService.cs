@@ -58,7 +58,16 @@ namespace ksts.be.applications.LoKy.Interfaces
         /// <summary>Lô còn dở của người đang đăng nhập, để mở lại màn hình là thấy đúng tiến độ.</summary>
         Task<ViewLoKyDto?> LoDangChayAsync();
 
-        /// <summary>Dừng lô. File đã ký xong giữ nguyên và vẫn hợp lệ.</summary>
+        /// <summary>
+        /// Pauses the batch: files left mid-signing go back to the queue and the source files stay, so the
+        /// next start picks up from the next file.
+        /// </summary>
+        Task DungAsync(int loKyId);
+
+        /// <summary>
+        /// Cancels the batch for good. Signed files stay on the store and stay valid, but the batch never
+        /// resumes and its uploaded source files are cleaned up.
+        /// </summary>
         Task HuyAsync(int loKyId);
 
         /// <summary>

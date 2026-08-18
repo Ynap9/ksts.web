@@ -57,10 +57,25 @@ Windows**: tiện cho máy dev, sai hoàn toàn khi deploy lên server thật.
 `GiaySongCuaYeuCau = 120`: một lượt ký không ai lấy đi trong 120 giây thì chết hẳn và file tính lỗi, thay vì
 giữ một luồng ký treo mãi.
 
+⚠️ Bẫy đã sập: hạn 120 giây được dựng bằng **linked token** với token của lô, nên lô bị dừng cũng bật đúng cái
+token đó. Bản đầu để callback ném thẳng `TimeoutException` cho cả hai trường hợp ⇒ file đang chờ chữ ký bị ghi
+**Lỗi** thay vì trả về `Cho`, và vì lấy việc chỉ lọc `Cho` nên đúng 8 file đang dở **không bao giờ ký tiếp
+được** — kể cả khi người dùng bấm dừng đúng cách. Phải hỏi `cancellationToken.IsCancellationRequested` trong
+callback để phân biệt *lô bị dừng* (huỷ lượt ký) với *lượt ký quá hạn* (ném timeout).
+
 ### Cái giá phải trả, phải nói rõ với người dùng
 
-⚠️ **Đóng tab là lô dừng** — mất người đưa thư. File đã ký giữ nguyên và vẫn hợp lệ; bấm Bắt đầu lại thì chạy
-tiếp từ file dở (lấy việc luôn lọc `TrangThai = Cho`).
+⚠️ **Đóng tab là lô dừng** — mất người đưa thư. File đã ký giữ nguyên và vẫn hợp lệ; bấm bắt đầu lại thì chạy
+tiếp từ file kế tiếp (lấy việc luôn lọc `TrangThai = Cho`).
+
+**Dừng và Huỷ là hai thao tác khác nhau**, chọn bằng `KieuDungLo` truyền vào `IKySoRunner.Dung`: dừng thì trả
+file dở về `Cho` và **giữ** bản nguồn để còn ký tiếp; huỷ thì lô không chạy lại nữa nên bản nguồn được dọn.
+Bản đã ký **không bao giờ bị xoá** ở cả hai đường — nó nằm ở thư mục dùng chung theo khoá tuyển sinh, tên file
+là số CCCD, nên xoá theo lô là xoá trúng bản của lô khác. Bảng đối chiếu đầy đủ ở
+[../contracts/lo-ky.contract.md](../contracts/lo-ky.contract.md).
+
+⚠️ Trạng thái cuối của lô do **tiến trình nền** chốt trong `KetThucLoAsync`, mà nó chạy **sau** khi service đã
+ghi DB. Không truyền lý do dừng xuống là nó ghi đè trạng thái vừa ghi — bấm Dừng lại hiện ra "đã huỷ".
 
 ⚠️ **Mở lại màn hình khi lô đang chạy thì chưa nối lại được vòng đưa thư.** Màn hình thấy đúng tiến độ qua
 `lo-ky/dang-chay`, nhưng không ai mang chữ ký đi nên các lượt ký hết hạn sau 120 giây và file tính lỗi. Chưa

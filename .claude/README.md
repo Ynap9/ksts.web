@@ -40,7 +40,7 @@ trữ, đã có luồng ký số PDF chạy thật. KSTS dùng lại phần lớ
 | Tính vị trí đặt dấu + chữ ký tươi | ✅ Xong |
 | Dựng giấy báo trúng tuyển hàng loạt qua Gotenberg | ✅ Xong — mẫu HTML tự chứa, không gọi CDN |
 | Luồng ký PDF + CMS + dấu thời gian TSA | ✅ Xong — đã ký PDF thật, TSA thật, verify hợp lệ |
-| Lô ký hàng loạt (`api/core/lo-ky`) | ✅ Xong — 8 luồng, tiến độ, huỷ, chạy tiếp, tải zip |
+| Lô ký hàng loạt (`api/core/lo-ky`) | ✅ Xong — 8 luồng, tiến độ, tạm dừng / huỷ, chạy tiếp, tải zip |
 | Plugin ký ở máy người dùng (`ksts.plugin`) | ✅ Xong phần ký — mở phiên giữ handle khoá, ký theo đợt |
 | FE | ✅ Template · Chứng thư số · Import tuyển sinh · Ký số |
 | **Chạy thử lô thật với token trên prod** | ❌ **Việc kế tiếp** — xem `dang-lam.md` |

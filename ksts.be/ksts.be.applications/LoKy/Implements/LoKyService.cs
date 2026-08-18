@@ -393,6 +393,8 @@ namespace ksts.be.applications.LoKy.Implements
                 .Select(ToViewFileDto)
                 .ToList();
 
+            var dangChay = _kySoRunner.DangChay(loKyId);
+
             return new ViewTienDoDto
             {
                 Id = lo.Id,
@@ -401,8 +403,15 @@ namespace ksts.be.applications.LoKy.Implements
                 TongSo = lo.TongSo,
                 DaXong = lo.DaXong,
                 SoLoi = lo.SoLoi,
-                DangChay = _kySoRunner.DangChay(loKyId),
+                DangChay = dangChay,
+
+                // Lô TẠM DỪNG cố ý KHÔNG mang cờ hoàn tất: cờ đó nghĩa là lô đã chốt, gán cho lô còn ký tiếp
+                // được là lẫn hai nghĩa khác hẳn nhau.
                 HoanTat = lo.TrangThai is TrangThaiLoKy.Xong or TrangThaiLoKy.Huy or TrangThaiLoKy.Loi,
+
+                // Tính ở BE cho khớp đúng điều kiện của đường nén, đừng để FE tự suy lại từ cờ hoàn tất: lô
+                // đang tạm dừng vẫn tải được phần đã ký, mà nó thì chưa hoàn tất.
+                CoTheTaiZip = !dangChay && lo.DaXong > 0,
                 LoiChung = lo.LoiChung,
                 TienToKho = lo.TienToKho,
                 FilesLoi = files,
@@ -413,13 +422,34 @@ namespace ksts.be.applications.LoKy.Implements
         /// <inheritdoc/>
         public async Task<ViewLoKyDto?> LoDangChayAsync()
         {
+            // Lấy cả lô TẠM DỪNG chứ không riêng lô đang chạy: dừng xong mở lại màn hình mà không thấy lô đâu
+            // thì mất luôn đường ký tiếp, người dùng buộc phải lập lô mới và ký lại từ file đầu.
             var userId = getCurrentUserId();
             var lo = await _kstsDbContext.LoKy
-                .Where(x => x.IdUser == userId && !x.Deleted && x.TrangThai == TrangThaiLoKy.DangKy)
+                .Where(x => x.IdUser == userId && !x.Deleted
+                    && (x.TrangThai == TrangThaiLoKy.DangKy || x.TrangThai == TrangThaiLoKy.TamDung))
                 .OrderByDescending(x => x.Id)
                 .FirstOrDefaultAsync();
 
             return lo == null ? null : ToViewDto(lo);
+        }
+
+        /// <inheritdoc/>
+        public async Task DungAsync(int loKyId)
+        {
+            _logger.LogInformation($"{nameof(DungAsync)} loKyId={loKyId}");
+
+            var lo = await LayLoAsync(loKyId);
+            _kySoRunner.Dung(loKyId, KieuDungLo.TamDung);
+
+            lo.TrangThai = TrangThaiLoKy.TamDung;
+            lo.ModifiedDate = GetVietnamTime();
+            await _kstsDbContext.SaveChangesAsync();
+
+            // Đóng phiên SAU khi đã bật công tắc dừng, không bao giờ trước: đóng trước thì các lượt đang chờ
+            // chữ ký nhận lỗi "phiên đã đóng" và file rơi vào nhánh LỖI thay vì được trả về hàng đợi — đúng
+            // ngần ấy file sẽ không ký tiếp được.
+            _hangDoiKy.DongPhien(loKyId);
         }
 
         /// <inheritdoc/>
@@ -428,11 +458,13 @@ namespace ksts.be.applications.LoKy.Implements
             _logger.LogInformation($"{nameof(HuyAsync)} loKyId={loKyId}");
 
             var lo = await LayLoAsync(loKyId);
-            _kySoRunner.Dung(loKyId);
+            _kySoRunner.Dung(loKyId, KieuDungLo.Huy);
 
             lo.TrangThai = TrangThaiLoKy.Huy;
             lo.ModifiedDate = GetVietnamTime();
             await _kstsDbContext.SaveChangesAsync();
+
+            _hangDoiKy.DongPhien(loKyId);
         }
 
         /// <inheritdoc/>

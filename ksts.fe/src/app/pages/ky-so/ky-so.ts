@@ -95,25 +95,36 @@ export class KySo extends BaseComponent {
         return tong === 0 ? 0 : Math.round(((this.daXong() + this.soLoi()) / tong) * 100);
     });
 
-    certDaChon = computed<IViewSignCert | null>(
-        () => this.certs().find((cert) => cert.thumbprint === this.thumbprint()) ?? null
-    );
+    certDaChon = computed<IViewSignCert | null>(() => this.certs().find((cert) => cert.thumbprint === this.thumbprint()) ?? null);
 
-    coNguon = computed(() =>
-        this.nguon() === 'kho' ? this.duongDanKho().trim().length > 0 : this.files().length > 0
-    );
+    coNguon = computed(() => (this.nguon() === 'kho' ? this.duongDanKho().trim().length > 0 : this.files().length > 0));
 
-    coTheBatDau = computed(
-        () =>
-            this.coNguon() &&
-            !!this.templateId() &&
-            this.tokenHopLe() &&
-            !this.dangKy() &&
-            !this.dangUpload() &&
-            !this.dangLayTuKho()
-    );
+    /**
+     * Lô còn ký tiếp được: đã lập trên máy chủ, chưa chốt, và không còn tiến trình nào chạy. Bao cả lô vừa
+     * bấm Dừng lẫn lô mất người đưa thư vì đóng tab.
+     */
+    loDangDo = computed(() => {
+        const lo = this.lo();
+        const tienDo = this.tienDo();
+        if (!lo || !tienDo || this.dangKy()) {
+            return null;
+        }
 
-    taiDuoc = computed(() => !!this.tienDo()?.hoanTat && this.daXong() > 0);
+        return !tienDo.hoanTat && !tienDo.dangChay ? lo : null;
+    });
+
+    coTheBatDau = computed(() => {
+        if (this.dangKy() || this.dangUpload() || this.dangLayTuKho() || !this.tokenHopLe()) {
+            return false;
+        }
+
+        // Ký tiếp lô dở KHÔNG đòi chọn lại nguồn lẫn template: cả hai đã nằm trong lô trên máy chủ, mà sau
+        // khi mở lại màn hình thì hai ô đó đều rỗng - đòi chúng là khoá luôn đường ký tiếp.
+        return this.loDangDo() ? true : this.coNguon() && !!this.templateId();
+    });
+
+    /** Máy chủ tính sẵn: lô tạm dừng chưa hoàn tất nhưng vẫn tải được phần đã ký. */
+    taiDuoc = computed(() => !!this.tienDo()?.coTheTaiZip);
 
     /** Kho chứa bản đã ký của lô; bản ký được đẩy lên ngay trong lúc ký. */
     tienToKho = computed(() => this.tienDo()?.tienToKho ?? '');
@@ -126,9 +137,9 @@ export class KySo extends BaseComponent {
     }
 
     /**
-     * Rời màn hình là mất người đưa thư nên lô không ký tiếp được: dừng hẳn thay vì để nó nằm lại trạng thái
-     * đang ký. Bỏ mặc thì lần đăng nhập sau lô mồ côi đó hiện lại như đang chạy, trong khi từng lượt ký chỉ
-     * đang chờ hết hạn để tính lỗi.
+     * Rời màn hình là mất người đưa thư nên lô không ký tiếp được: TẠM DỪNG chứ không huỷ, quay lại là ký
+     * tiếp từ file kế tiếp. Bỏ mặc thì lô mồ côi đó hiện lại như đang chạy, trong khi từng lượt ký chỉ đang
+     * chờ hết hạn để tính lỗi.
      */
     dungLoKhiRoiMan() {
         const loKyId = this.lo()?.id;
@@ -137,20 +148,24 @@ export class KySo extends BaseComponent {
         }
 
         this.dangKy.set(false);
-        this._pluginService.dongPhienKy().subscribe();
-        this._loKyService.huy(loKyId).subscribe();
+
+        // Dừng XONG rồi mới đóng phiên, không bao giờ ngược lại: đóng phiên trước thì các lượt đang chờ chữ
+        // ký nhận lỗi "phiên đã đóng" và file rơi vào nhánh lỗi thay vì quay lại hàng đợi - đúng ngần ấy file
+        // sẽ không ký tiếp được. Đóng phiên chạy ở cả nhánh lỗi để token không bị giữ lại.
+        this._loKyService.dung(loKyId).subscribe({
+            next: () => this._pluginService.dongPhienKy().subscribe(),
+            error: () => this._pluginService.dongPhienKy().subscribe()
+        });
     }
 
     getTemplates() {
-        this._templateService
-            .findPaging({ pageNumber: this.START_PAGE_NUMBER, pageSize: 1000 })
-            .subscribe({
-                next: (res) => {
-                    if (this.isResponseSucceed(res)) {
-                        this.templates.set(res.data?.items ?? []);
-                    }
+        this._templateService.findPaging({ pageNumber: this.START_PAGE_NUMBER, pageSize: 1000 }).subscribe({
+            next: (res) => {
+                if (this.isResponseSucceed(res)) {
+                    this.templates.set(res.data?.items ?? []);
                 }
-            });
+            }
+        });
     }
 
     /** Không cache danh sách chứng thư: token có thể vừa được cắm hoặc vừa rút giữa hai lần mở màn hình. */
@@ -207,7 +222,11 @@ export class KySo extends BaseComponent {
             next: (res) => {
                 if (this.isResponseSucceed(res, false) && res.data) {
                     this.lo.set(res.data);
-                    this.dangKy.set(true);
+
+                    // Lô TẠM DỪNG không phải lô đang ký: đánh dấu nhầm là khoá mất nút ký tiếp. Nạp lại
+                    // template của lô để ô chọn không rỗng khi người dùng ký tiếp.
+                    this.dangKy.set(res.data.trangThai === 'DangKy');
+                    this.templateId.set(res.data.templateId);
                     this.getDanhSachFile(res.data.id);
                     this.hoiTienDo();
                 }
@@ -333,8 +352,7 @@ export class KySo extends BaseComponent {
                         this.messageError(res.data.reason || 'Chứng thư số chưa sẵn sàng để ký.');
                     }
                 },
-                error: () =>
-                    this.messageError('Không xác thực được chứng thư số. Kiểm tra token đã cắm và plugin còn chạy không.')
+                error: () => this.messageError('Không xác thực được chứng thư số. Kiểm tra token đã cắm và plugin còn chạy không.')
             })
             .add(() => this.dangXacThuc.set(false));
     }
@@ -350,7 +368,11 @@ export class KySo extends BaseComponent {
         }
 
         try {
-            const lo = await this.taoLoVaDayFile();
+            // Lô còn dở thì KHÔNG lập lô mới: lập mới là tải lại toàn bộ file rồi ký lại từ file đầu, trong
+            // khi máy chủ chỉ cần mở lại phiên là chạy tiếp từ file kế tiếp (lấy việc luôn lọc trạng thái Chờ).
+            const loDangDo = this.loDangDo();
+            const lo = loDangDo ?? (await this.taoLoVaDayFile());
+
             this.lo.set(lo);
             this.getDanhSachFile(lo.id);
             await this.moPhienKy(lo.id);
@@ -442,12 +464,13 @@ export class KySo extends BaseComponent {
                 }
 
                 const ky = await firstValueFrom(this._pluginService.kyLo(cho.data));
-                const ketQua = ky?.status === 1 && ky.data
-                    ? ky.data
-                    : cho.data.map((yeuCau) => ({
-                        yeuCauId: yeuCau.yeuCauId,
-                        loi: ky?.message || 'Không gọi được plugin để ký.'
-                    }));
+                const ketQua =
+                    ky?.status === 1 && ky.data
+                        ? ky.data
+                        : cho.data.map((yeuCau) => ({
+                              yeuCauId: yeuCau.yeuCauId,
+                              loi: ky?.message || 'Không gọi được plugin để ký.'
+                          }));
 
                 await firstValueFrom(this._loKyService.nopChuKy(loKyId, ketQua));
             } catch {
@@ -495,6 +518,10 @@ export class KySo extends BaseComponent {
                     this.messageError(`Lô ký dừng: ${tienDo.loiChung}`);
                 } else if (tienDo.hoanTat) {
                     this.messageSuccess(`Đã ký xong ${tienDo.daXong}/${tienDo.tongSo} file.`);
+                } else {
+                    // Lô dừng giữa chừng: chưa hoàn tất mà cũng không còn tiến trình nào chạy. Im lặng ở đây
+                    // là người dùng tưởng lô vẫn đang chạy và ngồi đợi một thứ đã dừng từ lâu.
+                    this.messageWarning(`Lô đang dừng ở ${tienDo.daXong}/${tienDo.tongSo} file. Bấm Ký tiếp để chạy tiếp từ file kế tiếp.`);
                 }
             },
             error: () => {
@@ -504,6 +531,33 @@ export class KySo extends BaseComponent {
         });
     }
 
+    /** Tạm dừng: lô nằm lại chờ, bấm Ký tiếp là chạy tiếp từ file kế tiếp. */
+    onDung() {
+        const loKyId = this.lo()?.id;
+        if (!loKyId) {
+            return;
+        }
+
+        this.confirmAction(
+            {
+                header: 'Tạm dừng lô ký',
+                message: 'Dừng lô đang ký? File đã ký giữ nguyên và vẫn hợp lệ; bấm Ký tiếp để chạy tiếp từ file kế tiếp.'
+            },
+            () => {
+                this.dangKy.set(false);
+                this._loKyService.dung(loKyId).subscribe({
+                    next: (res) => {
+                        this._pluginService.dongPhienKy().subscribe();
+                        if (this.isResponseSucceed(res, true, 'Đã tạm dừng lô ký.')) {
+                            this.hoiTienDo();
+                        }
+                    }
+                });
+            }
+        );
+    }
+
+    /** Huỷ hẳn: bản đã ký vẫn nằm trên kho, nhưng lô không ký tiếp và không hiện lại nữa nên dọn sạch màn. */
     onHuy() {
         const loKyId = this.lo()?.id;
         if (!loKyId) {
@@ -511,13 +565,17 @@ export class KySo extends BaseComponent {
         }
 
         this.confirmAction(
-            { header: 'Huỷ lô ký', message: 'Dừng lô đang ký? File đã ký xong vẫn giữ nguyên và vẫn hợp lệ.' },
+            {
+                header: 'Huỷ lô ký',
+                message: 'Huỷ hẳn lô này? File đã ký vẫn giữ nguyên trên kho và vẫn hợp lệ, nhưng lô sẽ không ký tiếp được nữa.'
+            },
             () => {
+                this.dangKy.set(false);
                 this._loKyService.huy(loKyId).subscribe({
                     next: (res) => {
-                        if (this.isResponseSucceed(res, true, 'Đã dừng lô ký.')) {
-                            this.dangKy.set(false);
-                            this.hoiTienDo();
+                        this._pluginService.dongPhienKy().subscribe();
+                        if (this.isResponseSucceed(res, true, 'Đã huỷ lô ký.')) {
+                            this.datLaiLo();
                         }
                     }
                 });
@@ -540,9 +598,12 @@ export class KySo extends BaseComponent {
         window.location.href = this._loKyService.duongDanTaiZip(loKyId, taiToken);
     }
 
+    /** Dọn sạch dấu vết lô cũ. Phải dọn cả bảng file: bỏ sót là lô sau hiện chồng lên danh sách lô trước. */
     datLaiLo() {
         this.lo.set(null);
         this.tienDo.set(null);
         this.phanTramUpload.set(0);
+        this.rows.set([]);
+        this.thoiGianTheoThuTu.set(new Map());
     }
 }

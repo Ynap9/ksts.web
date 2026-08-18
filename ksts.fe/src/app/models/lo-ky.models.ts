@@ -1,11 +1,14 @@
 export type TrangThaiFileKy = 'cho' | 'dangKy' | 'xong' | 'loi';
 
+/** Trạng thái lô, BE gửi dạng CHUỖI chứ không phải số thứ tự enum. */
+export type TrangThaiLoKy = 'MoiTao' | 'DangKy' | 'Xong' | 'Huy' | 'Loi' | 'TamDung';
+
 export interface IViewLoKy {
     id: number;
     templateId: number;
     thumbprint?: string | null;
     taiToken: string;
-    trangThai: string;
+    trangThai: TrangThaiLoKy;
     tongSo: number;
     daXong: number;
     soLoi: number;
@@ -24,13 +27,17 @@ export interface IViewFileKy {
 
 export interface IViewTienDoLoKy {
     id: number;
-    trangThai: string;
+    trangThai: TrangThaiLoKy;
     taiToken: string;
     tongSo: number;
     daXong: number;
     soLoi: number;
     dangChay: boolean;
     hoanTat: boolean;
+
+    /** BE tính sẵn: lô tạm dừng chưa hoàn tất nhưng vẫn tải được phần đã ký, đừng suy lại từ `hoanTat`. */
+    coTheTaiZip: boolean;
+
     loiChung?: string | null;
 
     /** Thư mục trên kho chứa bản đã ký; bản ký được đẩy lên ngay trong lúc ký. */
