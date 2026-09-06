@@ -5,10 +5,8 @@ using System.Text.RegularExpressions;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfSignatureInspector : IPdfSignatureInspector
     {
-        /// <inheritdoc/>
         public bool HasSignature(byte[] bytes)
         {
             if (bytes.Length == 0)

@@ -7,10 +7,8 @@ using System.Security.Principal;
 
 namespace ksts.plugin.external.Setup.Implements
 {
-    /// <inheritdoc/>
     public class TuCaiDatService : ITuCaiDatService
     {
-        /// <inheritdoc/>
         public bool DangChayTuThuMucCai()
         {
             var dangChay = Path.GetDirectoryName(Environment.ProcessPath);
@@ -22,21 +20,18 @@ namespace ksts.plugin.external.Setup.Implements
                 StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <inheritdoc/>
         // IL3000 cảnh báo Location trả chuỗi rỗng trong bản single-file — ở đây chuỗi rỗng CHÍNH LÀ dấu hiệu
         // cần tìm, nên tắt cảnh báo thay vì đổi cách viết.
 #pragma warning disable IL3000
         public bool LaBanPhatHanh() => string.IsNullOrEmpty(Assembly.GetEntryAssembly()?.Location);
 #pragma warning restore IL3000
 
-        /// <inheritdoc/>
         public bool DangCoQuyenQuanTri()
         {
             using var danhTinh = WindowsIdentity.GetCurrent();
             return new WindowsPrincipal(danhTinh).IsInRole(WindowsBuiltInRole.Administrator);
         }
 
-        /// <inheritdoc/>
         public int ChayLaiVoiQuyenQuanTri(string thamSo)
         {
             var thongTin = new ProcessStartInfo(Environment.ProcessPath!, thamSo)
@@ -52,7 +47,6 @@ namespace ksts.plugin.external.Setup.Implements
             return tienTrinh.ExitCode;
         }
 
-        /// <inheritdoc/>
         public void DungBanDangChay()
         {
             var chinhMinh = Environment.ProcessId;
@@ -79,7 +73,6 @@ namespace ksts.plugin.external.Setup.Implements
             Thread.Sleep(CaiDatConstants.ChoNhaFileMs);
         }
 
-        /// <inheritdoc/>
         public void ChepVaoThuMucCai()
         {
             var thuMuc = CaiDatConstants.DuongDanThuMucCai();
@@ -88,14 +81,12 @@ namespace ksts.plugin.external.Setup.Implements
             File.Copy(Environment.ProcessPath!, Path.Combine(thuMuc, CaiDatConstants.TenExe), overwrite: true);
         }
 
-        /// <inheritdoc/>
         public void BatTuKhoiDong()
         {
             using var khoa = Registry.CurrentUser.CreateSubKey(CaiDatConstants.KhoaAutostart);
             khoa.SetValue(CaiDatConstants.TenAutostart, $"\"{DuongExeDaCai()}\"", RegistryValueKind.String);
         }
 
-        /// <inheritdoc/>
         public void GhiMucGoCaiDat()
         {
             using var khoa = Registry.CurrentUser.CreateSubKey(CaiDatConstants.KhoaGoCaiDat);
@@ -111,20 +102,17 @@ namespace ksts.plugin.external.Setup.Implements
             khoa.SetValue("NoRepair", 1, RegistryValueKind.DWord);
         }
 
-        /// <inheritdoc/>
         public void ChayBanDaCai()
         {
             Process.Start(new ProcessStartInfo(DuongExeDaCai()) { UseShellExecute = true });
         }
 
-        /// <inheritdoc/>
         public void XoaTuKhoiDong()
         {
             using var khoa = Registry.CurrentUser.OpenSubKey(CaiDatConstants.KhoaAutostart, writable: true);
             khoa?.DeleteValue(CaiDatConstants.TenAutostart, throwOnMissingValue: false);
         }
 
-        /// <inheritdoc/>
         public void XoaMucGoCaiDat()
         {
             Registry.CurrentUser.DeleteSubKeyTree(CaiDatConstants.KhoaGoCaiDat, throwOnMissingSubKey: false);
@@ -147,7 +135,6 @@ namespace ksts.plugin.external.Setup.Implements
             try { Directory.Delete(thuMuc, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
 
-        /// <inheritdoc/>
         public void HenXoaThuMucCai()
         {
             var thuMuc = CaiDatConstants.DuongDanThuMucCai();

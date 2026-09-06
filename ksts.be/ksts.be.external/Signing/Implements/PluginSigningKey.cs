@@ -23,7 +23,6 @@ namespace ksts.be.external.Signing.Implements
             _hangDoiKy = hangDoiKy;
         }
 
-        /// <inheritdoc/>
         public Task<X509Certificate2> LayChungThuAsync(int loKyId, string thumbprint,
             CancellationToken cancellationToken)
         {
@@ -40,14 +39,12 @@ namespace ksts.be.external.Signing.Implements
             return Task.FromResult(cert);
         }
 
-        /// <inheritdoc/>
         public Task<byte[]> KyAsync(int loKyId, byte[] duLieu, X509Certificate2 cert,
             CancellationToken cancellationToken)
         {
             return _hangDoiKy.XinChuKyAsync(loKyId, duLieu, cancellationToken);
         }
 
-        /// <inheritdoc/>
         public IReadOnlyList<X509Certificate2> LayChuoiChungThu(X509Certificate2 cert)
         {
             using var chain = new X509Chain();

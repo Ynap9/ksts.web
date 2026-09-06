@@ -16,5 +16,12 @@ namespace ksts.be.applications.Plugin.Interfaces
 
         /// <summary>Nội dung bộ cài để FE tải về. Thiếu file lúc này mới là lỗi thật.</summary>
         Stream OpenBoCai();
+
+        /// <summary>
+        /// Đối chiếu phiên bản plugin đang chạy ở máy người dùng với whitelist của backend. Phiên bản lạc
+        /// hậu KHÔNG phải lỗi ở đây: trả PhuHop = false kèm LyDo để FE mời cập nhật, vì người dùng không tự
+        /// gây ra chuyện đó và vẫn cần đọc được lời nhắn.
+        /// </summary>
+        ViewPhienBanPluginDto KiemTraPhienBan(KiemTraPhienBanDto input);
     }
 }

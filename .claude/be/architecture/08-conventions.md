@@ -1,27 +1,18 @@
 # Quy ước code (BE)
 
-## Hai luật cứng của dự án này
+## Ba luật cứng của dự án này
 
 ### 1. Không viết hàm `private`
 
 Cần tách việc thì tách thành **service có interface**, đặt đúng tầng (nghiệp vụ → `applications`, kỹ thuật →
-`external`). Không đẻ helper riêng tư trong class.
-
-```csharp
-// ❌ private string? PersistImage(string? path, int id, string ten) { … }
-// ✅ IS3FileStorage.UploadAsync(...) — có interface, test được, đổi được
-```
-
-Đổi lại: mọi mảnh logic đều có tên và thay được, method public dài hơn — đừng lách bằng `static` class.
+`external`) — `IS3FileStorage.UploadAsync(...)` chứ không phải `private string? PersistImage(...)`. Không đẻ
+helper riêng tư trong class, cũng đừng lách bằng `static` class. Đổi lại: mọi mảnh logic đều có tên và thay
+được, method public dài hơn.
 
 ### 2. Comment ít, bằng TIẾNG ANH, chỉ ở nơi có lý do
 
-XML `<summary>` **tiếng Anh, một câu** ở đầu class và đầu mỗi method public. **Không comment trong thân hàm.**
-
-```csharp
-/// <summary>Soft-deletes the template and removes its images from MinIO.</summary>
-public async Task DeleteAsync(int id)
-```
+XML `<summary>` **tiếng Anh, một câu** ở đầu class và đầu mỗi method public — `/// <summary>Soft-deletes the
+template and removes its images from MinIO.</summary>`. **Không comment trong thân hàm.**
 
 Comment trả lời **vì sao**, không thuật lại code. Cấm:
 
@@ -29,6 +20,17 @@ Comment trả lời **vì sao**, không thuật lại code. Cấm:
 - Comment lan man nhiều dòng; ghi lịch sử sửa đổi, tên người sửa, ngày sửa — git giữ những thứ đó.
 - Comment code chết — xoá hẳn đoạn code đó đi.
 - `// TODO` trống nghĩa. Việc còn dở ghi vào [../../dang-lam.md](../../dang-lam.md).
+
+### 3. KHÔNG viết `/// <inheritdoc/>`
+
+Class implement **không mang dòng nào** — mô tả nằm ở interface và chỉ nằm ở đó. Đã dọn 221 dòng khỏi
+`ksts.be`, `ksts.plugin`, `kssm.be` ngày 02/09/2026; đừng thêm lại, kể cả khi IDE tự chèn.
+
+Nó tốn một dòng cho mỗi thành viên mà không thêm chữ nào người đọc chưa có: IDE đã tự kéo doc của interface
+xuống, còn người đọc diff thì vẫn phải nhảy sang interface dù có hay không có dòng đó.
+
+⚠️ Ngoại lệ duy nhất là **`ksts.be.infrastructure/Migrations/`** — ở đó `/// <inheritdoc />` do `dotnet ef
+migrations add` tự sinh, dọn tay thì migration sau lại có, mà quên một lần là luật thành nói dối.
 
 **DTO, entity và class settings KHÔNG comment** — túi dữ liệu, tên trường đã tự nói; ý nghĩa từng trường nằm ở
 [04-domain.md](04-domain.md) và [03-dtos-mapping.md](03-dtos-mapping.md), không rải vào code.
@@ -58,10 +60,8 @@ interface `I<Feature>Service` + implement `<Feature>Service`; method async có h
 bố ở [../../contracts/](../../contracts/); tên trường entity/DTO (`TenTemplate`, `LyDoKy`) là cột DB và khoá
 JSON trên dây, đổi là migration + phá contract; tên class nghiệp vụ đã có (`LoKy`, `Template`); và câu hiển thị
 cho người dùng (`ErrorMessages`). Tên **mới** theo luật tiếng Anh ở trên; tên **cũ** giữ nguyên, không đổi
-hàng loạt.
-
-Tóm lại: comment và XML doc **tiếng Anh**, câu cho người dùng **tiếng Việt** có dấu, tài liệu `.claude/`
-**tiếng Việt**.
+hàng loạt. Tóm lại: comment và XML doc **tiếng Anh**, câu cho người dùng **tiếng Việt** có dấu, tài liệu
+`.claude/` **tiếng Việt**.
 
 ## Thời gian
 
@@ -96,6 +96,7 @@ thì `LogWarning` rồi đi tiếp — bản ghi đã xoá, ảnh chỉ còn là
 - Không trả entity ra controller — luôn qua DTO.
 - Không quên `!x.Deleted` trong truy vấn.
 - Không thêm repository/unit-of-work khi chưa được yêu cầu.
+- Không thêm `/// <inheritdoc/>` — trừ `Migrations/` của EF.
 
 ## Chốt công việc
 

@@ -50,7 +50,6 @@ namespace ksts.be.external.Storage.Implements
             });
         }
 
-        /// <inheritdoc/>
         public async Task<S3UploadResultDto> UploadAsync(IFormFile file, string objectKey,
             CancellationToken cancellationToken = default)
         {
@@ -86,7 +85,6 @@ namespace ksts.be.external.Storage.Implements
             };
         }
 
-        /// <inheritdoc/>
         public async Task<S3UploadResultDto> UploadBytesAsync(byte[] noiDung, string objectKey,
             string contentType, CancellationToken cancellationToken = default)
         {
@@ -120,7 +118,6 @@ namespace ksts.be.external.Storage.Implements
             };
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]> DownloadAsync(string objectKey, CancellationToken cancellationToken = default)
         {
             try
@@ -143,7 +140,6 @@ namespace ksts.be.external.Storage.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<bool> ExistsAsync(string objectKey, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(objectKey))
@@ -162,7 +158,6 @@ namespace ksts.be.external.Storage.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<IReadOnlyList<string>> ListKeysAsync(string keyPrefix,
             CancellationToken cancellationToken = default)
         {
@@ -201,7 +196,6 @@ namespace ksts.be.external.Storage.Implements
             return ketQua;
         }
 
-        /// <inheritdoc/>
         public async Task CopyAsync(string objectKeyNguon, string objectKeyDich,
             CancellationToken cancellationToken = default)
         {
@@ -224,7 +218,6 @@ namespace ksts.be.external.Storage.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task DeleteAsync(string objectKey, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(objectKey))
@@ -246,7 +239,6 @@ namespace ksts.be.external.Storage.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task DeleteByPrefixAsync(string keyPrefix, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(keyPrefix))
@@ -273,7 +265,6 @@ namespace ksts.be.external.Storage.Implements
             }
         }
 
-        /// <inheritdoc/>
         public string BuildPublicUrl(string objectKey) =>
             $"{_settings.Url.TrimEnd('/')}/{_settings.Bucket}/{objectKey}";
     }

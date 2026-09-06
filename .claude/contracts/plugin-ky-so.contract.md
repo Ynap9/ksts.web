@@ -4,10 +4,9 @@ Plugin chạy trên máy người dùng, nghe **`http://127.0.0.1:17739`**. FE g
 Bearer token — plugin không biết gì về tài khoản. Mã nguồn: `ksts.plugin/`.
 
 > Topology **A** (plugin mở listener loopback) là cái **đang chạy**; topology B (plugin tự gọi ra qua WSS) để
-> **tối ưu sau**, xem [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §2. Hệ quả phải nắm: trang
-> `https://` gọi `http://127.0.0.1` **không** dính mixed content, nhưng Private Network Access của Chrome đã
-> đổi cơ chế vài lần — phải test lại trên đúng bản trình duyệt đang dùng. `Origin` **không** phải hàng rào
-> bảo mật.
+> **tối ưu sau**, xem [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §2. Trang `https://` gọi
+> `http://127.0.0.1` **không** dính mixed content, nhưng Private Network Access của Chrome đã đổi cơ chế vài
+> lần — phải test lại trên đúng bản trình duyệt đang dùng. `Origin` **không** phải hàng rào bảo mật.
 
 ## Routes
 
@@ -28,19 +27,18 @@ Envelope giống hệt BE: `{ "status": 1, "data": …, "code": 200, "message": 
 | POST | `ky-so/do-toc-do` | `{ thumbprint, soLan }` (mặc định 20, trần 100) | `DoTocDoKetQua` |
 | POST | `ky-so/dong-phien` | — | `true` |
 
-`mo-phien` là **chỗ duy nhất hộp PIN bật lên** trong luồng ký: nó mở khoá rồi GIỮ handle cho cả lô. Giữ handle
-khác cache PIN — PIN vẫn đi thẳng từ bàn phím vào middleware, không byte nào vào tiến trình plugin. Phiên tự
-đóng sau **15 phút không dùng** (`KySoConstants.PhutTuDongDongPhien`).
+`mo-phien` là **chỗ duy nhất hộp PIN bật lên** trong luồng ký: mở khoá rồi GIỮ handle cho cả lô — khác cache
+PIN, vì PIN vẫn đi thẳng từ bàn phím vào middleware. Phiên tự đóng sau **15 phút không dùng**
+(`KySoConstants.PhutTuDongDongPhien`).
 
 `chungThuBase64` là chứng thư phần **CÔNG KHAI** (DER), nộp lên máy chủ để dựng chuỗi tin cậy và lắp vào CMS.
 
-`ky` nhận **cả một đợt** yêu cầu chứ không phải một: token ký tuần tự nên mỗi vòng đi-về cộng thẳng vào từng
-file, gom đợt là cách duy nhất chia nhỏ khoản đó. Một yêu cầu hỏng trả `loi` riêng cho nó, các yêu cầu còn
-lại vẫn ký.
+`ky` nhận **cả một đợt** yêu cầu: token ký tuần tự nên mỗi vòng đi-về cộng thẳng vào từng file, gom đợt là
+cách duy nhất chia nhỏ khoản đó. Một yêu cầu hỏng trả `loi` riêng cho nó, các yêu cầu còn lại vẫn ký.
 
-`duLieuBase64` là **SignedAttributes** do máy chủ dựng — plugin không cần biết nội dung file vẫn ký được, và
-cũng không nhận file nào. Đổi lại, plugin **không tự kiểm được mình đang ký gì** (WYSIWYS ở
-[docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §5 chưa thi công) — phải nói thẳng khi bàn giao.
+`duLieuBase64` là **SignedAttributes** do máy chủ dựng — plugin không nhận file nào vẫn ký được, đổi lại nó
+**không tự kiểm được mình đang ký gì** (WYSIWYS ở
+[docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §5 chưa thi công) — nói thẳng khi bàn giao.
 
 ## `do-toc-do` — đo sàn cứng của token
 
@@ -52,19 +50,19 @@ cũng không nhận file nào. Đổi lại, plugin **không tự kiểm đượ
 }
 ```
 
-Mở phiên thật nên **hộp PIN sẽ bật**. Đây là chỗ duy nhất đo được `T` — thời gian một lượt ký qua token — con
-số quyết định thời lượng của cả lô, vì token ký tuần tự (5000 × `T` không rút ngắn được bằng thêm luồng). Trần
-`SoLanDoToiDa = 100` để không ai biến nó thành vòng lặp vô tận chạm vào token thật.
+Mở phiên thật nên **hộp PIN sẽ bật**. Đây là chỗ duy nhất đo được `T` — thời gian một lượt ký qua token, con
+số quyết định thời lượng cả lô vì token ký tuần tự (5000 × `T`, thêm luồng không rút ngắn được). Trần
+`SoLanDoToiDa = 100` để không ai biến nó thành vòng lặp vô tận chạm token thật.
 
 ## Dò plugin đã cài hay chưa
 
-`GET api/plugin/trang-thai` là **phép dò**: gọi được nghĩa là máy đã cài và plugin đang chạy. Timeout ngắn
-(1–2 s) rồi coi như chưa cài — FE hiện popup tải bộ cài (plugin + middleware bit4id gói trong một exe).
-Endpoint này **không** chạm tới chứng thư hay token nên không bao giờ bật hộp thoại lên màn hình người dùng.
+`GET api/plugin/trang-thai` là **phép dò**: gọi được nghĩa là máy đã cài và plugin đang chạy; timeout ngắn
+(1–2 s) rồi coi như chưa cài, FE hiện popup tải bộ cài. Endpoint này **không** chạm chứng thư hay token nên
+không bao giờ bật hộp thoại lên màn hình người dùng.
 
 ```jsonc
 // TrangThai
-{ "ten": "KSTS Plugin ký số", "phienBan": "1.0.0", "sanSang": true }
+{ "ten": "Plugin ký số", "phienBan": "1.0.0", "sanSang": true }
 ```
 
 ## TokenVerify — kiểm token cắm thật hay chưa
@@ -92,10 +90,9 @@ nhất rằng token đang cắm thật và PIN dùng được — mọi phép đ
 - Plugin **không giữ handle khoá** sau khi kiểm: mỗi lần kiểm là một lần hỏi PIN. Luồng ký cả lô đi đường
   khác — `ky-so/mo-phien` giữ handle cho cả phiên nên N file chỉ hỏi PIN một lần; giữ handle **không** phải
   cache PIN.
-- ⚠️ Màn ký số hiện **bắt xác thực chứng thư trước khi mở nút Bắt đầu**, nên người dùng nhập PIN **hai lần**
-  cho một lô: một lần ở `kiem-tra-token`, một lần ở `ky-so/mo-phien`. Đổi được bằng cách coi `mo-phien` chính
-  là phép xác thực (nó cũng chạm khoá thật), nhưng khi đó lỗi cert sai sẽ hiện muộn hơn — sau khi đã tải file
-  lên. Chưa quyết.
+- ⚠️ Màn ký số **bắt xác thực chứng thư trước khi mở nút Bắt đầu**, nên người dùng nhập PIN **hai lần** cho
+  một lô (`kiem-tra-token` rồi `ky-so/mo-phien`). Coi `mo-phien` là phép xác thực thì bỏ được, đổi lại lỗi
+  cert sai hiện muộn hơn — sau khi đã tải file lên. Chưa quyết.
 - FE **không đặt timeout** cho lời gọi này: người dùng cần thời gian nhập PIN.
 
 > ⚠️ Còn phải kiểm trên máy thật: plugin chạy nền, **không sở hữu cửa sổ nào**, nên hộp PIN có thể hiện chìm
@@ -103,24 +100,42 @@ nhất rằng token đang cắm thật và PIN dùng được — mọi phép đ
 > thử — plugin chưa có cửa sổ để trỏ. Nếu gặp, hướng sửa là cho plugin chạy dạng tray app có cửa sổ ẩn rồi
 > truyền HWND đó vào.
 
-## Bộ cài — phát từ BE, không phải từ plugin
+## Bộ cài và phiên bản — phát từ BE, không phải từ plugin
 
-Dò không thấy plugin thì FE mở popup và tải bộ cài qua **BE** (yêu cầu Bearer token như mọi API khác):
+Cùng một plugin phục vụ **nhiều backend**: `ksts.be` (đòi Bearer token) và `kssm.be` (không auth — là API
+external). Mỗi bên tự phát bộ cài của mình bằng cùng bộ route dưới đây; `dong-goi.ps1` chép một exe sang
+`Plugins/` của cả hai.
 
 | Method | Route | `data` trả về |
 |---|---|---|
-| GET | `api/core/plugin/bo-cai` | `{ "fileName": "KstsPlugin.exe", "exists": true }` |
+| GET | `api/core/plugin/bo-cai` | `{ "fileName": "Ký số plugin.exe", "exists": true }` |
 | GET | `api/core/plugin/bo-cai/noi-dung` | **bytes exe thô, không envelope** |
+| GET | `api/core/plugin/phien-ban?phienBan=1.0.0` | `{ phienBan, phuHop, danhSachPhuHop, lyDo }` |
 
-Bộ cài là **một file exe tự cài**: bấm đúp vào nó là cài luôn middleware **bit4id** đã nhúng sẵn bên trong,
-chép plugin vào `%LocalAppData%` rồi chạy nền. Không giải nén, không có file phụ nào để chạy nhầm. File nằm
-cạnh bản build BE tại `Plugins/KstsPlugin.exe`.
+Bộ cài là **một file exe tự cài**: bấm đúp là cài luôn middleware **bit4id** nhúng sẵn bên trong, chép plugin
+vào `%LocalAppData%\KySoPlugin` rồi chạy nền — không giải nén, không có file phụ để chạy nhầm. File nằm cạnh
+bản build BE tại `Plugins/Ký số plugin.exe`.
 
-`exists = false` **không** phải lỗi — FE khoá nút tải kèm lời nhắn liên hệ quản trị. Chỉ khi gọi
-`bo-cai/noi-dung` mà thiếu file mới ném `1080 PluginSetupMissing`.
+`exists = false` **không** phải lỗi — FE khoá nút tải; chỉ `bo-cai/noi-dung` thiếu file mới ném `1080 PluginSetupMissing`.
 
-FE **phải tải qua HttpClient rồi tạo blob**, không mở thẳng URL bằng `window.open`: endpoint đòi Bearer
-token, mở trần sẽ nhận 401.
+FE tải qua HttpClient rồi tạo blob, **không** `window.open`: route của `ksts.be` đòi Bearer token, mở trần nhận 401.
+
+**Phiên bản**: FE lấy `phienBan` từ `trang-thai` rồi hỏi `phien-ban` của backend mình dùng. Whitelist ở
+`appsettings.json` → `Plugin:PhienBanPhuHop`, khớp **chính xác cả chuỗi** chứ không so lớn-bé; sửa file là ăn
+ngay, không khởi động lại API. Bỏ trống thì rơi về `PluginConstants.PhienBanPhuHopMacDinh` ghim trong mã — cố
+ý, để bản triển khai thiếu cấu hình không đánh trượt mọi plugin. `phuHop = false` **không** ném lỗi: người
+dùng không gây ra chuyện đó và vẫn cần đọc `lyDo`.
+
+`PluginConstants.PhienBan` **đọc lại từ assembly** (2026-09-02) nên `<Version>` của `ksts.plugin.api.csproj`
+là nguồn duy nhất; nâng bản thì chỉ còn phải thêm giá trị mới vào whitelist của **mọi** backend đang dùng
+plugin — thiếu một backend là bên đó báo plugin lỗi thời ngay sau khi người dùng cập nhật.
+
+⚠️ .NET gắn thêm commit SHA vào `InformationalVersion` (`1.0.0+0e8060f9…`) nên hằng số phải cắt ở dấu `+`; bỏ
+bước cắt là chuỗi gửi lên không bao giờ khớp whitelist và **mọi** plugin bị đánh là lỗi thời.
+
+⚠️ Exe nay tên **`Ký số plugin.exe`** (2026-09-02) — có dấu và có khoảng trắng nên mọi chỗ dựng lệnh phải bọc
+nháy; thư mục cài và khoá registry vẫn là `KySoPlugin`. Máy đã cài bản `KstsPlugin` cũ vẫn **cài song song**
+chứ không đè lên: phải gỡ bản cũ bằng tay một lần, đừng "sửa" bằng cách đưa tên cũ trở lại.
 
 ## CertScanResult
 
@@ -128,20 +143,11 @@ token, mở trần sẽ nhận 401.
 {
   "certificates": [
     {
-      "subject": "CN=Trường Đại học Xây dựng Hà Nội, O=…",
-      "commonName": "Trường Đại học Xây dựng Hà Nội",
-      "issuer": "CN=CA phục vụ các cơ quan Nhà nước G2, …",
-      "issuerCommonName": "CA phục vụ các cơ quan Nhà nước G2",
-      "serialNumber": "540E…",
-      "thumbprint": "A1B2C3…",
-      "source": 2,
-      "keyProvider": "bit4id xPKI CSP",
-      "validFrom": "01/01/2026 00:00:00",
-      "validTo": "01/01/2029 00:00:00",
-      "hasPrivateKey": true,
-      "isExpired": false,
-      "allowsSigning": true,
-      "reason": null
+      "subject": "CN=Trường Đại học Xây dựng Hà Nội, O=…", "commonName": "Trường Đại học Xây dựng Hà Nội",
+      "issuer": "CN=CA phục vụ các cơ quan Nhà nước G2, …", "issuerCommonName": "CA phục vụ các cơ quan Nhà nước G2",
+      "serialNumber": "540E…", "thumbprint": "A1B2C3…", "source": 2, "keyProvider": "bit4id xPKI CSP",
+      "validFrom": "01/01/2026 00:00:00", "validTo": "01/01/2029 00:00:00",
+      "hasPrivateKey": true, "isExpired": false, "allowsSigning": true, "reason": null
     }
   ],
   "storeDiagnostics": ["CurrentUser\\My: 12 chứng thư", "LocalMachine\\My: 2 chứng thư"]
@@ -151,26 +157,32 @@ token, mở trần sẽ nhận 401.
 - `source`: `0` Local · `1` Server · `2` UsbToken.
 - `thumbprint` là **khoá định danh** — dùng nó khi chọn cert và khi lưu vào template.
 - `reason` = lý do **tại máy** khiến cert không ký được, xét theo thứ tự: thiếu khoá bí mật → hết hạn →
-  KeyUsage không cho ký → **khoá không nằm trên USB token**. `null` nghĩa là qua hết các điều kiện đó, FE
-  hiển thị "Ký được". Cert nằm trong kho phần mềm của máy (`source` = `0`/`1`) luôn là **"Không ký được"** —
-  ký giấy báo trúng tuyển phải bằng khoá trên token, khoá phần mềm sao chép được nên không đủ tư cách.
-  Hiển thị `reason` nguyên văn cho người dùng.
-- **Không có `canSign` và không có `isTrusted`.** Plugin chạy trên máy không kiểm soát được, cờ tin cậy do nó
-  gửi lên là vô giá trị — thẩm định chuỗi về CA đã ghim là việc của BE
-  (`ICertificateTrustValidator`), xem [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §7.
-- `storeDiagnostics` để chẩn đoán khi danh sách rỗng mà không rõ nguyên nhân. Đặt sau một nút "Chẩn đoán",
-  không hiện mặc định.
+  KeyUsage không cho ký → **khoá không nằm trên USB token**; `null` là qua hết, FE hiện "Ký được". Cert trong
+  kho phần mềm (`source` = `0`/`1`) luôn **"Không ký được"** — khoá phần mềm sao chép được nên không đủ tư
+  cách ký giấy báo trúng tuyển. Hiển thị `reason` nguyên văn cho người dùng.
+- **Không có `canSign`, không có `isTrusted`.** Plugin chạy trên máy không kiểm soát được nên cờ tin cậy nó
+  gửi lên là vô giá trị — thẩm định chuỗi về CA đã ghim là việc của BE (`ICertificateTrustValidator`), xem
+  [docs/bao-mat-agent-ky-so.md](../docs/bao-mat-agent-ky-so.md) §7.
+- `storeDiagnostics` để chẩn đoán khi danh sách rỗng. Đặt sau nút "Chẩn đoán", không hiện mặc định.
 - **Danh sách không được cache** — gọi lại mỗi lần mở màn chọn cert: token có thể vừa cắm hoặc vừa rút.
 - Bước lấy danh sách **không bật hộp thoại PIN**: plugin chỉ đọc metadata của khoá, không ký thử.
 
 ## Vì sao không cần DLL nào trong plugin
 
-Plugin đọc chứng thư qua **Windows certificate store** (`X509Store`), kể cả cert nằm trên USB token — middleware
-của token (bit4id) tự bắc cầu khoá vào store qua minidriver/CSP. Plugin **không** nạp `.dll` PKCS#11 nào, không
-p/invoke thư viện của hãng token. Đổi lại, **máy phải cài middleware bit4id** thì token mới hiện trong store —
-đó chính là lý do bộ cài gói cả hai vào một exe.
+Plugin đọc chứng thư qua **Windows certificate store** (`X509Store`), kể cả cert trên USB token — middleware
+bit4id tự bắc cầu khoá vào store qua minidriver/CSP, không cần nạp `.dll` PKCS#11 nào. Đổi lại **máy phải cài
+middleware** thì token mới hiện trong store — đó là lý do bộ cài gói cả hai vào một exe.
 
 ## CORS
 
-Origin của FE khai ở `ksts.plugin.api/appsettings.json` → `Cors:AllowedOrigins`. Thiếu CORS thì trình duyệt
-không đọc được kết quả; đây là điều kiện để chạy, **không** phải lớp bảo mật.
+Origin của FE khai ở `ksts.plugin.api/appsettings.json` → `Cors:AllowedOrigins`, và ghim thêm trong
+`PluginConstants.OriginMacDinh` vì bản phát hành là một exe không kèm file cấu hình. Thiếu CORS thì trình
+duyệt không đọc được kết quả; đây là điều kiện để chạy, **không** phải lớp bảo mật.
+
+Danh sách đang khai: `https://ksts.yna.io.vn`, `localhost:4200` và `localhost:3000` (mỗi cổng cả `http` lẫn
+`https`). Cổng 3000 thêm ngày 2026-09-02 cho phía gọi `kssm.be` chạy dưới máy phát triển.
+
+⚠️ **Chưa khai origin prod của FE gọi `kssm.be`.** Quên bước này lúc rollout thì triệu chứng là "đã cài plugin
+mà trang web vẫn báo chưa cài", rất tốn công dò: request vẫn tới plugin và vẫn vào log, nhưng trình duyệt vứt
+bỏ câu trả lời vì thiếu tiêu đề `Access-Control-Allow-Origin`. Thêm origin xong phải **đóng gói lại** — danh
+sách ghim trong mã, sửa `appsettings.json` của bản phát hành không ăn.

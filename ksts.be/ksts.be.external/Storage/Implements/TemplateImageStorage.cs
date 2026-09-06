@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace ksts.be.external.Storage.Implements
 {
-    /// <inheritdoc/>
     public class TemplateImageStorage : ITemplateImageStorage
     {
         private readonly IS3FileStorage _storage;
@@ -17,7 +16,6 @@ namespace ksts.be.external.Storage.Implements
             _storage = storage;
         }
 
-        /// <inheritdoc/>
         public async Task<S3UploadResultDto> SaveAsync(IFormFile file, int templateId, string objectName,
             string? oldObjectKey, CancellationToken cancellationToken = default)
         {
@@ -43,23 +41,19 @@ namespace ksts.be.external.Storage.Implements
             return await _storage.UploadAsync(file, objectKey, cancellationToken);
         }
 
-        /// <inheritdoc/>
         public Task<bool> TonTaiAsync(string? objectKey, CancellationToken cancellationToken = default) =>
             string.IsNullOrWhiteSpace(objectKey)
                 ? Task.FromResult(false)
                 : _storage.ExistsAsync(objectKey, cancellationToken);
 
-        /// <inheritdoc/>
         public Task RemoveAsync(string? objectKey, CancellationToken cancellationToken = default) =>
             string.IsNullOrWhiteSpace(objectKey)
                 ? Task.CompletedTask
                 : _storage.DeleteAsync(objectKey, cancellationToken);
 
-        /// <inheritdoc/>
         public Task RemoveAllAsync(int templateId, CancellationToken cancellationToken = default) =>
             _storage.DeleteByPrefixAsync(TemplateConstants.GetAssetKeyPrefix(templateId), cancellationToken);
 
-        /// <inheritdoc/>
         public void ValidateImage(IFormFile file)
         {
             if (file.Length <= 0)

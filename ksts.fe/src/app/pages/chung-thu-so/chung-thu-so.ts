@@ -97,6 +97,7 @@ export class ChungThuSo extends BaseComponent {
                     const sanSang = res?.status === 1 && !!res.data?.sanSang;
                     this.coPlugin.set(sanSang);
                     if (sanSang) {
+                        this.checkPluginVersion(res.data?.phienBan);
                         this.getChungThuSo();
                     } else {
                         this.onOpenCaiPlugin();
@@ -110,6 +111,20 @@ export class ChungThuSo extends BaseComponent {
             .add(() => {
                 this.dangDoPlugin.set(false);
             });
+    }
+
+    /**
+     * Đối chiếu phiên bản plugin với whitelist của backend. Chỉ nhắc chứ không chặn: người dùng không gây ra
+     * chuyện plugin lạc hậu, và bản cũ vẫn ký được cho tới khi backend thật sự bỏ hỗ trợ.
+     */
+    checkPluginVersion(phienBan?: string) {
+        this._pluginService.kiemTraPhienBan(phienBan ?? '').subscribe({
+            next: (res) => {
+                if (res?.status === 1 && res.data?.phuHop === false) {
+                    this.messageWarning(res.data.lyDo ?? 'Plugin ký số đã lạc hậu, nên cài lại bản mới nhất.');
+                }
+            }
+        });
     }
 
     onOpenCaiPlugin(batBuoc = false) {

@@ -5,6 +5,7 @@ Hợp đồng API do BE công bố, FE cài đặt theo. **BE là nguồn chân 
 | File | Nội dung |
 |---|---|
 | [template-chu-ky.contract.md](template-chu-ky.contract.md) | CRUD template cấu hình chữ ký + vị trí gợi ý |
+| [template-chu-ky-kssm.contract.md](template-chu-ky-kssm.contract.md) | Bản của **`kssm.be`**: không auth, không vị trí gợi ý |
 | [chung-thu-so.contract.md](chung-thu-so.contract.md) | Lấy và chọn chứng thư số **từ máy chạy API** |
 | [plugin-ky-so.contract.md](plugin-ky-so.contract.md) | Plugin ở máy người dùng: dò đã cài, đọc chứng thư thật, ký hộ |
 | [lo-ky.contract.md](lo-ky.contract.md) | **Ký số hàng loạt** — lô, vòng đưa thư, tiến độ, tải zip |
@@ -25,7 +26,8 @@ Hợp đồng API do BE công bố, FE cài đặt theo. **BE là nguồn chân 
 - Phân trang: `pageNumber` đếm từ **1**; **`pageSize = -1` lấy hết**; envelope là
   `{ items, totalItems, customData }` (một chữ *m* trong `customData`).
 - Toạ độ luôn là **tỉ lệ 0..1** so với khổ trang, gốc **trên-trái**, **Y hướng xuống**.
-- Mọi endpoint yêu cầu **Bearer token**.
+- Mọi endpoint yêu cầu **Bearer token** — trừ toàn bộ `kssm.be`, backend đứng sau `sao_mai_be` như một API
+  external nên không kiểm token.
 
 ## Ngoại lệ không bọc envelope
 

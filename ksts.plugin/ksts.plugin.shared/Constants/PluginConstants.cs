@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace ksts.plugin.shared.Constants
 {
     /// <summary>
@@ -11,9 +13,18 @@ namespace ksts.plugin.shared.Constants
         /// </summary>
         public const int Port = 17739;
 
-        public const string Ten = "KSTS Plugin ký số";
+        public const string Ten = "Plugin ký số";
 
-        public const string PhienBan = "1.0.0";
+        /// <summary>
+        /// Phiên bản plugin, đọc từ &lt;Version&gt; của ksts.plugin.api lúc build và trả về ở
+        /// api/plugin/trang-thai để BE đối chiếu với whitelist Plugin:PhienBanPhuHop. Đọc từ assembly nên
+        /// csproj là nguồn duy nhất; nâng phiên bản thì thêm giá trị mới vào whitelist của MỌI backend đang
+        /// dùng plugin, thiếu một backend là bên đó báo plugin lỗi thời ngay sau khi người dùng cập nhật.
+        /// </summary>
+        public static readonly string PhienBan = Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion
+            .Split('+')[0] ?? string.Empty;
 
         /// <summary>
         /// Origin của trang web được phép ĐỌC kết quả trả về. Ghim trong mã chứ không chỉ để ở
@@ -27,7 +38,9 @@ namespace ksts.plugin.shared.Constants
         [
             "https://ksts.yna.io.vn",
             "http://localhost:4200",
-            "https://localhost:4200"
+            "https://localhost:4200",
+            "http://localhost:3000",
+            "https://localhost:3000"
         ];
     }
 }

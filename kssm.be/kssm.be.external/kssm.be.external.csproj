@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- External TỰ CHỨA hợp đồng của mình (Interfaces + Dtos) nên chỉ cần Shared (hằng số, mã lỗi).
+         Chiều phụ thuộc là Application -> External, không bao giờ ngược lại. -->
+    <ProjectReference Include="..\kssm.be.shared\kssm.be.shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- External nhận IFormFile ở hợp đồng tải file lên nên cần framework ASP.NET Core. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="4.0.102.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
+    <!-- Đọc dự án, cấu hình kho và danh sách file từ MongoDB của sao_mai. Chỉ đọc. -->
+    <PackageReference Include="MongoDB.Driver" Version="3.5.0" />
+    <!-- PDFsharp (MIT): chỉ dùng để VẼ khối chữ ký hiển thị ra một tài liệu tạm rồi cấy sang file đích — tên
+         người ký có dấu tiếng Việt nên phải nhúng font Unicode đã subset, tự viết bộ nhúng font là việc lớn
+         và dễ sai. TUYỆT ĐỐI không dùng PdfDocument.Save() để ghi file đã ký: nó ghi lại cả tài liệu, mọi byte
+         dịch chỗ và /ByteRange của chữ ký CŨ trỏ sang byte khác -> giết chữ ký cũ. -->
+    <PackageReference Include="PdfSharp" Version="6.2.1" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Log\Logs\" />
+    <Folder Include="Log\Archive\" />
+  </ItemGroup>
+
+</Project>

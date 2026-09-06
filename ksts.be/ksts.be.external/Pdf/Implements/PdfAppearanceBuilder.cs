@@ -15,7 +15,6 @@ using System.Text.RegularExpressions;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfAppearanceBuilder : IPdfAppearanceBuilder
     {
         private readonly IPdfRevisionReader _revisionReader;
@@ -38,7 +37,6 @@ namespace ksts.be.external.Pdf.Implements
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
         }
 
-        /// <inheritdoc/>
         public PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
             double height, string mau)
         {
@@ -67,7 +65,6 @@ namespace ksts.be.external.Pdf.Implements
             return Transplant(tempPdf, firstObjectNumber, width, height);
         }
 
-        /// <inheritdoc/>
         public PdfAppearanceDto BuildImage(byte[] anh, int doDamPhanTram, int doDayNetPhanTram,
             int firstObjectNumber, double width, double height, string? mau)
         {
@@ -96,7 +93,6 @@ namespace ksts.be.external.Pdf.Implements
             return appearance;
         }
 
-        /// <inheritdoc/>
         public IReadOnlyList<PdfRectPointsDto> TinhLopNongNet(double width, double height,
             int doDayNetPhanTram)
         {
@@ -134,7 +130,6 @@ namespace ksts.be.external.Pdf.Implements
             return lop;
         }
 
-        /// <inheritdoc/>
         public byte[] Draw(double width, double height, Action<XGraphics, XRect> ve)
         {
             lock (_khoaPdfSharp)
@@ -143,7 +138,6 @@ namespace ksts.be.external.Pdf.Implements
             }
         }
 
-        /// <inheritdoc/>
         public byte[] VeVaoTaiLieuTam(double width, double height, Action<XGraphics, XRect> ve)
         {
             using var document = new PdfDocument();
@@ -163,7 +157,6 @@ namespace ksts.be.external.Pdf.Implements
             return stream.ToArray();
         }
 
-        /// <inheritdoc/>
         public PdfAppearanceDto Transplant(byte[] tempPdf, int firstObjectNumber, double width, double height)
         {
             var temp = _revisionReader.Load(tempPdf);
@@ -273,7 +266,6 @@ namespace ksts.be.external.Pdf.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public string ReadResources(PdfRevisionDto temp, string pageBody)
         {
             var at = pageBody.IndexOf("/Resources", StringComparison.Ordinal);
@@ -293,7 +285,6 @@ namespace ksts.be.external.Pdf.Implements
                 : "<<>>";
         }
 
-        /// <inheritdoc/>
         public void ApDoDamVaMau(PdfAppearanceDto appearance, int doDamPhanTram, string? mau)
         {
             var heSo = doDamPhanTram / 100d;
@@ -361,7 +352,6 @@ namespace ksts.be.external.Pdf.Implements
             }
         }
 
-        /// <inheritdoc/>
         public string BuildDecodeArray(double can, double tran, int soThanhPhan, RgbColorDto? mau)
         {
             // Ảnh CMYK: 0 là KHÔNG mực chứ không phải điểm tối, nhuộm theo cùng công thức sẽ ra ảnh âm bản.
@@ -382,7 +372,6 @@ namespace ksts.be.external.Pdf.Implements
             return "/Decode [" + string.Join(" ", moc) + "]";
         }
 
-        /// <inheritdoc/>
         public string BuildIndexedPalette(double can, double tran, int hival, RgbColorDto mau)
         {
             var bang = new StringBuilder();
@@ -401,18 +390,15 @@ namespace ksts.be.external.Pdf.Implements
             return $"[/Indexed /DeviceRGB {hival} <{bang}>]";
         }
 
-        /// <inheritdoc/>
         public int ReadBitsPerComponent(string dictText)
         {
             var match = Regex.Match(dictText, @"/BitsPerComponent\s+(\d+)");
             return match.Success ? int.Parse(match.Groups[1].Value) : 8;
         }
 
-        /// <inheritdoc/>
         public string FormatColorValue(double giaTri) =>
             Math.Clamp(giaTri, 0d, 1d).ToString("0.####", CultureInfo.InvariantCulture);
 
-        /// <inheritdoc/>
         public int DemThanhPhanMau(string dictText)
         {
             if (Regex.IsMatch(dictText, @"/ColorSpace\s*/DeviceRGB")) return 3;
@@ -421,7 +407,6 @@ namespace ksts.be.external.Pdf.Implements
             return 0;
         }
 
-        /// <inheritdoc/>
         public IEnumerable<int> FindRefs(string dictRaw)
         {
             foreach (Match match in Regex.Matches(dictRaw, @"(\d+)\s+\d+\s+R\b"))
@@ -430,7 +415,6 @@ namespace ksts.be.external.Pdf.Implements
             }
         }
 
-        /// <inheritdoc/>
         public string Renumber(string dictRaw, IReadOnlyDictionary<int, int> map)
         {
             return Regex.Replace(dictRaw, @"(\d+)(\s+\d+\s+R\b)", match =>

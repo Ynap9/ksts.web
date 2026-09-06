@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ksts.plugin.applications.KySo.Implements
 {
-    /// <inheritdoc/>
     public class KySoService : IKySoService
     {
         private readonly ISigningSession _signingSession;
@@ -19,10 +18,8 @@ namespace ksts.plugin.applications.KySo.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public MoPhienKetQuaDto MoPhien(MoPhienDto input) => _signingSession.MoPhien(input.Thumbprint);
 
-        /// <inheritdoc/>
         public List<KetQuaKyDto> Ky(KyLoDto input)
         {
             _logger.LogInformation("{Method} soYeuCau={SoYeuCau}", nameof(Ky), input.YeuCau.Count);
@@ -51,10 +48,8 @@ namespace ksts.plugin.applications.KySo.Implements
             return ketQua;
         }
 
-        /// <inheritdoc/>
         public void DongPhien() => _signingSession.DongPhien();
 
-        /// <inheritdoc/>
         public DoTocDoKetQuaDto DoTocDo(DoTocDoDto input) =>
             _signingSession.DoTocDo(input.Thumbprint, Math.Clamp(input.SoLan, 1, KySoConstants.SoLanDoToiDa));
     }

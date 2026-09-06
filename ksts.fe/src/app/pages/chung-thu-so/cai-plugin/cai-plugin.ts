@@ -43,7 +43,7 @@ export class CaiPlugin extends BaseComponent {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = this.boCai().fileName ?? 'KstsPlugin.exe';
+                    link.download = this.boCai().fileName ?? 'Ký số plugin.exe';
                     link.click();
                     URL.revokeObjectURL(url);
                 },

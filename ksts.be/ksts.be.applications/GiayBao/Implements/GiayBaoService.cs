@@ -64,14 +64,12 @@ namespace ksts.be.applications.GiayBao.Implements
             _settings = settings.Value;
         }
 
-        /// <inheritdoc/>
         public List<ExcelSheetInfoDto> DanhSachSheet(IFormFile file)
         {
             using var stream = file.OpenReadStream();
             return _excelSheetReader.ListSheets(stream);
         }
 
-        /// <inheritdoc/>
         public List<ViewThiSinhDto> DanhSachThiSinh(IFormFile file, string? sheetName, int startRow)
         {
             using var stream = file.OpenReadStream();
@@ -87,7 +85,6 @@ namespace ksts.be.applications.GiayBao.Implements
                 .ToList();
         }
 
-        /// <inheritdoc/>
         public ZipJobDto BatDauTaoZip(IFormFile file, string? sheetName, int startRow)
         {
             _logger.LogInformation("BatDauTaoZip: {FileName} sheet {Sheet} dòng {StartRow}, đồng thời {MaxDongThoi}",
@@ -131,7 +128,6 @@ namespace ksts.be.applications.GiayBao.Implements
             return _zipJobStore.Lay(job.JobId)!;
         }
 
-        /// <inheritdoc/>
         public async Task ChayLoAsync(string jobId, string template, List<Dictionary<string, string>> hopLe)
         {
             var dongHo = Stopwatch.StartNew();
@@ -233,7 +229,6 @@ namespace ksts.be.applications.GiayBao.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task GhiNenAsync(string jobId, Stream dich, CancellationToken cancellationToken)
         {
             var dongHo = Stopwatch.StartNew();
@@ -291,7 +286,6 @@ namespace ksts.be.applications.GiayBao.Implements
                 daGhi, danhSach.Count, dongHo.Elapsed.TotalSeconds);
         }
 
-        /// <inheritdoc/>
         public void ApLoaiTrungTuyen(IReadOnlyDictionary<string, string> row,
             Dictionary<string, string> giaTri, Dictionary<string, bool> hien)
         {
@@ -362,7 +356,6 @@ namespace ksts.be.applications.GiayBao.Implements
                 : LoaiTrungTuyenConstants.TieuDeThuTucChinhQuy;
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]?> TaiMotFileAsync(string tenFile, CancellationToken cancellationToken)
         {
             try

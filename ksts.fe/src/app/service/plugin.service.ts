@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { timeout } from 'rxjs';
 import { environment } from '@/environments/environment';
-import { IViewBoCaiPlugin, IViewCertScanResult, IViewTokenVerify, IViewTrangThaiPlugin } from '../models/plugin.models';
+import { IViewBoCaiPlugin, IViewCertScanResult, IViewPhienBanPlugin, IViewTokenVerify, IViewTrangThaiPlugin } from '../models/plugin.models';
 import { PLUGIN_PROBE_TIMEOUT_MS } from '../shared/constants/chung-thu-so.constants';
 import { IKetQuaKy, IMoPhienKetQua, IYeuCauKy } from '../models/lo-ky.models';
 import { IBaseResponse, IBaseResponseWithData } from '../shared/models/request-paging.base.models';
@@ -69,7 +69,17 @@ export class PluginService {
         return this.http.get<IBaseResponseWithData<IViewBoCaiPlugin>>(`${this.apiBoCai}/bo-cai`);
     }
 
-    /** Nội dung bộ cài dạng nhị phân: BE trả file nén thô, không bọc envelope. */
+    /**
+     * Đối chiếu phiên bản plugin đang cài với whitelist của backend đang dùng. Whitelist nằm ở BE nên mỗi
+     * hệ thống tự quyết bản nào còn dùng được, FE chỉ chuyển tiếp con số đọc từ trang-thai.
+     */
+    kiemTraPhienBan(phienBan: string) {
+        return this.http.get<IBaseResponseWithData<IViewPhienBanPlugin>>(`${this.apiBoCai}/phien-ban`, {
+            params: { phienBan }
+        });
+    }
+
+    /** Nội dung bộ cài dạng nhị phân: BE trả file exe thô, không bọc envelope. */
     taiBoCai() {
         return this.http.get(`${this.apiBoCai}/bo-cai/noi-dung`, { responseType: 'blob' });
     }

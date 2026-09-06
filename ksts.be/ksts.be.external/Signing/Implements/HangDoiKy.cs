@@ -7,7 +7,6 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace ksts.be.external.Signing.Implements
 {
-    /// <inheritdoc/>
     public class HangDoiKy : IHangDoiKy
     {
         private readonly ILogger<HangDoiKy> _logger;
@@ -19,7 +18,6 @@ namespace ksts.be.external.Signing.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public void MoPhien(int loKyId, X509Certificate2 cert)
         {
             _logger.LogInformation("{Method} loKyId={LoKyId} thumbprint={Thumbprint}",
@@ -29,7 +27,6 @@ namespace ksts.be.external.Signing.Implements
             _phien[loKyId] = new PhienKy(cert);
         }
 
-        /// <inheritdoc/>
         public X509Certificate2 LayChungThu(int loKyId)
         {
             return _phien.TryGetValue(loKyId, out var phien)
@@ -38,7 +35,6 @@ namespace ksts.be.external.Signing.Implements
                     "Chưa mở phiên ký với máy người dùng, hoặc phiên đã đóng.");
         }
 
-        /// <inheritdoc/>
         public void DongPhien(int loKyId)
         {
             if (!_phien.TryRemove(loKyId, out var phien))
@@ -55,7 +51,6 @@ namespace ksts.be.external.Signing.Implements
             phien.Dispose();
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]> XinChuKyAsync(int loKyId, byte[] duLieu, CancellationToken cancellationToken)
         {
             if (!_phien.TryGetValue(loKyId, out var phien))
@@ -90,7 +85,6 @@ namespace ksts.be.external.Signing.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<List<YeuCauKyDto>> LayYeuCauAsync(int loKyId, TimeSpan cho,
             CancellationToken cancellationToken)
         {
@@ -123,7 +117,6 @@ namespace ksts.be.external.Signing.Implements
             return [];
         }
 
-        /// <inheritdoc/>
         public void NopKetQua(int loKyId, IEnumerable<KetQuaKyDto> ketQua)
         {
             if (!_phien.TryGetValue(loKyId, out var phien))

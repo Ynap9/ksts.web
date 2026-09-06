@@ -6,10 +6,8 @@ using System.Reflection;
 
 namespace ksts.plugin.external.Setup.Implements
 {
-    /// <inheritdoc/>
     public class MiddlewareService : IMiddlewareService
     {
-        /// <inheritdoc/>
         public bool DaCoTrenMay()
         {
             string[] duong =
@@ -35,12 +33,11 @@ namespace ksts.plugin.external.Setup.Implements
             return Directory.Exists(system32) && Directory.EnumerateFiles(system32, "bit4*.dll").Any();
         }
 
-        /// <inheritdoc/>
         public bool CoBanNhungKem() => TimTaiNguyen() is not null;
 
         /// <summary>
         /// Tên tài nguyên nhúng của bộ cài middleware, null nếu bản build này không kèm. Tài nguyên nằm
-        /// trong assembly khởi động (KstsPlugin) chứ không phải assembly chứa lớp này.
+        /// trong assembly khởi động (KySoPlugin) chứ không phải assembly chứa lớp này.
         /// </summary>
         public string? TimTaiNguyen()
         {
@@ -52,7 +49,6 @@ namespace ksts.plugin.external.Setup.Implements
             return null;
         }
 
-        /// <inheritdoc/>
         public void CaiNgam()
         {
             var taiNguyen = TimTaiNguyen()

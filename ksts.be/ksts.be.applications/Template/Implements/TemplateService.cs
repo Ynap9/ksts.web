@@ -22,7 +22,6 @@ using TemplatePositionEntity = ksts.be.domain.Template.TemplatePosition;
 
 namespace ksts.be.applications.Template.Implements
 {
-    /// <inheritdoc/>
     public class TemplateService : BaseService, ITemplateService
     {
         private readonly ITemplateImageStorage _imageStorage;
@@ -50,7 +49,6 @@ namespace ksts.be.applications.Template.Implements
             _userManager = userManager;
         }
 
-        /// <inheritdoc/>
         public ViewTemplateDto Create(AddTemplateDto input)
         {
             _logger.LogInformation($"{nameof(Create)} tenTemplate={input.TenTemplate}");
@@ -77,7 +75,6 @@ namespace ksts.be.applications.Template.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public ViewTemplateDto Update(UpdateTemplateDto input)
         {
             _logger.LogInformation($"{nameof(Update)} id={input.Id}");
@@ -111,7 +108,6 @@ namespace ksts.be.applications.Template.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public Task<ViewTemplateDto> CreateConfigAsync(AddConfigTemplateDto input)
         {
             _logger.LogInformation($"{nameof(CreateConfigAsync)} id={input.Id}");
@@ -119,7 +115,6 @@ namespace ksts.be.applications.Template.Implements
             return UpdateConfigAsync(_mapper.Map<UpdateConfigTemplateDto>(input));
         }
 
-        /// <inheritdoc/>
         public async Task<ViewTemplateDto> UpdateConfigAsync(UpdateConfigTemplateDto input)
         {
             _logger.LogInformation($"{nameof(UpdateConfigAsync)} id={input.Id} soKhoi={input.Positions.Count}");
@@ -217,7 +212,6 @@ namespace ksts.be.applications.Template.Implements
             return await GetByIdAsync(entity.Id);
         }
 
-        /// <inheritdoc/>
         public async Task DeleteAsync(int id)
         {
             _logger.LogInformation($"{nameof(DeleteAsync)} id={id}");
@@ -245,7 +239,6 @@ namespace ksts.be.applications.Template.Implements
             await _imageStorage.RemoveAllAsync(id);
         }
 
-        /// <inheritdoc/>
         public async Task<ViewTemplateDto> GetByIdAsync(int id)
         {
             var userId = getCurrentUserId();
@@ -272,7 +265,6 @@ namespace ksts.be.applications.Template.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public async Task<BaseResponsePagingDto<ViewTemplateDto>> FindPagingAsync(FindPagingTemplateDto input)
         {
             _logger.LogInformation($"{nameof(FindPagingAsync)} keyword={input.Keyword}");
@@ -314,7 +306,6 @@ namespace ksts.be.applications.Template.Implements
             };
         }
 
-        /// <inheritdoc/>
         public SampleFileDto GetSampleFile()
         {
             var path = TemplateConstants.GetSamplePdfPath();
@@ -325,7 +316,6 @@ namespace ksts.be.applications.Template.Implements
             };
         }
 
-        /// <inheritdoc/>
         public Stream OpenSampleFile()
         {
             var path = TemplateConstants.GetSamplePdfPath();
@@ -338,7 +328,6 @@ namespace ksts.be.applications.Template.Implements
             return File.OpenRead(path);
         }
 
-        /// <inheritdoc/>
         public async Task<SuggestedPlacementDto> GetSuggestedPlacementAsync(SuggestPlacementDto input)
         {
             _logger.LogInformation($"{nameof(GetSuggestedPlacementAsync)} pageNumber={input.PageNumber}");

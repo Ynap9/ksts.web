@@ -17,7 +17,6 @@ namespace ksts.be.external.Signing.Implements
         private const byte TagSetOf = 0x31;
         private const byte TagContext0 = 0xA0;
 
-        /// <inheritdoc/>
         public byte[] BuildSignedAttributes(byte[] noiDungHash, X509Certificate2 cert, DateTime signedAtUtc)
         {
             var writer = new AsnWriter(AsnEncodingRules.DER);
@@ -57,7 +56,6 @@ namespace ksts.be.external.Signing.Implements
             return writer.Encode();
         }
 
-        /// <inheritdoc/>
         public byte[] BuildSigningCertificateV2(X509Certificate2 cert)
         {
             // SigningCertificateV2 ::= SEQUENCE { certs SEQUENCE OF ESSCertIDv2 }
@@ -74,7 +72,6 @@ namespace ksts.be.external.Signing.Implements
             return writer.Encode();
         }
 
-        /// <inheritdoc/>
         public byte[] Assemble(byte[] signedAttributes, byte[] chuKyTho, X509Certificate2 cert,
             IReadOnlyList<X509Certificate2> chuoiChungThu, byte[] tsaToken)
         {

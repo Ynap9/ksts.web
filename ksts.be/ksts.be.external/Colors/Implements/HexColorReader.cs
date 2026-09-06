@@ -6,10 +6,8 @@ using System.Text.RegularExpressions;
 
 namespace ksts.be.external.Colors.Implements
 {
-    /// <inheritdoc/>
     public class HexColorReader : IHexColorReader
     {
-        /// <inheritdoc/>
         public RgbColorDto? Read(string? hex)
         {
             var chuan = Normalize(hex);
@@ -26,7 +24,6 @@ namespace ksts.be.external.Colors.Implements
             };
         }
 
-        /// <inheritdoc/>
         public string? Normalize(string? hex)
         {
             var giaTri = (hex ?? string.Empty).Trim();

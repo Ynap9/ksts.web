@@ -16,7 +16,6 @@ namespace ksts.be.external.Excel.Implements
     {
         private const string DateFormat = "dd/MM/yyyy";
 
-        /// <inheritdoc/>
         public List<ExcelSheetInfoDto> ListSheets(Stream stream)
         {
             using var workbook = MoWorkbook(stream);
@@ -29,7 +28,6 @@ namespace ksts.be.external.Excel.Implements
                 .ToList();
         }
 
-        /// <inheritdoc/>
         public ExcelSheetDto ReadSheet(Stream stream, string? sheetName, int startRow)
         {
             using var workbook = MoWorkbook(stream);
@@ -88,7 +86,6 @@ namespace ksts.be.external.Excel.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public string NormalizeKey(string? text)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -115,7 +112,6 @@ namespace ksts.be.external.Excel.Implements
             return ketQua.ToString();
         }
 
-        /// <inheritdoc/>
         public string LayGiaTri(IReadOnlyDictionary<string, string> row, IEnumerable<string> tenCotUngVien)
         {
             foreach (var tenCot in tenCotUngVien)

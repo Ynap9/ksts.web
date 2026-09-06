@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ksts.be.external.Placement.Implements
 {
-    /// <inheritdoc/>
     public class SealPlacementResolver : ISealPlacementResolver
     {
         private readonly IPdfTextLocator _textLocator;
@@ -22,7 +21,6 @@ namespace ksts.be.external.Placement.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public SealPlacementResultDto Resolve(Stream pdfStream, int pageNumber, ImageSizeDto? dauDo,
             ImageSizeDto? chuKyTuoi)
         {
@@ -80,7 +78,6 @@ namespace ksts.be.external.Placement.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public PdfTextLineDto? FindAnchorChucDanh(IReadOnlyList<PdfTextLineDto> lines)
         {
             foreach (var anchor in SealPlacementConstants.AnchorChucDanh)
@@ -95,7 +92,6 @@ namespace ksts.be.external.Placement.Implements
             return null;
         }
 
-        /// <inheritdoc/>
         public PdfTextLineDto? FindAnchorTenNguoiKy(IReadOnlyList<PdfTextLineDto> lines,
             PdfTextLineDto anchorChucDanh)
         {
@@ -125,7 +121,6 @@ namespace ksts.be.external.Placement.Implements
             return byHocVi ?? aligned.LastOrDefault();
         }
 
-        /// <inheritdoc/>
         public PdfRectRatioDto BuildCenteredRect(double centerXRatio, double centerYRatio, double widthPoints,
             double heightPoints, double pageWidthPoints, double pageHeightPoints)
         {

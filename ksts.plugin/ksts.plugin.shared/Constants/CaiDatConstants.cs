@@ -13,20 +13,21 @@ namespace ksts.plugin.shared.Constants
         public static string DuongDanThuMucCai() => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), TenThuMucCai);
 
-        public const string TenThuMucCai = "KstsPlugin";
+        public const string TenThuMucCai = "KySoPlugin";
 
-        public const string TenExe = "KstsPlugin.exe";
+        /// <summary>Khớp &lt;AssemblyName&gt; của ksts.plugin.api và SetupFileName của mọi backend phát bộ cài.</summary>
+        public const string TenExe = "Ký số plugin.exe";
 
         /// <summary>Tự khởi động theo NGƯỜI DÙNG (HKCU) chứ không theo máy — đây là lý do cài không cần UAC.</summary>
         public const string KhoaAutostart = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-        public const string TenAutostart = "KstsPlugin";
+        public const string TenAutostart = "KySoPlugin";
 
         /// <summary>
         /// Mục hiện trong Apps &amp; Features. Ghi ở HKCU vì bản cài là per-user; gỡ được là bắt buộc với
         /// phần mềm chạy nền, tự khởi động và đụng tới token.
         /// </summary>
-        public const string KhoaGoCaiDat = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\KstsPlugin";
+        public const string KhoaGoCaiDat = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\KySoPlugin";
 
         /// <summary>
         /// Tiến trình con chạy với quyền quản trị chỉ làm ĐÚNG việc cài middleware. Không để nó cài luôn

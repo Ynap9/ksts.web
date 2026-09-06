@@ -20,7 +20,6 @@ namespace ksts.be.external.Tsa.Implements
             _httpClientFactory = httpClientFactory;
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]> RequestTokenAsync(byte[] signatureValue, CancellationToken cancellationToken)
         {
             var hash = SHA256.HashData(signatureValue);
@@ -77,7 +76,6 @@ namespace ksts.be.external.Tsa.Implements
             return request.ProcessResponse(reply, out _).AsSignedCms().Encode();
         }
 
-        /// <inheritdoc/>
         public DateTime? DocGenTime(byte[] token)
         {
             if (!Rfc3161TimestampToken.TryDecode(token, out var decoded, out _) || decoded == null)

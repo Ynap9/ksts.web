@@ -8,10 +8,8 @@ using System.Text;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfObjectWriter : IPdfObjectWriter
     {
-        /// <inheritdoc/>
         public void WriteObject(StringBuilder builder, int number, object? value)
         {
             builder.Append(number.ToString(CultureInfo.InvariantCulture)).Append(" 0 obj\n");
@@ -19,7 +17,6 @@ namespace ksts.be.external.Pdf.Implements
             builder.Append("\nendobj\n");
         }
 
-        /// <inheritdoc/>
         public void WriteValue(StringBuilder builder, object? value)
         {
             switch (value)
@@ -102,7 +99,6 @@ namespace ksts.be.external.Pdf.Implements
             }
         }
 
-        /// <inheritdoc/>
         public void WriteString(StringBuilder builder, string value)
         {
             if (value.All(c => c is >= (char)0x20 and < (char)0x7F))
@@ -126,7 +122,6 @@ namespace ksts.be.external.Pdf.Implements
             builder.Append('>');
         }
 
-        /// <inheritdoc/>
         public string? AppendToArray(string dictRaw, string key, int newObjectNumber)
         {
             var marker = "/" + key;

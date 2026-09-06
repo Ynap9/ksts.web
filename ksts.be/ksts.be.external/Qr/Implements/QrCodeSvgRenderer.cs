@@ -21,7 +21,6 @@ namespace ksts.be.external.Qr.Implements
         /// <summary>Nền phải đặc, không để trong suốt: lưới phác thảo chạy dưới nền ăn vào vùng lặng làm máy quét đọc nhầm.</summary>
         private const string BackgroundColor = "#ffffff";
 
-        /// <inheritdoc/>
         public string RenderSvg(string noiDung)
         {
             if (string.IsNullOrWhiteSpace(noiDung))

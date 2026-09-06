@@ -9,6 +9,13 @@ export interface IViewBoCaiPlugin {
   exists?: boolean;
 }
 
+export interface IViewPhienBanPlugin {
+  phienBan?: string;
+  phuHop?: boolean;
+  danhSachPhuHop?: string[];
+  lyDo?: string | null;
+}
+
 export interface IViewSignCert {
   subject?: string;
   commonName?: string;

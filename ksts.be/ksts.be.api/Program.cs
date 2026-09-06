@@ -12,6 +12,7 @@ using ksts.be.applications.Signing.Implements;
 using ksts.be.applications.Signing.Interfaces;
 using ksts.be.applications.Template.Implements;
 using ksts.be.applications.Template.Interfaces;
+using ksts.be.shared.Constants.Plugin;
 using ksts.be.external.Certificates.Implements;
 using ksts.be.external.Certificates.Interfaces;
 using ksts.be.external.Colors.Implements;
@@ -130,6 +131,10 @@ string secretKey = builder.Configuration.GetSection("AuthServer:SecretKey").Valu
 
 builder.Services.Configure<AuthServerSettings>(builder.Configuration.GetSection("AuthServer"));
 builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("S3"));
+// Whitelist phiên bản plugin. IOptionsMonitor ở service chứ không IOptions: duyệt một bản plugin mới chỉ
+// cần sửa appsettings.json, không phải khởi động lại API - giống hệt cách bộ cài đã làm.
+builder.Services.Configure<PluginSettings>(
+    builder.Configuration.GetSection(PluginConstants.ConfigSection));
 builder.Services.Configure<FileSettings>(builder.Configuration.GetSection("FileConfig:File"));
 builder.Services.Configure<ConvertFileSettings>(builder.Configuration.GetSection("ConvertFile"));
 

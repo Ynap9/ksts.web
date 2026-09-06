@@ -26,7 +26,6 @@ namespace ksts.plugin.external.Certificates.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public TokenVerifyDto Verify(string thumbprint)
         {
             _logger.LogInformation($"{nameof(Verify)} thumbprint={thumbprint}");

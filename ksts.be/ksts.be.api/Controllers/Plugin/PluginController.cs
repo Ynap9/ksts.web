@@ -1,4 +1,5 @@
 using ksts.be.api.Controllers.Base;
+using ksts.be.applications.Plugin.Dtos;
 using ksts.be.applications.Plugin.Interfaces;
 using ksts.be.shared.Constants.Plugin;
 using ksts.be.shared.Requests;
@@ -24,6 +25,24 @@ namespace ksts.be.api.Controllers.Plugin
             ILogger<PluginController> logger) : base(logger)
         {
             _pluginService = pluginService;
+        }
+
+        /// <summary>
+        /// Đối chiếu phiên bản plugin ở máy người dùng với whitelist của backend. Phiên bản lạc hậu trả
+        /// PhuHop = false chứ không ném lỗi - FE cần lời nhắn để mời người dùng cập nhật.
+        /// </summary>
+        [HttpGet("phien-ban")]
+        public ApiResponse KiemTraPhienBan([FromQuery] KiemTraPhienBanDto dto)
+        {
+            try
+            {
+                var result = _pluginService.KiemTraPhienBan(dto);
+                return new(result);
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
         }
 
         /// <summary>Thông tin bộ cài plugin đi kèm bản build.</summary>

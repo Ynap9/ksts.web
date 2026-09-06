@@ -14,7 +14,6 @@ namespace ksts.be.external.Jobs.Implements
 
         private readonly ConcurrentDictionary<string, ZipJobDto> _jobs = new();
 
-        /// <inheritdoc/>
         public ZipJobDto Tao(int tongSo)
         {
             var job = new ZipJobDto
@@ -29,10 +28,8 @@ namespace ksts.be.external.Jobs.Implements
             return job;
         }
 
-        /// <inheritdoc/>
         public ZipJobDto? Lay(string jobId) => _jobs.TryGetValue(jobId, out var job) ? job : null;
 
-        /// <inheritdoc/>
         public void CapNhat(string jobId, Action<ZipJobDto> thayDoi)
         {
             if (!_jobs.TryGetValue(jobId, out var job))
@@ -46,7 +43,6 @@ namespace ksts.be.external.Jobs.Implements
             }
         }
 
-        /// <inheritdoc/>
         public void DonHetHan()
         {
             foreach (var item in _jobs.Where(x => x.Value.HetHanUtc < DateTime.UtcNow).ToList())

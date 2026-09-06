@@ -4,7 +4,10 @@
     <TargetFramework>net9.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>KstsPlugin</AssemblyName>
+    <AssemblyName>Ký số plugin</AssemblyName>
+    <!-- Nguồn DUY NHẤT của phiên bản: PluginConstants.PhienBan đọc lại từ assembly, BE đối chiếu chuỗi đó
+         với whitelist Plugin:PhienBanPhuHop. -->
+    <Version>1.0.0</Version>
     <RootNamespace>ksts.plugin.api</RootNamespace>
   </PropertyGroup>
 

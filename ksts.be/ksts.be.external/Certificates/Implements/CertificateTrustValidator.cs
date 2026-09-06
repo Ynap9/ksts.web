@@ -44,7 +44,6 @@ namespace ksts.be.external.Certificates.Implements
                 _rootG1 != null, _rootG2 != null, _subCaG1 != null, _intermediateCAs.Count);
         }
 
-        /// <inheritdoc/>
         public bool IsTrusted(X509Certificate2 signerCert, DateTime verificationTimeUtc)
         {
             if (_rootG1 != null && _subCaG1 != null)
@@ -60,7 +59,6 @@ namespace ksts.be.external.Certificates.Implements
                 && ChainsToRoot(signerCert, new X509Certificate2Collection(), _rootG2, verificationTimeUtc);
         }
 
-        /// <inheritdoc/>
         public bool ChainsToRoot(X509Certificate2 leaf, X509Certificate2Collection extra, X509Certificate2 root,
             DateTime verificationTimeUtc)
         {
@@ -81,7 +79,6 @@ namespace ksts.be.external.Certificates.Implements
             return string.Equals(top.Thumbprint, root.Thumbprint, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <inheritdoc/>
         public X509Certificate2? LoadPinnedCert(string fileName, string expectedSha256)
         {
             try
