@@ -202,7 +202,28 @@ namespace ksts.be.api.Controllers.LoKy
             }
         }
 
-        /// <summary>Dừng lô đang ký. File đã ký xong giữ nguyên và vẫn hợp lệ.</summary>
+        /// <summary>
+        /// Tạm dừng lô đang ký. File đã ký xong giữ nguyên và vẫn hợp lệ; bấm bắt đầu lại thì chạy tiếp từ
+        /// file kế tiếp chứ không ký lại từ đầu.
+        /// </summary>
+        [HttpPost("{id}/dung")]
+        public async Task<ApiResponse> Dung(int id)
+        {
+            try
+            {
+                await _loKyService.DungAsync(id);
+                return new();
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Huỷ hẳn lô. File đã ký giữ nguyên trên kho và vẫn hợp lệ, nhưng lô không ký tiếp được nữa và
+        /// không hiện lại ở màn ký số.
+        /// </summary>
         [HttpPost("{id}/huy")]
         public async Task<ApiResponse> Huy(int id)
         {

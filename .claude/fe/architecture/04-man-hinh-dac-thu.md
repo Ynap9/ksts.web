@@ -39,11 +39,20 @@ lặp thoát. Yêu cầu nào plugin trả lỗi thì nộp lại **đúng phầ
 ⚠️ **Đừng dựng lại `rows` mỗi nhịp.** Bắt Angular vẽ lại 5000 dòng mỗi 2 giây chính là thứ làm trình duyệt cạn
 tài nguyên rồi chết giữa lô. BE cũng chỉ trả file lỗi + tối đa 100 file vừa xong, không bao giờ cả danh sách.
 
-### Rời màn là dừng lô
+### Dừng, huỷ và ký tiếp
 
-`_destroyRef.onDestroy(() => this.dungLoKhiRoiMan())`: đóng phiên plugin **và** gọi `huy` lô. Bỏ mặc thì lô mồ
-côi vẫn mang trạng thái `DangKy` — lần sau hiện lại như đang chạy, trong khi mọi lượt ký chỉ đợi hết hạn 120
-giây để tính lỗi. File đã ký vẫn hợp lệ; bấm Bắt đầu lại thì chạy tiếp từ file dở.
+`dungLoKhiRoiMan` nay gọi `dung` (**tạm dừng**, không phải huỷ) rồi mới đóng phiên plugin — rời màn là mất
+người đưa thư, nhưng quay lại vẫn ký tiếp được. `loDangDo()` (có lô, `!hoanTat`, `!dangChay`) là cổng của ba
+thứ: nút đổi nhãn thành **Ký tiếp**, `coTheBatDau()` bỏ đòi nguồn và template (lô trên máy chủ đã có, mà mở
+lại màn thì hai ô rỗng), và `onBatDau` bỏ qua `taoLoVaDayFile()` để gọi thẳng `moPhienKy` + `goiBatDau`. Tải
+zip theo `coTheTaiZip` do BE tính, **không** suy từ `hoanTat`. Bảng Dừng-khác-Huỷ:
+[../../contracts/lo-ky.contract.md](../../contracts/lo-ky.contract.md).
+
+⚠️ **`dung`/`huy` XONG rồi mới `dongPhienKy`** — đóng phiên trước thì lượt đang chờ nhận lỗi "phiên đã đóng",
+không phải lỗi huỷ, nên file rơi vào nhánh **Lỗi** thay vì quay lại hàng đợi và đúng ngần ấy file không ký
+tiếp được.
+
+⚠️ `datLaiLo()` phải dọn **cả** `rows` và `thoiGianTheoThuTu`, bỏ sót là bảng của lô vừa huỷ còn nằm trên màn.
 
 ### Nạp file — hai đường
 

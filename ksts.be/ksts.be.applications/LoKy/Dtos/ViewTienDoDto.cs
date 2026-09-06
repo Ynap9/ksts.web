@@ -18,6 +18,8 @@ namespace ksts.be.applications.LoKy.Dtos
 
         public bool HoanTat { get; set; }
 
+        public bool CoTheTaiZip { get; set; }
+
         public string? LoiChung { get; set; }
 
         public string? TienToKho { get; set; }

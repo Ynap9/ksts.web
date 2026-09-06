@@ -32,7 +32,7 @@ namespace ksts.be.applications.LoKy.Implements
         private readonly IS3FileStorage _s3FileStorage;
         private readonly ILogger<KySoRunner> _logger;
 
-        private readonly ConcurrentDictionary<int, CancellationTokenSource> _dangChay = new();
+        private readonly ConcurrentDictionary<int, LuotChayLo> _dangChay = new();
 
         /// <summary>Khoá nhận việc: hai luồng không được nhận trúng cùng một file.</summary>
         private readonly SemaphoreSlim _khoaNhanViec = new(1, 1);
@@ -65,10 +65,10 @@ namespace ksts.be.applications.LoKy.Implements
         {
             _logger.LogInformation("{Method} loKyId={LoKyId}", nameof(BatDau), loKyId);
 
-            var nguon = new CancellationTokenSource();
-            if (!_dangChay.TryAdd(loKyId, nguon))
+            var luot = new LuotChayLo(new CancellationTokenSource());
+            if (!_dangChay.TryAdd(loKyId, luot))
             {
-                nguon.Dispose();
+                luot.Dispose();
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace ksts.be.applications.LoKy.Implements
             {
                 try
                 {
-                    await ChayLoAsync(loKyId, thumbprint, nguon.Token);
+                    await ChayLoAsync(loKyId, thumbprint, luot.Nguon.Token);
                 }
                 catch (Exception ex)
                 {
@@ -90,11 +90,15 @@ namespace ksts.be.applications.LoKy.Implements
             });
         }
 
-        public void Dung(int loKyId)
+        /// <inheritdoc/>
+        public void Dung(int loKyId, KieuDungLo kieu)
         {
-            if (_dangChay.TryGetValue(loKyId, out var nguon))
+            // Ghi lý do TRƯỚC khi bật công tắc: vòng chạy đọc lại nó lúc chốt trạng thái, mà nó có thể thoát
+            // ngay trong lời gọi Cancel này.
+            if (_dangChay.TryGetValue(loKyId, out var luot))
             {
-                nguon.Cancel();
+                luot.KieuDung = kieu;
+                luot.Nguon.Cancel();
             }
         }
 
@@ -118,9 +122,19 @@ namespace ksts.be.applications.LoKy.Implements
             {
             }
 
-            await KetThucLoAsync(loKyId, cancellationToken.IsCancellationRequested);
+            var kieuDung = _dangChay.TryGetValue(loKyId, out var luot) ? luot.KieuDung : null;
+
+            // Bị dừng mà không rõ vì đâu thì coi là TẠM DỪNG: giữ file nguồn lại vẫn ký tiếp được, còn đoán
+            // nhầm sang huỷ là dọn mất nguồn của một lô người dùng đang muốn chạy tiếp.
+            if (kieuDung == null && cancellationToken.IsCancellationRequested)
+            {
+                kieuDung = KieuDungLo.TamDung;
+            }
+
+            await KetThucLoAsync(loKyId, kieuDung);
         }
 
+        /// <inheritdoc/>
         public async Task<PhienKyDto> MoPhienAsync(int loKyId, string thumbprint,
             CancellationToken cancellationToken)
         {
@@ -387,7 +401,8 @@ namespace ksts.be.applications.LoKy.Implements
                     .SetProperty(x => x.ModifiedDate, now));
         }
 
-        public async Task KetThucLoAsync(int loKyId, bool biHuy)
+        /// <inheritdoc/>
+        public async Task KetThucLoAsync(int loKyId, KieuDungLo? kieuDung)
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<KstsDbContext>();
@@ -398,20 +413,31 @@ namespace ksts.be.applications.LoKy.Implements
                 return;
             }
 
-            lo.TrangThai = biHuy ? TrangThaiLoKy.Huy : TrangThaiLoKy.Xong;
-            lo.ThoiDiemXong = DateTimeConstants.VietnamNow;
-            lo.ModifiedDate = lo.ThoiDiemXong;
+            lo.TrangThai = kieuDung switch
+            {
+                KieuDungLo.Huy => TrangThaiLoKy.Huy,
+                KieuDungLo.TamDung => TrangThaiLoKy.TamDung,
+                _ => TrangThaiLoKy.Xong,
+            };
+            lo.ModifiedDate = DateTimeConstants.VietnamNow;
+
+            // Lô tạm dừng CHƯA kết thúc: để trống mốc xong thì màn hình và báo cáo không đọc nhầm nó thành lô
+            // đã chốt, mà nó còn ký tiếp được.
+            if (kieuDung != KieuDungLo.TamDung)
+            {
+                lo.ThoiDiemXong = lo.ModifiedDate;
+            }
 
             await db.SaveChangesAsync();
 
-            if (biHuy)
+            // Chỉ giữ bản nguồn cho lô còn ký tiếp. Chạy trọn hoặc huỷ hẳn thì dọn, vì lúc đó không ai quay
+            // lại lô này nữa và để lại là rác vĩnh viễn. CHỈ có tác dụng với lô nhận file từ máy người dùng —
+            // lô lấy từ thư mục trên kho không chép gì vào lo-ky/ nên tiền tố này rỗng và lệnh xoá thành vô hại.
+            if (kieuDung == KieuDungLo.TamDung)
             {
                 return;
             }
 
-            // Dọn bản nguồn của lô. CHỈ có tác dụng với lô nhận file từ máy người dùng — lô lấy từ thư mục
-            // trên kho không chép gì vào lo-ky/ nên tiền tố này rỗng và lệnh xoá thành vô hại. Chỉ dọn khi lô
-            // chạy trọn: lô bị huỷ còn phải ký tiếp từ file dở, xoá nguồn là mất luôn đường chạy tiếp.
             try
             {
                 await _loKyFileStorage.XoaThuMucAsync(loKyId, LoKyConstants.ThuMucNguon);
@@ -440,6 +466,17 @@ namespace ksts.be.applications.LoKy.Implements
             lo.ModifiedDate = lo.ThoiDiemXong;
 
             await db.SaveChangesAsync();
+        }
+
+        /// <summary>One running batch: its cancel switch plus why it was stopped, so the finishing step can
+        /// tell a pause from a cancel — the runner settles the batch state AFTER the service wrote it.</summary>
+        private sealed class LuotChayLo(CancellationTokenSource nguon) : IDisposable
+        {
+            public CancellationTokenSource Nguon { get; } = nguon;
+
+            public KieuDungLo? KieuDung { get; set; }
+
+            public void Dispose() => Nguon.Dispose();
         }
     }
 }

@@ -70,6 +70,15 @@ export class LoKyService {
         return this.http.get<IBaseResponseWithData<IViewTienDoLoKy>>(`${this.api}/${loKyId}/trang-thai`);
     }
 
+    /**
+     * Tạm dừng lô: file đang ký dở quay lại hàng đợi và bản nguồn được giữ, nên bắt đầu lại là chạy tiếp từ
+     * file kế tiếp. Gọi xong mới được đóng phiên ký — ngược lại các lượt đang chờ bị tính thành lỗi.
+     */
+    dung(loKyId: number) {
+        return this.http.post<IBaseResponse>(`${this.api}/${loKyId}/dung`, {});
+    }
+
+    /** Huỷ hẳn lô: bản đã ký vẫn nằm trên kho và vẫn hợp lệ, nhưng lô không ký tiếp và không hiện lại nữa. */
     huy(loKyId: number) {
         return this.http.post<IBaseResponse>(`${this.api}/${loKyId}/huy`, {});
     }

@@ -1,5 +1,6 @@
 using ksts.be.applications.LoKy.Dtos;
 using ksts.be.external.Pdf.Dtos;
+using ksts.be.shared.Constants.LoKy;
 using TemplateEntity = ksts.be.domain.Template.Template;
 
 namespace ksts.be.applications.LoKy.Interfaces
@@ -19,8 +20,11 @@ namespace ksts.be.applications.LoKy.Interfaces
         /// <summary>Khởi động tiến trình ký cho một lô. Gọi lại trên lô đang chạy thì bỏ qua.</summary>
         void BatDau(int loKyId, string thumbprint);
 
-        /// <summary>Dừng lô. File đã ký xong giữ nguyên và vẫn hợp lệ, cắm lại token là chạy tiếp từ file dở.</summary>
-        void Dung(int loKyId);
+        /// <summary>
+        /// Stops a running batch. Signed files always stay valid; <paramref name="kieu"/> decides whether the
+        /// batch can be resumed later or is closed for good.
+        /// </summary>
+        void Dung(int loKyId, KieuDungLo kieu);
 
         /// <summary>Lô có đang được tiến trình nền chạy không.</summary>
         bool DangChay(int loKyId);
@@ -83,8 +87,12 @@ namespace ksts.be.applications.LoKy.Interfaces
         /// <summary>Cộng dồn số file xong / lỗi của lô bằng một câu lệnh, không đếm lại cả bảng sau mỗi file.</summary>
         Task CongDonKetQuaAsync(int loKyId, bool thanhCong);
 
-        /// <summary>Chốt trạng thái lô khi vòng chạy kết thúc, dù là chạy hết hay bị dừng giữa chừng.</summary>
-        Task KetThucLoAsync(int loKyId, bool biHuy);
+        /// <summary>
+        /// Settles the batch state once the run ends. Null <paramref name="kieuDung"/> means the batch ran to
+        /// the end. Source files are cleaned up unless the batch was merely paused — dropping them would take
+        /// away the only way to resume.
+        /// </summary>
+        Task KetThucLoAsync(int loKyId, KieuDungLo? kieuDung);
 
         /// <summary>Ghi sự cố chung của lô — khác lỗi từng file, cái này làm cả lô dừng lại.</summary>
         Task GhiLoiChungAsync(int loKyId, string thongDiep);
