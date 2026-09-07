@@ -90,6 +90,12 @@ namespace kssm.be.external.Pdf.Interfaces
         PdfRectPointsDto ApplyChuKyMinSize(PdfRectPointsDto rect, PdfRectPointsDto pageBox);
 
         /// <summary>
+        /// Đặt con dấu về bề rộng thật <c>ImagePlacementConstants.DauDoWidthMm</c>, cao suy ra theo tỉ lệ ảnh
+        /// để dấu tròn không thành bầu dục. Ô người dùng kéo chỉ dùng để lấy tâm đóng dấu.
+        /// </summary>
+        PdfRectPointsDto ApplyDauDoSize(PdfRectPointsDto rect, byte[] anh);
+
+        /// <summary>
         /// Nắn ô chữ ký tươi cho khớp ảnh: GIỮ NGUYÊN TỈ LỆ khung hình để nét chữ không bị bóp méo, và chặn
         /// trần bề rộng theo <c>SealPlacementConstants.MaxChuKyTuoiWidthRatio</c> — ảnh scan có thể rất lớn,
         /// không có trần thì chữ ký chiếm hết nửa trang. Ô mới lấy đúng TÂM của ô người dùng đã đặt.

@@ -253,6 +253,15 @@ namespace kssm.be.applications.LoKy.Implements
                     "Chưa mở phiên ký với máy người dùng, hoặc phiên đã mất. Mở lại phiên rồi ký tiếp.");
             }
 
+            // Ký tiếp phải ký lại cả file hỏng của lượt trước: phần lớn lỗi là do phiên ký đứt giữa chừng
+            // (rút token, đóng tab, tạm dừng) chứ không phải file hỏng, để nguyên thì chúng không bao giờ
+            // được ký. Trừ lại bộ đếm đúng bấy nhiêu vì nó cộng dồn theo từng file.
+            var soLoiTraLai = await TraFileLoiVeHangDoiAsync(loKyId);
+            if (soLoiTraLai > 0)
+            {
+                lo.SoLoi = Math.Max(0, lo.SoLoi - soLoiTraLai);
+            }
+
             // Ký tiếp cũng đi đúng đường này: việc lấy file luôn lọc theo trạng thái chờ nên hết file chờ
             // nghĩa là không còn gì để ký, kể cả khi lô từng dừng giữa chừng.
             var conCho = await _kstsDbContext.LoKyFile
@@ -560,6 +569,24 @@ namespace kssm.be.applications.LoKy.Implements
             tenDaCo.Add(tenMoi);
 
             return tenMoi;
+        }
+
+        /// <summary>
+        /// Trả mọi file hỏng về hàng đợi, trả về số file đã gỡ để bộ đếm lỗi của lô trừ đi đúng bấy nhiêu.
+        /// Kết quả kiểm chữ ký của lượt trước xoá theo: nó thuộc về lần thử đã hỏng, không phải lần sắp chạy.
+        /// </summary>
+        public async Task<int> TraFileLoiVeHangDoiAsync(int loKyId)
+        {
+            var now = DateTimeConstants.VietnamNow;
+
+            return await _kstsDbContext.LoKyFile
+                .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Loi)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.TrangThai, TrangThaiFileKy.Cho)
+                    .SetProperty(x => x.LyDoLoi, (string?)null)
+                    .SetProperty(x => x.ChuKyHopLe, (bool?)null)
+                    .SetProperty(x => x.LyDoChuKy, (string?)null)
+                    .SetProperty(x => x.ModifiedDate, now));
         }
 
         /// <summary>

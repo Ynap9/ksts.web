@@ -36,7 +36,7 @@ namespace kssm.be.applications.Plugin.Implements
             var path = PluginConstants.GetSetupPath();
             return new ViewBoCaiPluginDto
             {
-                FileName = Path.GetFileName(path),
+                FileName = PluginConstants.GetSetupDownloadName(),
                 Exists = File.Exists(path),
             };
         }

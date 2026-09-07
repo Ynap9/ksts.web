@@ -65,7 +65,7 @@ namespace kssm.be.api.Controllers.Plugin
         public IActionResult GetBoCaiContent()
         {
             var stream = _pluginService.OpenBoCai();
-            return File(stream, PluginConstants.SetupContentType, PluginConstants.SetupFileName);
+            return File(stream, PluginConstants.SetupContentType, PluginConstants.GetSetupDownloadName());
         }
     }
 }

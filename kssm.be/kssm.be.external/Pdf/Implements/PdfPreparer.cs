@@ -363,6 +363,7 @@ namespace kssm.be.external.Pdf.Implements
             foreach (var placement in options.ViTri)
             {
                 var veKhoiChu = placement.Kind == TemplatePositionKindConstants.ChuKy;
+                var laDauDo = placement.Kind == TemplatePositionKindConstants.DauDo;
                 byte[]? anh = null;
                 bool laChuKy;
 
@@ -379,12 +380,12 @@ namespace kssm.be.external.Pdf.Implements
                         laChuKy = options.NhoiChuKySoVaoAnh;
                         break;
 
-                    // Con dấu đã được vẽ sẵn vào trang từ bước dựng giấy báo nên luồng ký KHÔNG vẽ lại: vẽ
-                    // thêm là thành hai con dấu trên một tờ. Chỉ khi template chọn nhồi chữ ký số vào ảnh mới
-                    // đặt lên đó một widget trong suốt để bấm vào dấu là ra bảng thông tin chữ ký.
+                    // Tài liệu vào đây là bản QUÉT của dự án, trên trang không có sẵn con dấu nào, nên luồng
+                    // ký phải tự vẽ dấu vào - khác hẳn giấy báo trúng tuyển do chính hệ thống dựng ra kèm dấu.
                     case TemplatePositionKindConstants.DauDo:
-                        if (!options.NhoiChuKySoVaoAnh) continue;
-                        laChuKy = true;
+                        if (options.AnhDauDo == null || options.AnhDauDo.Length == 0) continue;
+                        anh = options.AnhDauDo;
+                        laChuKy = options.NhoiChuKySoVaoAnh;
                         break;
 
                     default:
@@ -400,18 +401,25 @@ namespace kssm.be.external.Pdf.Implements
                 var pageBox = ReadPageBox(revision, pageRaw, pagesObjectNumber);
                 var rect = ToPoints(placement, pageBox);
                 if (veKhoiChu) rect = ApplyChuKyMinSize(rect, pageBox);
-                if (anh != null) rect = ApplyChuKyTuoiFit(rect, pageBox, anh);
+                if (anh != null)
+                {
+                    rect = laDauDo ? ApplyDauDoSize(rect, anh) : ApplyChuKyTuoiFit(rect, pageBox, anh);
+                }
                 rect = ClampToPage(rect, pageBox);
 
                 if (rect.Width <= 0 || rect.Height <= 0) continue;
 
+                // Dấu KHÔNG nong nét và KHÔNG nhuộm màu: nong nét sinh ra cho nét bút quét bị mảnh, còn dấu
+                // là bản in sẵn có đường viền và mực đỏ riêng - động vào là ra vệt bệt và sai màu con dấu.
                 var appearance = veKhoiChu
                     ? _appearanceBuilder.BuildText(options.TenNguoiKy, signedAtText, plan.NextObjectNumber,
                         rect.Width, rect.Height, options.MauChuKySo)
                     : anh != null
-                        ? _appearanceBuilder.BuildImage(anh, options.DoDamChuKyTuoi,
-                            options.DoDayNetChuKyTuoi, plan.NextObjectNumber, rect.Width, rect.Height,
-                            options.MauChuKyTuoi)
+                        ? _appearanceBuilder.BuildImage(anh,
+                            laDauDo ? options.DoDamDauDo : options.DoDamChuKyTuoi,
+                            laDauDo ? TemplateConstants.DoDayNetMin : options.DoDayNetChuKyTuoi,
+                            plan.NextObjectNumber, rect.Width, rect.Height,
+                            laDauDo ? null : options.MauChuKyTuoi)
                         : _appearanceBuilder.Transplant(
                             _appearanceBuilder.Draw(rect.Width, rect.Height, (_, _) => { }),
                             plan.NextObjectNumber, rect.Width, rect.Height);
@@ -549,6 +557,28 @@ namespace kssm.be.external.Pdf.Implements
             {
                 X = rect.X,
                 Y = rect.Top - height,
+                Width = width,
+                Height = height,
+            };
+        }
+
+        public PdfRectPointsDto ApplyDauDoSize(PdfRectPointsDto rect, byte[] anh)
+        {
+            var kichThuoc = _imageSizeReader.Read(anh);
+            if (kichThuoc.WidthPoints <= 0 || kichThuoc.HeightPoints <= 0)
+            {
+                return rect;
+            }
+
+            var width = ImagePlacementConstants.DauDoWidthMm
+                / ImagePlacementConstants.MmPerInch * ImagePlacementConstants.PointsPerInch;
+            var height = width * kichThuoc.HeightPoints / kichThuoc.WidthPoints;
+
+            // Giữ nguyên TÂM ô người dùng đã đặt: đổi khổ quanh tâm thì dấu vẫn đóng đúng chỗ được chọn.
+            return new PdfRectPointsDto
+            {
+                X = rect.X + (rect.Width - width) / 2,
+                Y = rect.Y + (rect.Height - height) / 2,
                 Width = width,
                 Height = height,
             };

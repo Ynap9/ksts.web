@@ -16,7 +16,11 @@ namespace kssm.be.external.Pdf.Dtos
 
         public bool NhoiChuKySoVaoAnh { get; set; }
 
+        public byte[]? AnhDauDo { get; set; }
+
         public byte[]? AnhChuKyTuoi { get; set; }
+
+        public int DoDamDauDo { get; set; } = TemplateConstants.DoDamMacDinh;
 
         public int DoDamChuKyTuoi { get; set; } = TemplateConstants.DoDamMacDinh;
 

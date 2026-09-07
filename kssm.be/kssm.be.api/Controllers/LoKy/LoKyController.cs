@@ -3,6 +3,7 @@ using kssm.be.applications.LoKy.Dtos;
 using kssm.be.applications.LoKy.Interfaces;
 using kssm.be.shared.Constants.LoKy;
 using kssm.be.shared.Requests;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace kssm.be.api.Controllers.LoKy
@@ -230,6 +231,14 @@ namespace kssm.be.api.Controllers.LoKy
         public async Task<IActionResult> TaiZip(int id, [FromQuery] string token,
             CancellationToken cancellationToken)
         {
+            // ZipArchive ghi bảng mục lục cuối gói bằng lệnh ghi ĐỒNG BỘ, mà Response.Body cấm ghi đồng bộ
+            // theo mặc định - không mở cờ này thì gói hỏng đúng lúc đóng, sau khi đã ghi hết file.
+            var dieuKhienThan = HttpContext.Features.Get<IHttpBodyControlFeature>();
+            if (dieuKhienThan != null)
+            {
+                dieuKhienThan.AllowSynchronousIO = true;
+            }
+
             Response.ContentType = LoKyConstants.ZipContentType;
             Response.Headers.ContentDisposition =
                 $"attachment; filename=\"ky-so-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";

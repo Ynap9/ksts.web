@@ -59,6 +59,12 @@ namespace kssm.be.applications.LoKy.Interfaces
         Task KyMotFileAsync(int loKyFileId, PhienKyDto phien, CancellationToken cancellationToken);
 
         /// <summary>
+        /// Tải ảnh dấu đỏ của template về, MỘT lần cho cả lô. Cùng luật với ảnh chữ ký tươi: không khai thì
+        /// trả null, khai rồi mà kho không trả được ảnh thì DỪNG lô.
+        /// </summary>
+        Task<byte[]?> TaiAnhDauDoAsync(TemplateEntity template, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Tải ảnh chữ ký tươi của template về, MỘT lần cho cả lô. Template không khai ảnh thì trả null —
         /// chữ ký tươi là tuỳ chọn. Khai rồi mà kho không có ảnh thì DỪNG lô kèm lý do đọc được: ký thiếu
         /// ảnh cả lô rồi mới phát hiện là phải ký lại từ đầu.
@@ -71,7 +77,7 @@ namespace kssm.be.applications.LoKy.Interfaces
         /// tươi và con dấu. Bật cả hai vẫn chỉ MỘT chữ ký, chỉ là nhiều widget.
         /// </summary>
         PdfPrepareOptionsDto DungTuyChon(TemplateEntity template, List<PdfPlacementDto> viTri,
-            string tenNguoiKy, byte[]? anhChuKyTuoi);
+            string tenNguoiKy, byte[]? anhDauDo, byte[]? anhChuKyTuoi);
 
         /// <summary>
         /// Bản sao tuỳ chọn cho một file, chỉ khác giờ ký. Phải nhân bản chứ không sửa thẳng bản mẫu: các

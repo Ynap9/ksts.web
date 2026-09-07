@@ -172,6 +172,7 @@ namespace kssm.be.applications.LoKy.Implements
                 })
                 .ToListAsync(cancellationToken);
 
+            var anhDauDo = await TaiAnhDauDoAsync(template, cancellationToken);
             var anhChuKyTuoi = await TaiAnhChuKyTuoiAsync(template, cancellationToken);
 
             // Lấy chứng thư MỘT lần cho cả lô: với token thật, đây chính là chỗ giữ phiên khoá để N file chỉ
@@ -185,7 +186,7 @@ namespace kssm.be.applications.LoKy.Implements
                 ProjectId = lo.ProjectId,
                 Cert = cert,
                 ChuoiChungThu = _signingKey.LayChuoiChungThu(cert),
-                TuyChonMau = DungTuyChon(template, viTri, tenNguoiKy, anhChuKyTuoi),
+                TuyChonMau = DungTuyChon(template, viTri, tenNguoiKy, anhDauDo, anhChuKyTuoi),
                 KyDe = template.KyDe,
                 Kho = await LayKhoAsync(lo.ProjectId, cancellationToken),
                 TienToDaKy = lo.TienToKho ?? LoKyConstants.GetSignedPrefix(loKyId),
@@ -349,6 +350,32 @@ namespace kssm.be.applications.LoKy.Implements
             }
         }
 
+        public async Task<byte[]?> TaiAnhDauDoAsync(TemplateEntity template,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(template.AnhDauDoObjectKey))
+            {
+                return null;
+            }
+
+            try
+            {
+                // Ảnh của template luôn nằm ở kho mặc định của service, không phải kho của dự án.
+                return await _s3FileStorage.DownloadAsync(template.AnhDauDoObjectKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                // DỪNG cả lô, cùng lý do như ảnh chữ ký tươi: cả nghìn tờ thiếu con dấu chỉ lộ ra sau khi đã
+                // ký xong thì phải ký lại toàn bộ.
+                _logger.LogError(ex, "Không tải được ảnh dấu đỏ {Key} của template {TemplateId}",
+                    template.AnhDauDoObjectKey, template.Id);
+
+                throw new UserFriendlyException(ErrorCodes.TemplateImageInvalid,
+                    $"Không tải được ảnh dấu đỏ của template \"{template.TenTemplate}\" từ kho "
+                    + $"(object key: {template.AnhDauDoObjectKey}). Vào màn Template tải lại ảnh rồi ký lại.");
+            }
+        }
+
         public async Task<byte[]?> TaiAnhChuKyTuoiAsync(TemplateEntity template,
             CancellationToken cancellationToken)
         {
@@ -377,7 +404,7 @@ namespace kssm.be.applications.LoKy.Implements
         }
 
         public PdfPrepareOptionsDto DungTuyChon(TemplateEntity template, List<PdfPlacementDto> viTri,
-            string tenNguoiKy, byte[]? anhChuKyTuoi)
+            string tenNguoiKy, byte[]? anhDauDo, byte[]? anhChuKyTuoi)
         {
             return new PdfPrepareOptionsDto
             {
@@ -388,7 +415,9 @@ namespace kssm.be.applications.LoKy.Implements
                 NoiKy = template.NoiKy,
                 HienThiChuKySo = template.HienThiChuKySo,
                 NhoiChuKySoVaoAnh = template.NhoiChuKySoVaoAnh,
+                AnhDauDo = anhDauDo,
                 AnhChuKyTuoi = anhChuKyTuoi,
+                DoDamDauDo = template.DoDamDauDo,
                 DoDamChuKyTuoi = template.DoDamChuKyTuoi,
                 DoDayNetChuKyTuoi = template.DoDayNetChuKyTuoi,
                 MauChuKySo = template.MauChuKySo,
@@ -407,7 +436,9 @@ namespace kssm.be.applications.LoKy.Implements
                 SignedAt = signedAt,
                 HienThiChuKySo = mau.HienThiChuKySo,
                 NhoiChuKySoVaoAnh = mau.NhoiChuKySoVaoAnh,
+                AnhDauDo = mau.AnhDauDo,
                 AnhChuKyTuoi = mau.AnhChuKyTuoi,
+                DoDamDauDo = mau.DoDamDauDo,
                 DoDamChuKyTuoi = mau.DoDamChuKyTuoi,
                 DoDayNetChuKyTuoi = mau.DoDayNetChuKyTuoi,
                 MauChuKySo = mau.MauChuKySo,
