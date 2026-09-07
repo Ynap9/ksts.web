@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace ksts.be.shared.Constants.Plugin
 {
     /// <summary>
@@ -16,6 +18,29 @@ namespace ksts.be.shared.Constants.Plugin
 
         /// <summary>Khớp đúng từng ký tự với CaiDatConstants.TenExe của plugin; lệch là API báo thiếu bộ cài.</summary>
         public const string SetupFileName = "Ký số plugin.exe";
+
+        /// <summary>
+        /// Tên file lúc TẢI VỀ, kèm phiên bản đọc từ chính bộ cài. Tên trên đĩa phải giữ nguyên
+        /// <see cref="SetupFileName"/> vì trình cài đặt của plugin dò theo tên đó, nên phiên bản chỉ được gắn
+        /// ở đây. Không đọc được phiên bản thì lùi về tên trơn, tải về vẫn chạy đúng.
+        /// </summary>
+        public static string GetSetupDownloadName()
+        {
+            var path = GetSetupPath();
+            if (!File.Exists(path))
+            {
+                return SetupFileName;
+            }
+
+            var phienBan = FileVersionInfo.GetVersionInfo(path).ProductVersion?.Split('+')[0];
+            if (string.IsNullOrWhiteSpace(phienBan))
+            {
+                return SetupFileName;
+            }
+
+            return $"{Path.GetFileNameWithoutExtension(SetupFileName)} {phienBan}"
+                + Path.GetExtension(SetupFileName);
+        }
 
         public const string SetupContentType = "application/octet-stream";
 
