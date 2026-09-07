@@ -32,8 +32,16 @@ namespace kssm.be.shared.Constants.SaoMai
         public const string FieldOrderIndex = "orderIndex";
         public const string FieldCreatedAt = "createdAt";
 
-        /// <summary>Chỉ dự án ĐANG NGHIỆM THU mới được đưa vào ký số.</summary>
         public const string StatusInAcceptance = "dang_nghiem_thu";
+
+        public const string StatusFinished = "da_xong";
+
+        /// <summary>Chỉ dự án ĐANG NGHIỆM THU hoặc ĐÃ XONG mới được đưa vào ký số.</summary>
+        public static readonly IReadOnlyList<string> SignableStatuses = new[]
+        {
+            StatusInAcceptance,
+            StatusFinished,
+        };
 
         /// <summary>
         /// Trạng thái đặt cho dự án sau khi lô ký chạy trọn. Giá trị này CHƯA có trong enum PROJECT_STATUS

@@ -511,10 +511,11 @@ namespace kssm.be.applications.LoKy.Implements
         {
             var duAn = await _projectReader.GetProjectAsync(projectId, cancellationToken);
 
-            if (!string.Equals(duAn.Status, SaoMaiConstants.StatusInAcceptance, StringComparison.Ordinal))
+            if (!SaoMaiConstants.SignableStatuses.Any(x =>
+                string.Equals(x, duAn.Status, StringComparison.Ordinal)))
             {
                 throw new UserFriendlyException(ErrorCodes.DuAnSaiTrangThai,
-                    $"Dự án \"{duAn.Name}\" không ở trạng thái đang nghiệm thu nên chưa ký số được.");
+                    $"Dự án \"{duAn.Name}\" không ở trạng thái đang nghiệm thu hoặc đã xong nên chưa ký số được.");
             }
 
             var kho = await _projectReader.GetProjectStorageAsync(projectId, cancellationToken)
