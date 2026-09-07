@@ -51,6 +51,6 @@ namespace kssm.be.shared.Constants.Plugin
         /// Whitelist dùng khi cấu hình để trống. Ghim ở đây để một bản triển khai thiếu section Plugin vẫn
         /// chạy được, thay vì đánh trượt MỌI plugin và chặn cả hệ thống ký.
         /// </summary>
-        public static readonly string[] PhienBanPhuHopMacDinh = ["1.0.0"];
+        public static readonly string[] PhienBanPhuHopMacDinh = ["1.0.1"];
     }
 }
