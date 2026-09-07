@@ -4,7 +4,6 @@ using ksts.plugin.external.Certificates.Interfaces;
 
 namespace ksts.plugin.applications.ChungThuSo.Implements
 {
-    /// <inheritdoc/>
     public class ChungThuSoService : IChungThuSoService
     {
         private readonly ICertificateProvider _certificateProvider;
@@ -16,7 +15,6 @@ namespace ksts.plugin.applications.ChungThuSo.Implements
             _tokenVerifier = tokenVerifier;
         }
 
-        /// <inheritdoc/>
         public CertScanResultDto GetList(bool onlySignable)
         {
             var result = _certificateProvider.GetCertificates();
@@ -29,7 +27,6 @@ namespace ksts.plugin.applications.ChungThuSo.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public TokenVerifyDto KiemTraToken(string thumbprint)
         {
             return _tokenVerifier.Verify(thumbprint);

@@ -29,7 +29,6 @@ namespace ksts.be.external.Certificates.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public CertScanResultDto GetCertificates()
         {
             _logger.LogInformation($"{nameof(GetCertificates)}");

@@ -35,7 +35,6 @@ namespace ksts.be.external.Gotenberg.Implements
             _settings = settings.Value;
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]> HtmlToPdfAsync(string html, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(_settings.BaseUrl))

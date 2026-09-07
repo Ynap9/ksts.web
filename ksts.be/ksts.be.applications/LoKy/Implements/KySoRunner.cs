@@ -19,7 +19,6 @@ using TemplateEntity = ksts.be.domain.Template.Template;
 
 namespace ksts.be.applications.LoKy.Implements
 {
-    /// <inheritdoc/>
     public class KySoRunner : IKySoRunner
     {
         private readonly IServiceScopeFactory _scopeFactory;
@@ -62,7 +61,6 @@ namespace ksts.be.applications.LoKy.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public void BatDau(int loKyId, string thumbprint)
         {
             _logger.LogInformation("{Method} loKyId={LoKyId}", nameof(BatDau), loKyId);
@@ -104,10 +102,8 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public bool DangChay(int loKyId) => _dangChay.ContainsKey(loKyId);
 
-        /// <inheritdoc/>
         public async Task ChayLoAsync(int loKyId, string thumbprint, CancellationToken cancellationToken)
         {
             var phien = await MoPhienAsync(loKyId, thumbprint, cancellationToken);
@@ -169,7 +165,6 @@ namespace ksts.be.applications.LoKy.Implements
             };
         }
 
-        /// <inheritdoc/>
         public async Task ChayMotLuongAsync(PhienKyDto phien, CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -184,7 +179,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<int?> NhanViecAsync(int loKyId, CancellationToken cancellationToken)
         {
             await _khoaNhanViec.WaitAsync(cancellationToken);
@@ -217,7 +211,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task KyMotFileAsync(int loKyFileId, PhienKyDto phien,
             CancellationToken cancellationToken)
         {
@@ -311,7 +304,6 @@ namespace ksts.be.applications.LoKy.Implements
                 dongHo.ElapsedMilliseconds - msTai - msDung - msKy - msTsa);
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]?> TaiAnhChuKyTuoiAsync(TemplateEntity template,
             CancellationToken cancellationToken)
         {
@@ -338,7 +330,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public PdfPrepareOptionsDto DungTuyChon(TemplateEntity template, string tenNguoiKy,
             byte[]? anhChuKyTuoi)
         {
@@ -368,7 +359,6 @@ namespace ksts.be.applications.LoKy.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfPrepareOptionsDto NhanBanTuyChon(PdfPrepareOptionsDto mau, DateTime signedAt)
         {
             return new PdfPrepareOptionsDto
@@ -388,7 +378,6 @@ namespace ksts.be.applications.LoKy.Implements
             };
         }
 
-        /// <inheritdoc/>
         public async Task CongDonKetQuaAsync(int loKyId, bool thanhCong)
         {
             using var scope = _scopeFactory.CreateScope();
@@ -460,7 +449,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task GhiLoiChungAsync(int loKyId, string thongDiep)
         {
             using var scope = _scopeFactory.CreateScope();

@@ -23,7 +23,6 @@ using LoKyFileEntity = ksts.be.domain.LoKy.LoKyFile;
 
 namespace ksts.be.applications.LoKy.Implements
 {
-    /// <inheritdoc/>
     public class LoKyService : BaseService, ILoKyService
     {
         private readonly ILoKyFileStorage _loKyFileStorage;
@@ -53,7 +52,6 @@ namespace ksts.be.applications.LoKy.Implements
             _s3Settings = s3Options.Value;
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto> TaoLoAsync(TaoLoKyDto input)
         {
             _logger.LogInformation($"{nameof(TaoLoAsync)} templateId={input.TemplateId}");
@@ -86,7 +84,6 @@ namespace ksts.be.applications.LoKy.Implements
             return ToViewDto(lo);
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto> ThemFileAsync(int loKyId, IFormFileCollection files)
         {
             _logger.LogInformation($"{nameof(ThemFileAsync)} loKyId={loKyId} soFile={files.Count}");
@@ -145,7 +142,6 @@ namespace ksts.be.applications.LoKy.Implements
             return ToViewDto(lo);
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto> ThemFileTuKhoAsync(int loKyId, ThemFileTuKhoDto input)
         {
             _logger.LogInformation($"{nameof(ThemFileTuKhoAsync)} loKyId={loKyId} duongDan={input.DuongDan}");
@@ -216,7 +212,6 @@ namespace ksts.be.applications.LoKy.Implements
             return ToViewDto(lo);
         }
 
-        /// <inheritdoc/>
         public string ChuanHoaTienTo(string duongDan)
         {
             var giaTri = (duongDan ?? string.Empty).Trim();
@@ -257,7 +252,6 @@ namespace ksts.be.applications.LoKy.Implements
             return giaTri.Length == 0 ? string.Empty : giaTri + "/";
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto> MoPhienKyAsync(int loKyId, MoPhienKyDto input)
         {
             _logger.LogInformation($"{nameof(MoPhienKyAsync)} loKyId={loKyId}");
@@ -298,14 +292,12 @@ namespace ksts.be.applications.LoKy.Implements
             return ToViewDto(lo);
         }
 
-        /// <inheritdoc/>
         public async Task DongPhienKyAsync(int loKyId)
         {
             await LayLoAsync(loKyId);
             _hangDoiKy.DongPhien(loKyId);
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto> BatDauAsync(int loKyId, BatDauKyDto input)
         {
             _logger.LogInformation($"{nameof(BatDauAsync)} loKyId={loKyId}");
@@ -340,7 +332,6 @@ namespace ksts.be.applications.LoKy.Implements
             return ToViewDto(lo);
         }
 
-        /// <inheritdoc/>
         public async Task<List<ViewFileKyDto>> DanhSachFileAsync(int loKyId)
         {
             await LayLoAsync(loKyId);
@@ -354,7 +345,6 @@ namespace ksts.be.applications.LoKy.Implements
                 .ToList();
         }
 
-        /// <inheritdoc/>
         public ViewFileKyDto ToViewFileDto(LoKyFileEntity file) => new()
         {
             Id = file.Id,
@@ -366,7 +356,6 @@ namespace ksts.be.applications.LoKy.Implements
             DauThoiGian = file.DauThoiGian,
         };
 
-        /// <inheritdoc/>
         public async Task<ViewTienDoDto> TrangThaiAsync(int loKyId)
         {
             var lo = await LayLoAsync(loKyId);
@@ -419,7 +408,6 @@ namespace ksts.be.applications.LoKy.Implements
             };
         }
 
-        /// <inheritdoc/>
         public async Task<ViewLoKyDto?> LoDangChayAsync()
         {
             // Lấy cả lô TẠM DỪNG chứ không riêng lô đang chạy: dừng xong mở lại màn hình mà không thấy lô đâu
@@ -467,7 +455,6 @@ namespace ksts.be.applications.LoKy.Implements
             _hangDoiKy.DongPhien(loKyId);
         }
 
-        /// <inheritdoc/>
         public async Task GhiNenAsync(int loKyId, string taiToken, Stream dich,
             CancellationToken cancellationToken)
         {
@@ -534,7 +521,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<byte[]?> TaiMotFileAsync(string objectKey, CancellationToken cancellationToken)
         {
             try
@@ -548,7 +534,6 @@ namespace ksts.be.applications.LoKy.Implements
             }
         }
 
-        /// <inheritdoc/>
         public async Task<LoKyEntity> LayLoAsync(int loKyId)
         {
             var lo = await _kstsDbContext.LoKy.FirstOrDefaultAsync(x => x.Id == loKyId && !x.Deleted)
@@ -563,7 +548,6 @@ namespace ksts.be.applications.LoKy.Implements
             return lo;
         }
 
-        /// <inheritdoc/>
         public string MaTrangThai(TrangThaiFileKy trangThai) => trangThai switch
         {
             TrangThaiFileKy.DangKy => LoKyConstants.MaTrangThaiDangKy,
@@ -572,7 +556,6 @@ namespace ksts.be.applications.LoKy.Implements
             _ => LoKyConstants.MaTrangThaiCho,
         };
 
-        /// <inheritdoc/>
         public ViewLoKyDto ToViewDto(LoKyEntity lo) => new()
         {
             Id = lo.Id,

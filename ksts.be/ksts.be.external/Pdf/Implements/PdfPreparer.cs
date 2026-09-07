@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfPreparer : IPdfPreparer
     {
         private readonly IPdfRevisionReader _revisionReader;
@@ -28,7 +27,6 @@ namespace ksts.be.external.Pdf.Implements
             _imageSizeReader = imageSizeReader;
         }
 
-        /// <inheritdoc/>
         public PdfPreparedDto Prepare(byte[] pdf, PdfPrepareOptionsDto options)
         {
             var revision = _revisionReader.Load(pdf);
@@ -83,7 +81,6 @@ namespace ksts.be.external.Pdf.Implements
             return WriteRevision(pdf, revision, objects, xrefNo);
         }
 
-        /// <inheritdoc/>
         public List<PdfAppearanceObjectDto> BuildRevisionObjects(PdfRevisionDto revision, string catalogRaw,
             PdfAnnotationPlanDto plan, IReadOnlyList<PdfAnnotationDto> chuKyWidgets,
             IReadOnlyList<PdfAnnotationDto> annotationsKhac, int sigFieldNo, int sigValueNo,
@@ -137,7 +134,6 @@ namespace ksts.be.external.Pdf.Implements
             return objects;
         }
 
-        /// <inheritdoc/>
         public List<PdfAppearanceObjectDto> BuildSignatureField(IReadOnlyList<PdfAnnotationDto> chuKyWidgets,
             int sigFieldNo, int sigValueNo)
         {
@@ -203,7 +199,6 @@ namespace ksts.be.external.Pdf.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public string BuildStampAnnotation(PdfAnnotationDto annotation)
         {
             var builder = new StringBuilder();
@@ -226,7 +221,6 @@ namespace ksts.be.external.Pdf.Implements
             return builder.ToString();
         }
 
-        /// <inheritdoc/>
         public string BuildSignatureValue(PdfPrepareOptionsDto options)
         {
             var builder = new StringBuilder();
@@ -256,14 +250,12 @@ namespace ksts.be.external.Pdf.Implements
             return builder.ToString();
         }
 
-        /// <inheritdoc/>
         public string BuildByteRangePlaceholder()
         {
             var o = new string(' ', SigningConstants.ByteRangeFieldWidth);
             return "/ByteRange [" + string.Join(" ", Enumerable.Repeat(o, 4)) + "]";
         }
 
-        /// <inheritdoc/>
         public PdfPreparedDto WriteRevision(byte[] pdf, PdfRevisionDto revision,
             IReadOnlyList<PdfAppearanceObjectDto> objects, int xrefNo)
         {
@@ -314,7 +306,6 @@ namespace ksts.be.external.Pdf.Implements
             return PatchByteRange(output, baseLength);
         }
 
-        /// <inheritdoc/>
         public PdfPreparedDto PatchByteRange(byte[] output, int baseLength)
         {
             var text = Encoding.Latin1.GetString(output);
@@ -359,7 +350,6 @@ namespace ksts.be.external.Pdf.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfAnnotationPlanDto PlanAnnotations(PdfRevisionDto revision, IReadOnlyList<int> pageOrder,
             int pagesObjectNumber, PdfPrepareOptionsDto options, int nextObjectNumber)
         {
@@ -453,7 +443,6 @@ namespace ksts.be.external.Pdf.Implements
             return plan;
         }
 
-        /// <inheritdoc/>
         public List<int> ReadPageOrder(PdfRevisionDto revision, int pagesObjectNumber)
         {
             var order = new List<int>();
@@ -487,7 +476,6 @@ namespace ksts.be.external.Pdf.Implements
             return order;
         }
 
-        /// <inheritdoc/>
         public PdfRectPointsDto ReadPageBox(PdfRevisionDto revision, string pageRaw, int pagesObjectNumber)
         {
             var boxMatch = Regex.Match(pageRaw, @"/MediaBox\s*\[([^\]]*)\]");
@@ -523,7 +511,6 @@ namespace ksts.be.external.Pdf.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfRectPointsDto ToPoints(PdfPlacementDto placement, PdfRectPointsDto pageBox)
         {
             var width = placement.WidthRatio * pageBox.Width;
@@ -539,7 +526,6 @@ namespace ksts.be.external.Pdf.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfRectPointsDto ApplyChuKyMinSize(PdfRectPointsDto rect, PdfRectPointsDto pageBox)
         {
             // Nhân theo khổ trang thật so với khổ tham chiếu để trang A3 không bị chữ ký teo bằng con tem còn
@@ -568,7 +554,6 @@ namespace ksts.be.external.Pdf.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfRectPointsDto ApplyChuKyTuoiFit(PdfRectPointsDto rect, PdfRectPointsDto pageBox, byte[] anh)
         {
             var kichThuoc = _imageSizeReader.Read(anh);
@@ -606,7 +591,6 @@ namespace ksts.be.external.Pdf.Implements
             };
         }
 
-        /// <inheritdoc/>
         public PdfRectPointsDto ClampToPage(PdfRectPointsDto rect, PdfRectPointsDto pageBox)
         {
             var margin = SigningConstants.AppearancePageMargin
@@ -637,7 +621,6 @@ namespace ksts.be.external.Pdf.Implements
             return new PdfRectPointsDto { X = x, Y = y, Width = rect.Width, Height = rect.Height };
         }
 
-        /// <inheritdoc/>
         public string BuildCatalogOverride(string catalogRaw, int signatureFieldNumber)
         {
             var at = catalogRaw.IndexOf("/AcroForm", StringComparison.Ordinal);
@@ -679,7 +662,6 @@ namespace ksts.be.external.Pdf.Implements
             return catalogRaw[..p] + updated + catalogRaw[(p + acroForm.Length)..];
         }
 
-        /// <inheritdoc/>
         public string BuildXrefStream(PdfRevisionDto revision, int xrefObjectNumber,
             IReadOnlyDictionary<int, long> offsets, int newSize)
         {
@@ -729,7 +711,6 @@ namespace ksts.be.external.Pdf.Implements
             return builder.ToString();
         }
 
-        /// <inheritdoc/>
         public string BuildXrefTable(PdfRevisionDto revision, IReadOnlyDictionary<int, long> offsets,
             int newSize, long xrefStart)
         {

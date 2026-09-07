@@ -4,12 +4,12 @@ Backend phát file trong thư mục này qua `GET api/core/plugin/bo-cai/noi-dun
 một file, đúng tên — `PluginConstants.SetupFileName` khớp cứng chứ không dò theo đuôi:
 
 ```
-KstsPlugin.exe
+Ký số plugin.exe
 ```
 
 Đây là bản publish self-contained single-file của `ksts.plugin`, **đã nhúng sẵn bộ cài middleware bit4id**.
 Người dùng tải một file, bấm đúp một lần: nó tự cài middleware nếu máy chưa có, tự chép mình vào
-`%LocalAppData%\KstsPlugin`, bật tự khởi động rồi chạy nền. Sinh ra bằng `ksts.plugin/dong-goi.ps1`.
+`%LocalAppData%\KySoPlugin`, bật tự khởi động rồi chạy nền. Sinh ra bằng `ksts.plugin/dong-goi.ps1`.
 
 Khi chạy ở máy phát triển, `.csproj` chép file sang thư mục output nên chỉ cần build lại là API thấy.
 
@@ -21,7 +21,7 @@ bộ cài không tự đi theo image — thiếu bước chép tay này thì mà
 `deploy/docker-compose.yml` mount thẳng thư mục này vào `/app/Plugins` (chỉ đọc), nên chép file lên là xong:
 
 ```bash
-scp ksts.be/ksts.be.api/Plugins/KstsPlugin.exe <user>@<may-chu>:<repo>/ksts.be/ksts.be.api/Plugins/
+scp "ksts.be/ksts.be.api/Plugins/Ký số plugin.exe" <user>@<may-chu>:<repo>/ksts.be/ksts.be.api/Plugins/
 ```
 
 **Không phải build lại image cũng không phải khởi động lại container** — backend mở file theo từng lần tải.

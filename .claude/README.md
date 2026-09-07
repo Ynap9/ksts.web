@@ -15,6 +15,7 @@ Toàn bộ tri thức dự án nằm trong thư mục này. Đọc theo thứ t�
 | [docs/bao-mat-agent-ky-so.md](docs/bao-mat-agent-ky-so.md) | 🔬 **Nghiên cứu, tối ưu sau**: threat model, topology B, job ticket, WYSIWYS |
 | [docs/luu-tru-minio.md](docs/luu-tru-minio.md) | Kho object: bản đồ tiền tố, quy tắc đặt key |
 | [docs/dat-dau-va-chu-ky-tuoi.md](docs/dat-dau-va-chu-ky-tuoi.md) | Cách tính vị trí đặt dấu + chữ ký tươi trên trang |
+| [docs/ky-so-kssm.md](docs/ky-so-kssm.md) | 🔶 **Chưa thi công**: ký số cho `kssm.be` — file/thư mục local và dự án, kèm nợ kỹ thuật phải sửa |
 | [be/architecture/](be/architecture/README.md) | Kiến trúc BE: 6 project, trách nhiệm từng tầng |
 | [fe/architecture/](fe/architecture/README.md) | Kiến trúc FE: Angular 21 zoneless, route/guard, service, hai màn đặc thù |
 | [be/plans/](be/plans/) | Kế hoạch từng tính năng phía BE |
@@ -32,7 +33,7 @@ KSTS kế thừa tri thức từ **SIPPACK** (`C:\Users\Admin\workspace\Sip`) �
 trữ, đã có luồng ký số PDF chạy thật. KSTS dùng lại phần lớn tri thức đó nhưng **là web**, nên mọi giả định
 "BE chạy cùng máy với người dùng" đều sai.
 
-## Trạng thái (2026-08-14)
+## Trạng thái (2026-08-29)
 
 | Phần | Trạng thái |
 |---|---|
@@ -42,6 +43,8 @@ trữ, đã có luồng ký số PDF chạy thật. KSTS dùng lại phần lớ
 | Luồng ký PDF + CMS + dấu thời gian TSA | ✅ Xong — đã ký PDF thật, TSA thật, verify hợp lệ |
 | Lô ký hàng loạt (`api/core/lo-ky`) | ✅ Xong — 8 luồng, tiến độ, tạm dừng / huỷ, chạy tiếp, tải zip |
 | Plugin ký ở máy người dùng (`ksts.plugin`) | ✅ Xong phần ký — mở phiên giữ handle khoá, ký theo đợt |
+| Bộ cài + kiểm phiên bản plugin ở `kssm.be` | ✅ Xong — cùng bộ route `api/core/plugin/*`, không auth |
+| Ký số ở `kssm.be` (file local · dự án) | 🔶 Đã chốt kiến trúc, **chưa thi công** — `docs/ky-so-kssm.md` |
 | FE | ✅ Template · Chứng thư số · Import tuyển sinh · Ký số |
 | **Chạy thử lô thật với token trên prod** | ❌ **Việc kế tiếp** — xem `dang-lam.md` |
 | Job ticket · WYSIWYS · topology B (plugin gọi ra WSS) | 🔬 Nghiên cứu, tối ưu sau |
@@ -54,12 +57,14 @@ Nguồn ký chọn bằng `Signing:Nguon` trong `appsettings.json`: bỏ trống
 1. **Không viết hàm `private`.** Cần tách việc thì tách thành service có interface, không đẻ helper riêng tư.
 2. **Comment ít, bằng tiếng Anh, chỉ ở đầu hàm** (`<summary>` XML / JSDoc), một câu, trả lời **vì sao**. Không
    comment trong thân hàm, không comment lan man, không kể lịch sử sửa đổi, không để lại code chết.
-3. **Tên hàm và biến ưu tiên tiếng Anh**; chỉ giữ tiếng Việt cho khái niệm nghiệp vụ không có từ tiếng Anh sát
+3. **Không viết `/// <inheritdoc/>`.** Class implement không mang dòng nào — mô tả nằm ở interface. Ngoại lệ
+   duy nhất là `Migrations/` của EF, nơi dòng đó do `dotnet ef migrations add` tự sinh.
+4. **Tên hàm và biến ưu tiên tiếng Anh**; chỉ giữ tiếng Việt cho khái niệm nghiệp vụ không có từ tiếng Anh sát
    nghĩa (`GiayBaoTrungTuyen`, `ChuKyTuoi`, `DauDo`). Route, cột DB, khoá JSON và câu cho người dùng **giữ
    nguyên tiếng Việt** — chúng là hợp đồng đã công bố. Tên cũ không đổi hàng loạt.
-4. Service bên thứ ba hoặc dùng chung (S3, đọc PDF, đo ảnh, tính vị trí) → đặt ở `ksts.be.external`.
-5. Dấu đỏ và chữ ký tươi là **tuỳ chọn** — mọi trường liên quan đều nullable (`?`).
-6. **Con dấu không được resize** — vẽ đúng kích thước gốc của ảnh.
+5. Service bên thứ ba hoặc dùng chung (S3, đọc PDF, đo ảnh, tính vị trí) → đặt ở `ksts.be.external`.
+6. Dấu đỏ và chữ ký tươi là **tuỳ chọn** — mọi trường liên quan đều nullable (`?`).
+7. **Con dấu không được resize** — vẽ đúng kích thước gốc của ảnh.
 
 Chi tiết đầy đủ: [be/architecture/08-conventions.md](be/architecture/08-conventions.md) (BE) ·
 [fe/architecture/05-conventions.md](fe/architecture/05-conventions.md) (FE).

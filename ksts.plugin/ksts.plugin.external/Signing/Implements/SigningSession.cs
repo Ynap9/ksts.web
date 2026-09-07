@@ -8,7 +8,6 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace ksts.plugin.external.Signing.Implements
 {
-    /// <inheritdoc/>
     public class SigningSession : ISigningSession
     {
         private static readonly StoreLocation[] Locations =
@@ -39,7 +38,6 @@ namespace ksts.plugin.external.Signing.Implements
             _logger = logger;
         }
 
-        /// <inheritdoc/>
         public MoPhienKetQuaDto MoPhien(string thumbprint)
         {
             _logger.LogInformation("{Method} thumbprint={Thumbprint}", nameof(MoPhien), thumbprint);
@@ -77,7 +75,6 @@ namespace ksts.plugin.external.Signing.Implements
             }
         }
 
-        /// <inheritdoc/>
         public byte[] Ky(byte[] duLieu)
         {
             lock (_khoa)
@@ -99,7 +96,6 @@ namespace ksts.plugin.external.Signing.Implements
             }
         }
 
-        /// <inheritdoc/>
         public void DongPhien()
         {
             lock (_khoa)
@@ -108,7 +104,6 @@ namespace ksts.plugin.external.Signing.Implements
             }
         }
 
-        /// <inheritdoc/>
         public DoTocDoKetQuaDto DoTocDo(string thumbprint, int soLan)
         {
             _logger.LogInformation("{Method} thumbprint={Thumbprint} soLan={SoLan}",

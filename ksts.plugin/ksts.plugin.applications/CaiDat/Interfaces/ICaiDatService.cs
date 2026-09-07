@@ -1,10 +1,10 @@
 namespace ksts.plugin.applications.CaiDat.Interfaces
 {
     /// <summary>
-    /// Luồng tự cài đặt của bộ cài một-file. Cùng một KstsPlugin.exe đóng hai vai: chạy từ chỗ người dùng
+    /// Luồng tự cài đặt của bộ cài một-file. Cùng một KySoPlugin.exe đóng hai vai: chạy từ chỗ người dùng
     /// vừa tải về thì là TRÌNH CÀI ĐẶT, chạy từ thư mục cài thì là PLUGIN.
     ///
-    /// Gộp làm một file vì bước dễ hỏng nhất của bản cũ là người dùng giải nén rồi chạy nhầm KstsPlugin.exe
+    /// Gộp làm một file vì bước dễ hỏng nhất của bản cũ là người dùng giải nén rồi chạy nhầm KySoPlugin.exe
     /// thay vì trình cài đặt — plugin lên nhưng middleware không được cài, và triệu chứng thì giống hệt
     /// "chưa cài gì cả".
     /// </summary>

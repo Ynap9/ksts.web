@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 
 namespace ksts.be.applications.Signing.Implements
 {
-    /// <inheritdoc/>
     public class CertificateService : BaseService, ICertificateService
     {
         private readonly ICertificateProvider _certificateProvider;
@@ -28,7 +27,6 @@ namespace ksts.be.applications.Signing.Implements
             _certificateProvider = certificateProvider;
         }
 
-        /// <inheritdoc/>
         public List<SignCertDto> GetCertificates(SignCertQueryDto query)
         {
             _logger.LogInformation($"{nameof(GetCertificates)} onlySignable={query.OnlySignable}");
@@ -39,7 +37,6 @@ namespace ksts.be.applications.Signing.Implements
                 : scan.Certificates;
         }
 
-        /// <inheritdoc/>
         public CertDiagnosticDto GetDiagnostics()
         {
             _logger.LogInformation($"{nameof(GetDiagnostics)}");
@@ -53,7 +50,6 @@ namespace ksts.be.applications.Signing.Implements
             };
         }
 
-        /// <inheritdoc/>
         public SignCertDto SelectCertificate(SelectCertDto input)
         {
             _logger.LogInformation($"{nameof(SelectCertificate)} thumbprint={input.Thumbprint}");

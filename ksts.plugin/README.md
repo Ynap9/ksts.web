@@ -1,4 +1,4 @@
-# KSTS Plugin
+# Plugin ký số
 
 Ứng dụng chạy trên **máy người dùng**, làm cầu nối giữa trang web ký số và USB token. Đọc
 [README tổng](../README.md) để nắm bối cảnh trước.
@@ -38,12 +38,12 @@ ksts.plugin.external       Đọc chứng thư, kiểm tra token, thao tác cài
 ksts.plugin.shared         Hằng số, envelope ApiResponse
 ```
 
-Một file `KstsPlugin.exe` đóng **hai vai**, `Program.cs` phân vai ngay dòng đầu:
+Một file `Ký số plugin.exe` đóng **hai vai**, `Program.cs` phân vai ngay dòng đầu:
 
 | Chạy từ đâu | Vai |
 |---|---|
 | Chỗ người dùng vừa tải về | **Trình cài đặt** — cài middleware, chép mình vào máy, bật tự khởi động |
-| `%LocalAppData%\KstsPlugin` | **Plugin** — mở cổng loopback và phục vụ |
+| `%LocalAppData%\KySoPlugin` | **Plugin** — mở cổng loopback và phục vụ |
 | Thư mục `bin` lúc phát triển | **Plugin** — bản build thường không bao giờ tự cài lên máy lập trình viên |
 
 Mốc phân biệt bản phát hành với bản phát triển là `Assembly.Location` rỗng — đặc điểm chỉ có ở bản publish
@@ -70,15 +70,22 @@ thì kiểm CORS trước tiên.
 
 | Method | Route | Việc |
 |---|---|---|
-| GET | `api/plugin/trang-thai` | Phép dò: gọi được nghĩa là máy đã cài plugin và plugin đang chạy |
+| GET | `api/plugin/trang-thai` | Phép dò: gọi được nghĩa là máy đã cài plugin và plugin đang chạy; trả kèm phiên bản |
 | GET | `api/plugin/chung-thu-so` | Liệt kê chứng thư trong kho của Windows |
 | POST | `api/plugin/chung-thu-so/kiem-tra-token` | Ký thử một mẩu dữ liệu để xác nhận token dùng được |
+| POST | `api/plugin/ky-so/mo-phien` | Mở khoá trên token và GIỮ handle cho cả lô; trả chứng thư phần công khai |
+| POST | `api/plugin/ky-so/ky` | Ký cả một đợt yêu cầu bằng handle đã mở, không hỏi PIN lại |
+| POST | `api/plugin/ky-so/do-toc-do` | Đo thời gian một lượt ký thật trên token |
+| POST | `api/plugin/ky-so/dong-phien` | Đóng phiên, giải phóng handle khoá |
 
-Hai điểm quan trọng về hành vi:
+Ba điểm quan trọng về hành vi:
 
 - **Liệt kê chứng thư không bao giờ hỏi mã PIN.** Nó chỉ đọc metadata của khoá.
-- **`kiem-tra-token` là chỗ duy nhất hộp PIN bật lên**, vì nó thực sự chạm vào khoá. Đây cũng là bằng chứng
-  duy nhất rằng token đang cắm thật: mọi phép đọc metadata đều có thể "đạt hết" trong khi token đã rút từ lâu.
+- **Ba route chạm vào khoá bí mật thì bật hộp PIN**: `kiem-tra-token`, `ky-so/mo-phien` và `ky-so/do-toc-do`.
+  Đó cũng là bằng chứng duy nhất rằng token đang cắm thật — mọi phép đọc metadata đều có thể "đạt hết" trong
+  khi token đã rút từ lâu.
+- **Phiên bản trả ở `trang-thai` đọc từ assembly**, tức `<Version>` trong `ksts.plugin.api.csproj` là nguồn
+  duy nhất. Backend đối chiếu chuỗi đó với whitelist của mình qua `GET api/core/plugin/phien-ban`.
 
 Kết quả liệt kê không có cờ `isTrusted`. Máy người dùng không kiểm soát được nên cờ tin cậy do nó gửi lên là
 vô giá trị; thẩm định chuỗi chứng thư về CA gốc là việc của backend.
@@ -103,11 +110,11 @@ cd ksts.plugin
 ./dong-goi.ps1
 ```
 
-Kết quả là **một file** `ksts.be/ksts.be.api/Plugins/KstsPlugin.exe` (~95 MB): self-contained nên máy người
+Kết quả là **một file** `Ký số plugin.exe` (~95 MB) chép vào `Plugins/` của cả `ksts.be` lẫn `kssm.be`: self-contained nên máy người
 dùng không cần .NET runtime, và **nhúng sẵn bộ cài middleware** lấy từ `vendor/bit4id/`.
 
 Một file thay vì file nén là quyết định có lý do: bước dễ hỏng nhất của bản cũ là người dùng giải nén rồi
-chạy nhầm `KstsPlugin.exe` thay vì `CAI-DAT.cmd` — plugin lên nhưng middleware không được cài, mà triệu
+chạy nhầm `Ký số plugin.exe` thay vì `CAI-DAT.cmd` — plugin lên nhưng middleware không được cài, mà triệu
 chứng thì giống hệt "chưa cài gì cả". Không còn file nào để chạy nhầm thì không còn lỗi đó.
 
 Backend phát file này qua `api/core/plugin/bo-cai/noi-dung`. Sau khi đóng gói phải **build lại `ksts.be.api`**
@@ -120,7 +127,8 @@ không có nó — thiếu bước này thì màn Ký số báo *"Máy chủ ch�
 mount sẵn vào container:
 
 ```bash
-scp ksts.be/ksts.be.api/Plugins/KstsPlugin.exe <user>@<may-chu>:<repo>/ksts.be/ksts.be.api/Plugins/
+scp "ksts.be/ksts.be.api/Plugins/Ký số plugin.exe" <user>@<may-chu>:<repo>/ksts.be/ksts.be.api/Plugins/
+scp "kssm.be/kssm.be.api/Plugins/Ký số plugin.exe" <user>@<may-chu>:<repo>/kssm.be/kssm.be.api/Plugins/
 ```
 
 `deploy/docker-compose.yml` mount thẳng thư mục đó vào `/app/Plugins` chỉ đọc, nên bản mới có hiệu lực ngay,
@@ -155,13 +163,13 @@ Không còn script cài đặt rời — logic nằm trong chính exe (`ICaiDatS
    ├─ chưa có, exe nhúng kèm bộ cài  -> xin quyền quản trị, chạy ngầm
    └─ chưa có, exe không kèm         -> báo rõ rồi vẫn cài plugin (sẽ không thấy token)
 2. Plugin
-   ├─ dừng bản đang chạy, chép mình vào %LocalAppData%\KstsPlugin
+   ├─ dừng bản đang chạy, chép mình vào %LocalAppData%\KySoPlugin
    ├─ bật tự khởi động HKCU\...\Run
    ├─ ghi mục gỡ cài đặt vào Apps & Features
    └─ chạy bản vừa cài
 ```
 
-Gỡ bằng Apps & Features, hoặc chạy `KstsPlugin.exe --go-cai-dat`. Tham số `--cai-middleware` dành riêng cho
+Gỡ bằng Apps & Features, hoặc chạy `Ký số plugin.exe --go-cai-dat`. Tham số `--cai-middleware` dành riêng cho
 tiến trình con chạy quyền quản trị: nó **chỉ** cài middleware, không cài plugin — nó đang mang tài khoản quản
 trị nên cài plugin là cài nhầm vào `%LocalAppData%` của tài khoản đó.
 
@@ -170,7 +178,7 @@ không dò tên trong Programs and Features. Thứ quyết định token có hi�
 có được đăng ký hay không**; mục trong Programs and Features chỉ nói ai đó từng chạy bộ cài, có bản gỡ lỗi để
 lại mục mà mất provider.
 
-Plugin cài **per-user** vào `%LocalAppData%\KstsPlugin`, tự khởi động qua `HKCU\...\Run`, không cài driver,
+Plugin cài **per-user** vào `%LocalAppData%\KySoPlugin`, tự khởi động qua `HKCU\...\Run`, không cài driver,
 không dựng service SYSTEM. Nhờ vậy phần cài plugin **không cần quyền quản trị**; chỉ bước cài middleware mới
 xin nâng quyền, và chỉ khi thực sự phải cài.
 
@@ -221,8 +229,8 @@ plugin **tự gọi ra máy chủ qua WebSocket** để nhận việc, không m�
 gọi được plugin, hết chuyện mixed content, hết Private Network Access, hết xung đột cổng. Kế hoạch chi tiết
 nằm ở `.claude/plugin/plans/ky-so-plugin.plan.md`.
 
-**Phiên ký giữ handle khoá** để cả lô chỉ hỏi PIN một lần, tự đóng sau 15 phút không dùng và đóng ngay khi
-rút token.
+**Giám sát rút token.** Phiên ký đã giữ handle khoá cho cả lô và tự đóng sau 15 phút không dùng, nhưng chưa
+đóng ngay khi rút token — rút giữa lô hiện biểu hiện thành một loạt file lỗi thay vì một thông báo rõ ràng.
 
 **Xác minh job ticket** do máy chủ ký, với public key ghim cứng lúc build, và tự tính lại giá trị băm từ
 bytes PDF thật trước khi ký.

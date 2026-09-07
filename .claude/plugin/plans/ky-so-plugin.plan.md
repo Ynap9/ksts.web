@@ -1,6 +1,6 @@
 # Plan — Plugin ký số ở máy người dùng
 
-> **Trạng thái: 🔶 phần ký đã chạy thật, phần bảo mật nâng cao để tối ưu sau** (cập nhật 2026-08-14).
+> **Trạng thái: 🔶 phần ký đã chạy thật, phần bảo mật nâng cao để tối ưu sau** (cập nhật 2026-08-29).
 > Hợp đồng đang chạy: [../../contracts/plugin-ky-so.contract.md](../../contracts/plugin-ky-so.contract.md).
 > Nền: [../../docs/luong-ky-so-hang-loat.md](../../docs/luong-ky-so-hang-loat.md). Mã nguồn `ksts.plugin/`.
 
@@ -25,7 +25,15 @@ BE  <--HTTPS-->  Trang web  <--http://127.0.0.1-->  Plugin  -->  Token
 | 5 | `ky-so/ky` nhận **cả một đợt** yêu cầu, hỏng cái nào trả `loi` riêng cái đó | ✅ |
 | 6 | `ky-so/do-toc-do` — đo thời gian một lượt ký thật trên token, trần 100 lượt | ✅ |
 | 7 | Bộ cài một file exe, nhúng sẵn middleware **bit4id**, cài per-user | ✅ |
+| 8 | Đổi tên `KstsPlugin` → `KySoPlugin`: plugin dùng chung cho nhiều backend, không còn thuộc riêng KSTS | ✅ |
+| 9 | `dong-goi.ps1` xuất bộ cài sang `Plugins/` của **cả** `ksts.be` lẫn `kssm.be` | ✅ |
+| 10 | `GET api/core/plugin/phien-ban` ở cả hai BE — whitelist `Plugin:PhienBanPhuHop` trong `appsettings.json` | ✅ |
+| 11 | Exe đổi tên `Ký số plugin.exe`, phiên bản đọc từ assembly, CORS thêm `localhost:3000`, FE gọi `phien-ban` | ✅ |
 | — | Pairing one-time token, job ticket, WYSIWYS, consent dialog, giám sát rút token | 🔬 chưa — xem cuối |
+
+Đổi tên đụng cả thư mục cài, khoá autostart và khoá gỡ cài đặt — máy đã cài bản `KstsPlugin` phải gỡ tay một
+lần, xem ⚠️ trong contract. Phiên bản là **một chuỗi khớp chính xác**, không so lớn-bé; nay đọc từ assembly
+nên `<Version>` trong csproj là nguồn duy nhất, nâng bản thì chỉ còn phải thêm vào whitelist của mọi backend.
 
 **PIN bật đúng một lần cho cả lô** ở `ky-so/mo-phien`: mở khoá rồi GIỮ handle. Giữ handle **khác** cache PIN —
 PIN vẫn đi thẳng từ bàn phím vào middleware qua CNG/minidriver, không byte nào vào tiến trình plugin.
@@ -50,9 +58,11 @@ token mới hiện trong store, đó là lý do bộ cài gói cả hai vào m�
 
 ## Còn phải làm ngay
 
-1. **Đo `T`** bằng `ky-so/do-toc-do` khi có token thật — con số quyết định thời lượng của cả lô.
-2. **Kiểm hộp PIN có hiện chìm không** trên máy thật.
-3. **Giám sát rút token**: quét cert store mỗi 2s, cert biến mất ⇒ đóng phiên. Hiện chỉ có mốc 15 phút không
+1. **Khai origin prod của FE gọi `kssm.be`** vào `PluginConstants.OriginMacDinh` rồi đóng gói lại — danh sách
+   ghim trong mã nên sửa `appsettings.json` của bản phát hành không ăn.
+2. **Đo `T`** bằng `ky-so/do-toc-do` khi có token thật — con số quyết định thời lượng của cả lô.
+3. **Kiểm hộp PIN có hiện chìm không** trên máy thật.
+4. **Giám sát rút token**: quét cert store mỗi 2s, cert biến mất ⇒ đóng phiên. Hiện chỉ có mốc 15 phút không
    dùng, nên rút token giữa lô sẽ biểu hiện thành một loạt file lỗi thay vì một thông báo rõ ràng.
 
 ## 🔬 Nghiên cứu — tối ưu sau

@@ -8,10 +8,8 @@ using System.Text.RegularExpressions;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfRevisionReader : IPdfRevisionReader
     {
-        /// <inheritdoc/>
         public PdfRevisionDto Load(byte[] bytes)
         {
             if (bytes.Length < 32 || bytes[0] != '%' || bytes[1] != 'P')
@@ -117,7 +115,6 @@ namespace ksts.be.external.Pdf.Implements
             return revision;
         }
 
-        /// <inheritdoc/>
         public string ReadClassicTable(PdfRevisionDto revision, long offset)
         {
             var text = revision.Text;
@@ -161,7 +158,6 @@ namespace ksts.be.external.Pdf.Implements
             return dictAt < 0 ? string.Empty : ExtractDictionary(text, dictAt);
         }
 
-        /// <inheritdoc/>
         public string ReadXrefStream(PdfRevisionDto revision, long offset)
         {
             var text = revision.Text;
@@ -224,7 +220,6 @@ namespace ksts.be.external.Pdf.Implements
             return dict;
         }
 
-        /// <inheritdoc/>
         public string? GetObjectBody(PdfRevisionDto revision, int number)
         {
             if (!revision.Objects.TryGetValue(number, out var location)) return null;
@@ -295,7 +290,6 @@ namespace ksts.be.external.Pdf.Implements
             return null;
         }
 
-        /// <inheritdoc/>
         public byte[]? GetRawStreamBytes(PdfRevisionDto revision, int number)
         {
             if (!revision.Objects.TryGetValue(number, out var location) || location.Type != 1) return null;
@@ -344,7 +338,6 @@ namespace ksts.be.external.Pdf.Implements
             return raw;
         }
 
-        /// <inheritdoc/>
         public byte[]? ReadStreamData(PdfRevisionDto revision, int afterDict, string dict)
         {
             var text = revision.Text;
@@ -395,7 +388,6 @@ namespace ksts.be.external.Pdf.Implements
             return raw;
         }
 
-        /// <inheritdoc/>
         public byte[] RemovePngPredictor(byte[] raw, int columns)
         {
             if (columns <= 0) return raw;
@@ -428,7 +420,6 @@ namespace ksts.be.external.Pdf.Implements
             return output.ToArray();
         }
 
-        /// <inheritdoc/>
         public string ExtractDictionary(string text, int start)
         {
             var depth = 0;

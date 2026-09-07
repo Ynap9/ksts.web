@@ -6,10 +6,8 @@ using System.Text;
 
 namespace ksts.be.external.Pdf.Implements
 {
-    /// <inheritdoc/>
     public class PdfContentWriter : IPdfContentWriter
     {
-        /// <inheritdoc/>
         public byte[] Write(PdfPreparedDto prepared, byte[] cms)
         {
             if (cms.Length == 0)

@@ -16,7 +16,6 @@ namespace ksts.be.external.Images.Implements
     {
         private static readonly byte[] PngSignature = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 
-        /// <inheritdoc/>
         public ImageSizeDto Read(byte[] bytes)
         {
             var size = TryReadPng(bytes) ?? TryReadJpeg(bytes);
@@ -37,7 +36,6 @@ namespace ksts.be.external.Images.Implements
             return size;
         }
 
-        /// <inheritdoc/>
         public ImageSizeDto? TryReadPng(byte[] bytes)
         {
             if (bytes.Length < 24 || !bytes.AsSpan(0, PngSignature.Length).SequenceEqual(PngSignature))
@@ -88,7 +86,6 @@ namespace ksts.be.external.Images.Implements
             return result.PixelWidth > 0 && result.PixelHeight > 0 ? result : null;
         }
 
-        /// <inheritdoc/>
         public ImageSizeDto? TryReadJpeg(byte[] bytes)
         {
             if (bytes.Length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8)

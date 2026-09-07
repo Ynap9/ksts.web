@@ -4,7 +4,7 @@ using ksts.plugin.shared.Constants;
 
 namespace ksts.plugin.applications.CaiDat.Implements
 {
-    /// <inheritdoc/>
+
     public class CaiDatService : ICaiDatService
     {
         private readonly IMiddlewareService _middlewareService;
@@ -16,11 +16,9 @@ namespace ksts.plugin.applications.CaiDat.Implements
             _tuCaiDatService = tuCaiDatService;
         }
 
-        /// <inheritdoc/>
         public bool LaLuotChayPlugin() =>
             !_tuCaiDatService.LaBanPhatHanh() || _tuCaiDatService.DangChayTuThuMucCai();
 
-        /// <inheritdoc/>
         public void ChayLuotCaiDat()
         {
             Console.WriteLine($"Cài {PluginConstants.Ten} {PluginConstants.PhienBan}");
@@ -80,14 +78,13 @@ namespace ksts.plugin.applications.CaiDat.Implements
             Console.WriteLine("      Cài xong.");
         }
 
-        /// <inheritdoc/>
         public void ChayLuotCaiMiddleware()
         {
             Console.WriteLine("Đang cài trình đọc USB token ở chế độ ngầm...");
             _middlewareService.CaiNgam();
         }
 
-        /// <inheritdoc/>
+
         public void ChayLuotGoCaiDat()
         {
             Console.WriteLine($"Gỡ {PluginConstants.Ten}");

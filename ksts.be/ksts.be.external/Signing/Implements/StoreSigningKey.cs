@@ -13,7 +13,6 @@ namespace ksts.be.external.Signing.Implements
     /// </summary>
     public class StoreSigningKey : ISigningKey
     {
-        /// <inheritdoc/>
         public Task<X509Certificate2> LayChungThuAsync(int loKyId, string thumbprint,
             CancellationToken cancellationToken)
         {
@@ -43,7 +42,6 @@ namespace ksts.be.external.Signing.Implements
                 "Không tìm thấy chứng thư số kèm khoá riêng theo vân tay đã chọn.");
         }
 
-        /// <inheritdoc/>
         public Task<byte[]> KyAsync(int loKyId, byte[] duLieu, X509Certificate2 cert,
             CancellationToken cancellationToken)
         {
@@ -55,7 +53,6 @@ namespace ksts.be.external.Signing.Implements
             return Task.FromResult(rsa.SignData(duLieu, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
         }
 
-        /// <inheritdoc/>
         public IReadOnlyList<X509Certificate2> LayChuoiChungThu(X509Certificate2 cert)
         {
             using var chain = new X509Chain();

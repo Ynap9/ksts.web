@@ -12,7 +12,6 @@ namespace ksts.be.external.Html.Implements
         /// <summary>Lớp ẩn của mẫu, đã có sẵn quy tắc display:none trong CSS đi kèm.</summary>
         private const string LopAn = "hidden";
 
-        /// <inheritdoc/>
         public string Fill(string html, IReadOnlyDictionary<string, string> giaTriTheoId,
             IReadOnlyDictionary<string, string> htmlTheoId,
             IReadOnlyDictionary<string, bool> hienTheoId)

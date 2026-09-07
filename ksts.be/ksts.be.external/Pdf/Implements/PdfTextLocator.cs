@@ -19,7 +19,6 @@ namespace ksts.be.external.Pdf.Implements
     {
         private const double BaselineToleranceRatio = 0.5;
 
-        /// <inheritdoc/>
         public PdfPageTextDto GetPageText(Stream pdfStream, int pageNumber)
         {
             using var document = PdfDocument.Open(pdfStream);
@@ -93,7 +92,6 @@ namespace ksts.be.external.Pdf.Implements
             return result;
         }
 
-        /// <inheritdoc/>
         public string Normalize(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
