@@ -1,0 +1,27 @@
+# kssm.be đứng riêng, không dùng chung compose với ksts:
+#   cd kssm.be/kssm.deploy && cp .env.example .env && docker compose up -d --build
+
+services:
+  kssm.be:
+    image: kssm.be:${APP_ENV:-latest}
+    container_name: kssm.be_c.${APP_ENV:-latest}
+    build:
+      context: ..
+      dockerfile: ./kssm.be.api/Dockerfile
+    ports:
+      - "${HOST_PORT:-8200}:8080"
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ASPNETCORE_HTTP_PORTS=8080
+      - FileConfig__File__Path=/app/App_Data
+    volumes:
+      # Bộ cài plugin thay được mà không phải dựng lại image: đóng gói lại là restart container.
+      - ../kssm.be.api/Plugins:/app/Plugins:ro
+      - kssm_app_data:/app/App_Data
+
+volumes:
+  kssm_app_data:
