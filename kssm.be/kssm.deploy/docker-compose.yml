@@ -4,7 +4,7 @@
 services:
   kssm.be:
     image: kssm.be:${APP_ENV}
-    container_name: kssm.be_prod
+    container_name: kssm.be_c.${APP_ENV}
     build:
       context: ..
       dockerfile: ./kssm.be.api/Dockerfile

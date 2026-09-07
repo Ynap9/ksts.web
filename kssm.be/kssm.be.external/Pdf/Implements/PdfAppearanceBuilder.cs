@@ -1,5 +1,6 @@
 using kssm.be.external.Colors.Dtos;
 using kssm.be.external.Colors.Interfaces;
+using kssm.be.external.Fonts.Interfaces;
 using kssm.be.external.Pdf.Dtos;
 using kssm.be.external.Pdf.Interfaces;
 using kssm.be.shared.Constants.Signing;
@@ -27,7 +28,8 @@ namespace kssm.be.external.Pdf.Implements
         /// </summary>
         private static readonly object _khoaPdfSharp = new();
 
-        public PdfAppearanceBuilder(IPdfRevisionReader revisionReader, IHexColorReader hexColorReader)
+        public PdfAppearanceBuilder(IPdfRevisionReader revisionReader, IHexColorReader hexColorReader,
+            IAppearanceFontResolver fontResolver)
         {
             _revisionReader = revisionReader;
             _hexColorReader = hexColorReader;
@@ -35,6 +37,7 @@ namespace kssm.be.external.Pdf.Implements
             // PDFsharp 6 không tự tìm font hệ thống; thiếu cờ này thì vẽ tên người ký ném lỗi thiếu font.
             // Cờ là biến toàn cục của thư viện, đặt lại nhiều lần vô hại.
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+            GlobalFontSettings.FontResolver = fontResolver;
         }
 
         public PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,

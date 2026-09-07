@@ -14,6 +14,8 @@ using kssm.be.external.Certificates.Interfaces;
 using kssm.be.external.Colors.Implements;
 using kssm.be.external.Colors.Interfaces;
 using kssm.be.external.Errors.Implements;
+using kssm.be.external.Fonts.Implements;
+using kssm.be.external.Fonts.Interfaces;
 using kssm.be.external.Mongo.Implements;
 using kssm.be.external.Mongo.Interfaces;
 using kssm.be.external.Pdf.Implements;
@@ -130,6 +132,7 @@ builder.Services.AddSingleton<ILoKyFileStorage, LoKyFileStorage>();
 builder.Services.AddSingleton<IImageSizeReader, ImageSizeReader>();
 
 // Luồng ký: dựng bản ký, ghép CMS, xin dấu thời gian.
+builder.Services.AddSingleton<IAppearanceFontResolver, AppearanceFontResolver>();
 builder.Services.AddSingleton<IPdfObjectWriter, PdfObjectWriter>();
 builder.Services.AddSingleton<IPdfRevisionReader, PdfRevisionReader>();
 builder.Services.AddSingleton<IPdfAppearanceBuilder, PdfAppearanceBuilder>();
