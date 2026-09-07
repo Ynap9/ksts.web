@@ -43,6 +43,7 @@ namespace ksts.plugin.shared.Constants
         public static readonly string[] OriginMacDinh =
         [
             "https://ksts.yna.io.vn",
+            "https://v2.nhaplieu.com",
             "http://localhost:4200",
             "https://localhost:4200",
             "http://localhost:3000",
