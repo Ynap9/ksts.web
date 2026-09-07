@@ -1,4 +1,4 @@
-using kssm.be.domain.LoKy;
+using kssm.be.domain.KySo.LoKy;
 using kssm.be.domain.Template;
 using kssm.be.shared.Constants.Template;
 using Microsoft.EntityFrameworkCore;

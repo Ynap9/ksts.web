@@ -1,8 +1,6 @@
 
 using kssm.be.api.Middlewares;
 using kssm.be.applications.Base;
-using kssm.be.applications.LoKy.Implements;
-using kssm.be.applications.LoKy.Interfaces;
 using kssm.be.applications.Plugin.Implements;
 using kssm.be.applications.Plugin.Interfaces;
 using kssm.be.applications.Signing.Implements;
@@ -42,6 +40,8 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
 using System.Globalization;
+using kssm.be.applications.KySo.LoKy.Implements;
+using kssm.be.applications.KySo.LoKy.Interfaces;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("Starting application...");

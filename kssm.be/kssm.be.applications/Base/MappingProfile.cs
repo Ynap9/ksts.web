@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using kssm.be.applications.Template.Dtos;
+using kssm.be.applications.KySo.Template.Dtos;
 using TemplateEntity = kssm.be.domain.Template.Template;
 using TemplatePositionEntity = kssm.be.domain.Template.TemplatePosition;
 

@@ -1,0 +1,43 @@
+namespace kssm.be.applications.KySo.Template.Dtos
+{
+    public class ViewTemplateDto
+    {
+        public int Id { get; set; }
+
+        public string TenTemplate { get; set; } = string.Empty;
+
+        public string Thumbprint { get; set; } = string.Empty;
+
+        public string? TenChungThu { get; set; }
+
+        public string? LyDoKy { get; set; }
+
+        public string? NoiKy { get; set; }
+
+        public string? AnhDauDoUrl { get; set; }
+
+        public string? AnhChuKyTuoiUrl { get; set; }
+
+        public bool HienThiChuKySo { get; set; }
+
+        public bool NhoiChuKySoVaoAnh { get; set; }
+
+        public bool KyDe { get; set; }
+
+        public int DoDamDauDo { get; set; }
+
+        public int DoDamChuKyTuoi { get; set; }
+
+        public int DoDayNetChuKyTuoi { get; set; }
+
+        public string MauChuKySo { get; set; } = string.Empty;
+
+        public string? MauChuKyTuoi { get; set; }
+
+        public DateTime? CreatedDate { get; set; }
+
+        public DateTime? ModifiedDate { get; set; }
+
+        public List<TemplatePositionDto> Positions { get; set; } = new();
+    }
+}
