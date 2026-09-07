@@ -6,6 +6,8 @@ namespace kssm.be.applications.LoKy.Dtos
 
         public int ThuTu { get; set; }
 
+        public string? DocumentId { get; set; }
+
         public string TenFile { get; set; } = string.Empty;
 
         public string TrangThai { get; set; } = string.Empty;

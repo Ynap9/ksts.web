@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using kssm.be.infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using kssm.be.infrastructure.Persistence;
 namespace kssm.be.infrastructure.Migrations
 {
     [DbContext(typeof(KssmDbContext))]
-    partial class KssmDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907034138_Add_document_id")]
+    partial class Add_document_id
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

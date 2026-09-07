@@ -19,6 +19,9 @@ namespace kssm.be.domain.LoKy
 
         public int ThuTu { get; set; }
 
+        [MaxLength(50)]
+        public string? DocumentId { get; set; }
+
         [MaxLength(500)]
         public string TenFile { get; set; } = string.Empty;
 
