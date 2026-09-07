@@ -3,7 +3,7 @@
 
 services:
   kssm.be:
-    image: kssm.be:${APP_ENV:-latest}
+    image: kssm.be:${APP_ENV}
     container_name: kssm.be_prod
     build:
       context: ..
