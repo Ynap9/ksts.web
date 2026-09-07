@@ -9,7 +9,13 @@
          với whitelist Plugin:PhienBanPhuHop. -->
     <Version>1.0.0</Version>
     <RootNamespace>ksts.plugin.api</RootNamespace>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\ky-so.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\ky-so.ico" LogicalName="ky-so.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <!--

@@ -15,6 +15,12 @@ namespace ksts.plugin.shared.Constants
 
         public const string Ten = "Plugin ký số";
 
+        public const string TaiNguyenBieuTuong = "ky-so.ico";
+
+        public const string TenKhoaMotBanChay = "KySoPlugin.MotBanChay";
+
+        public const string TenTinHieuMoCuaSo = "KySoPlugin.MoCuaSo";
+
         /// <summary>
         /// Phiên bản plugin, đọc từ &lt;Version&gt; của ksts.plugin.api lúc build và trả về ở
         /// api/plugin/trang-thai để BE đối chiếu với whitelist Plugin:PhienBanPhuHop. Đọc từ assembly nên
