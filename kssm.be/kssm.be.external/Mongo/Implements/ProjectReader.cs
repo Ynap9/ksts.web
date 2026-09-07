@@ -35,8 +35,8 @@ namespace kssm.be.external.Mongo.Implements
         public async Task<IReadOnlyList<ProjectDto>> GetSignableProjectsAsync(
             CancellationToken cancellationToken = default)
         {
-            var filter = Builders<BsonDocument>.Filter.Eq(SaoMaiConstants.FieldProjectStatus,
-                    SaoMaiConstants.StatusInAcceptance)
+            var filter = Builders<BsonDocument>.Filter.In(SaoMaiConstants.FieldProjectStatus,
+                    SaoMaiConstants.SignableStatuses)
                 & NotDeleted();
 
             var result = await _database.GetCollection<BsonDocument>(SaoMaiConstants.CollectionProjects)
