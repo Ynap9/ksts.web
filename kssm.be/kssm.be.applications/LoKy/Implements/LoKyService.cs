@@ -539,6 +539,7 @@ namespace kssm.be.applications.LoKy.Implements
                 {
                     LoKyId = lo.Id,
                     ThuTu = thuTu,
+                    DocumentId = file.Id,
                     TenFile = TenFileKhongTrung(file.FileName, thuTu, tenDaCo),
                     ObjectKeyNguon = file.ObjectKey,
                     TrangThai = TrangThaiFileKy.Cho,
@@ -651,6 +652,7 @@ namespace kssm.be.applications.LoKy.Implements
         {
             Id = file.Id,
             ThuTu = file.ThuTu,
+            DocumentId = file.DocumentId,
             TenFile = file.TenFile,
             TrangThai = MaTrangThai(file.TrangThai),
             LyDoLoi = file.LyDoLoi,
