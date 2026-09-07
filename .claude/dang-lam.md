@@ -131,6 +131,7 @@ Ba việc đi kèm, làm ngay trong lần chạy thử đó:
 | Bất cứ thứ gì thuộc luồng ký | [docs/luong-ky-so-hang-loat.md](docs/luong-ky-so-hang-loat.md) |
 | Sửa API lô ký / màn ký số | [contracts/lo-ky.contract.md](contracts/lo-ky.contract.md) |
 | Tách Dừng khỏi Huỷ, làm đường ký tiếp | [be/plans/dung-va-huy-lo-ky.plan.md](be/plans/dung-va-huy-lo-ky.plan.md) · [fe/plans/](fe/plans/dung-va-huy-lo-ky.plan.md) |
+| Tách Dừng khỏi Huỷ, làm đường ký tiếp | [be/plans/dung-va-huy-lo-ky.plan.md](be/plans/dung-va-huy-lo-ky.plan.md) · [fe/plans/](fe/plans/dung-va-huy-lo-ky.plan.md) |
 | Sửa plugin | [contracts/plugin-ky-so.contract.md](contracts/plugin-ky-so.contract.md) · [plugin/plans/](plugin/plans/) |
 | Sửa luồng dựng giấy báo | [docs/dung-giay-bao-tuyen-sinh.md](docs/dung-giay-bao-tuyen-sinh.md) |
 | Sửa bất cứ màn hình FE nào | [fe/architecture/](fe/architecture/README.md) |
@@ -143,8 +144,11 @@ Ba việc đi kèm, làm ngay trong lần chạy thử đó:
 
 ⚠️ **Đóng tab là lô dừng.** Trang web là người đưa thư giữa máy chủ và token. File đã ký giữ nguyên và vẫn hợp
 lệ.
+lệ.
 
 ⚠️ **Mở lại màn hình giữa lô thì chưa nối lại được vòng đưa thư** — thấy đúng tiến độ nhưng không ai mang chữ
+ký đi. Nay có đường đi vòng: bấm **Ký tiếp** để chạy tiếp từ file kế tiếp (hỏi PIN lại một lần), thay vì phải
+lập lô mới và ký lại từ đầu.
 ký đi. Nay có đường đi vòng: bấm **Ký tiếp** để chạy tiếp từ file kế tiếp (hỏi PIN lại một lần), thay vì phải
 lập lô mới và ký lại từ đầu.
 
