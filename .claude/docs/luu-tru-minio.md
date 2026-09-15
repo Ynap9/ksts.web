@@ -11,6 +11,7 @@ lô ký và bản đã ký. DB chỉ lưu **URL công khai** và **object key**.
 | `GiayBaoTrungTuyen/{khoá}/GiayBaoTrungTuyen/` | Giấy báo **chưa ký**, tên file là số CCCD | `GiayBaoService` |
 | `GiayBaoTrungTuyen/{khoá}/GiayBaoTrungTuyenDaKySo/` | Giấy báo **đã ký**, cùng tên file với bản gốc | `KySoRunner` |
 | `lo-ky/{loKyId}/nguon/` | Bản nguồn của lô nhận file **tải lên**; dọn khi lô chạy trọn | `LoKyService` |
+| `dong-goi/{sessionId}/` | Kho **tạm** của một phiên đóng gói TT05: `nguon/` giữ PDF và Excel tải lên, `goi/` giữ gói dựng ra. Dọn khi đóng gói xong, khi huỷ phiên, và bằng lượt quét phiên quá hạn lúc khởi động | `PackageSessionService` |
 
 Khoá tuyển sinh (`GiayBaoConstants.Khoa`, đang là `K71`) tách theo năm nên giấy báo các khoá không lẫn nhau và
 dọn theo năm chỉ là xoá một tiền tố. Lô ký lấy file bằng `them-tu-kho` thì **không chép gì** vào `lo-ky/` — nó

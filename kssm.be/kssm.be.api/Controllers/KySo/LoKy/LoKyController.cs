@@ -1,6 +1,6 @@
 using kssm.be.api.Controllers.Base;
-using kssm.be.applications.LoKy.Dtos;
-using kssm.be.applications.LoKy.Interfaces;
+using kssm.be.applications.KySo.LoKy.Dtos;
+using kssm.be.applications.KySo.LoKy.Interfaces;
 using kssm.be.shared.Constants.LoKy;
 using kssm.be.shared.Requests;
 using Microsoft.AspNetCore.Http.Features;

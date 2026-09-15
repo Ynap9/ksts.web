@@ -1,7 +1,7 @@
 using kssm.be.external.KySo.Images.Interfaces;
 using kssm.be.external.KySo.Pdf.Dtos;
 using kssm.be.external.KySo.Pdf.Interfaces;
-using kssm.be.external.Pdf.Dtos;
+
 using kssm.be.shared.Constants.Signing;
 using kssm.be.shared.Constants.Template;
 using kssm.be.shared.Requests.AppException;

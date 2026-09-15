@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:group name="elementsGroup">
+        <xs:sequence>
+            <xs:element name="arcFileCode" type="xs:string"/>
+            <xs:element name="title" type="xs:string"/>
+            <xs:element name="source" type="xs:string"/>
+            <xs:element name="description" type="xs:string"/>
+        </xs:sequence>
+    </xs:group>
+
+    <xs:complexType name="elementContainer">
+        <xs:annotation>
+            <xs:documentation xml:lang="en">
+                This complexType is included as a convenience for schema authors who need to define a root
+                or container element for all of the DC elements.
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:choice>
+            <xs:group ref="elementsGroup"/>
+        </xs:choice>
+    </xs:complexType>
+
+    <xs:element name="simpledc" type="elementContainer"/>
+
+</xs:schema>

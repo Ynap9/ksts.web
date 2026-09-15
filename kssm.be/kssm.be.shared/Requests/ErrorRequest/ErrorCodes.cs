@@ -58,5 +58,31 @@ namespace kssm.be.shared.Requests.ErrorRequest
         public const int TemplatePositionInvalid = 1005;
         public const int TemplateSampleFileMissing = 1006;
 
+        //Kiểm tra gói đóng: 1200 - 1219
+        public const int KiemTraPhienNotFound = 1200;
+        public const int KiemTraPhienDangChay = 1201;
+        public const int KiemTraPhienDaDon = 1202;
+        public const int KiemTraPhienRong = 1203;
+        public const int KiemTraExcelNotFound = 1204;
+        public const int KiemTraExcelUnreadable = 1205;
+        public const int KiemTraExcelLegacyFormat = 1206;
+        public const int KiemTraSheetMissing = 1207;
+        public const int KiemTraThieuTruongBatBuoc = 1208;
+        public const int KiemTraMaHoSoKhongKhop = 1209;
+        public const int KiemTraFileMoCoi = 1210;
+        public const int KiemTraTrungMa = 1211;
+        public const int KiemTraVuotTranMoiDot = 1212;
+        public const int KiemTraDinhDangKhongHoTro = 1213;
+        public const int KiemTraChuanChuaCauHinh = 1214;
+        public const int KiemTraThieuCapGoi = 1215;
+        public const int KiemTraNhieuCapGoi = 1216;
+        public const int KiemTraThieuCapTaiLieu = 1217;
+
+        //Đóng gói: 1220 - 1239
+        public const int DongGoiPhienChuaKiem = 1220;
+        public const int DongGoiKhongCoHoSoDat = 1221;
+        public const int DongGoiThieuSchema = 1222;
+        public const int DongGoiGoiNotFound = 1223;
+
     }
 }

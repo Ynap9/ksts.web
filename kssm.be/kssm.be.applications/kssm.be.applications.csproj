@@ -12,6 +12,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="16.1.1" />
+		<PackageReference Include="ClosedXML" Version="0.105.1" />
 	</ItemGroup>
 
 
@@ -20,10 +21,5 @@
     <ProjectReference Include="..\kssm.be.external\kssm.be.external.csproj" />
     <ProjectReference Include="..\kssm.be.infrastructure\kssm.be.infrastructure.csproj" />
   </ItemGroup>
-
-
-	<ItemGroup>
-	  <Folder Include="Template\Dtos\" />
-	</ItemGroup>
 
 </Project>

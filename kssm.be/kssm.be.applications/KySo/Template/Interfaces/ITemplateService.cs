@@ -1,7 +1,7 @@
-using kssm.be.applications.Template.Dtos;
+using kssm.be.applications.KySo.Template.Dtos;
 using kssm.be.shared.Requests.BaseRequest;
 
-namespace kssm.be.applications.Template.Interfaces
+namespace kssm.be.applications.KySo.Template.Interfaces
 {
     /// <summary>
     /// Quản lý TEMPLATE CẤU HÌNH CHỮ KÝ: bộ cấu hình dựng sẵn gồm chứng thư số, lý do/nơi ký, ảnh dấu đỏ,

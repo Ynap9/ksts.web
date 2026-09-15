@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using kssm.be.applications.KySo.Template.Dtos;
-using TemplateEntity = kssm.be.domain.Template.Template;
-using TemplatePositionEntity = kssm.be.domain.Template.TemplatePosition;
+using TemplateEntity = kssm.be.domain.KySo.Template.Template;
+using TemplatePositionEntity = kssm.be.domain.KySo.Template.TemplatePosition;
 
 
 namespace kssm.be.applications.Base

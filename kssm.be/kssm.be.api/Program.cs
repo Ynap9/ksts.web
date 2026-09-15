@@ -1,47 +1,59 @@
 
 using kssm.be.api.Middlewares;
 using kssm.be.applications.Base;
-using kssm.be.applications.Plugin.Implements;
-using kssm.be.applications.Plugin.Interfaces;
-using kssm.be.applications.Signing.Implements;
-using kssm.be.applications.Signing.Interfaces;
-using kssm.be.applications.Template.Implements;
-using kssm.be.applications.Template.Interfaces;
-using kssm.be.external.Certificates.Implements;
-using kssm.be.external.Certificates.Interfaces;
-using kssm.be.external.Colors.Implements;
-using kssm.be.external.Colors.Interfaces;
+using kssm.be.applications.KySo.LoKy.Implements;
+using kssm.be.applications.KySo.LoKy.Interfaces;
+using kssm.be.applications.KySo.Plugin.Implements;
+using kssm.be.applications.KySo.Plugin.Interfaces;
+using kssm.be.applications.KySo.Signing.Implements;
+using kssm.be.applications.KySo.Signing.Interfaces;
+using kssm.be.applications.KySo.Template.Implements;
+using kssm.be.applications.KySo.Template.Interfaces;
+using kssm.be.applications.DongGoi.Config.Implements;
+using kssm.be.applications.DongGoi.Config.Interfaces;
+using kssm.be.applications.DongGoi.Package.Implements;
+using kssm.be.applications.DongGoi.Package.Interfaces;
+using kssm.be.domain.DongGoi;
+using kssm.be.external.DongGoi.Implements;
+using kssm.be.external.DongGoi.Interfaces;
+using kssm.be.external.Excel.Implements;
+using kssm.be.external.Excel.Interfaces;
 using kssm.be.external.Errors.Implements;
-using kssm.be.external.Fonts.Implements;
-using kssm.be.external.Fonts.Interfaces;
+using kssm.be.external.Errors.Interfaces;
+using kssm.be.external.KySo.Certificates.Implements;
+using kssm.be.external.KySo.Certificates.Interfaces;
+using kssm.be.external.KySo.Colors.Implements;
+using kssm.be.external.KySo.Colors.Interfaces;
+using kssm.be.external.KySo.Fonts.Implements;
+using kssm.be.external.KySo.Fonts.Interfaces;
+using kssm.be.external.KySo.Images.Implements;
+using kssm.be.external.KySo.Images.Interfaces;
+using kssm.be.external.KySo.Pdf.Implements;
+using kssm.be.external.KySo.Pdf.Interfaces;
+using kssm.be.external.KySo.SaoMai.Implements;
+using kssm.be.external.KySo.SaoMai.Interfaces;
+using kssm.be.external.KySo.Signing.Implements;
+using kssm.be.external.KySo.Signing.Interfaces;
+using kssm.be.external.KySo.Tsa.Implements;
+using kssm.be.external.KySo.Tsa.Interfaces;
 using kssm.be.external.Mongo.Implements;
 using kssm.be.external.Mongo.Interfaces;
-using kssm.be.external.Pdf.Implements;
-using kssm.be.external.Pdf.Interfaces;
-using kssm.be.external.SaoMai.Implements;
-using kssm.be.external.SaoMai.Interfaces;
-using kssm.be.external.Signing.Implements;
-using kssm.be.external.Signing.Interfaces;
-using kssm.be.external.Tsa.Implements;
-using kssm.be.external.Tsa.Interfaces;
-using kssm.be.external.Images.Implements;
-using kssm.be.external.Images.Interfaces;
-using kssm.be.external.Errors.Interfaces;
 using kssm.be.external.S3.Implements;
 using kssm.be.external.S3.Interfaces;
 using kssm.be.infrastructure.Persistence;
+using kssm.be.infrastructure.Persistence.Seeder;
 using kssm.be.shared.Constants.Auth;
 using kssm.be.shared.Constants.Plugin;
 using kssm.be.shared.Requests;
 using kssm.be.shared.Requests.ErrorRequest;
 using kssm.be.shared.Settings;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
 using System.Globalization;
-using kssm.be.applications.KySo.LoKy.Implements;
-using kssm.be.applications.KySo.LoKy.Interfaces;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("Starting application...");
@@ -100,10 +112,31 @@ builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<IPluginService, PluginService>();
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<ILoKyService, LoKyService>();
+builder.Services.AddScoped<IConfigService, ConfigService>();
+builder.Services.AddScoped<IMetadataSchemaService, MetadataSchemaService>();
+builder.Services.AddScoped<IDossierLayoutService, DossierLayoutService>();
+builder.Services.AddScoped<IHeaderMatchService, HeaderMatchService>();
+builder.Services.AddScoped<IPackageSessionService, PackageSessionService>();
+builder.Services.AddScoped<IPackageBuilderService, PackageBuilderService>();
 
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("S3"));
+
+builder.Services.Configure<DongGoiSettings>(builder.Configuration.GetSection("DongGoi"));
+
+// Mặc định Kestrel chặn thân request ở ~30 MB còn FormOptions ở ~128 MB: một đợt tải lên vài chục PDF lưu
+// trữ là vượt ngay, mà lỗi hiện ra dưới dạng đứt kết nối chứ không phải một câu báo đọc được.
+var dongGoiSettings = builder.Configuration.GetSection("DongGoi").Get<DongGoiSettings>() ?? new DongGoiSettings();
+var tranThanRequest = (long)Math.Max(1, dongGoiSettings.MaxRequestBodyMb) * 1024 * 1024;
+
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = tranThanRequest);
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = tranThanRequest;
+    options.ValueCountLimit = int.MaxValue;
+});
+
 
 // Kết nối MongoDB của sao_mai nằm ở ConnectionStrings chứ không ở section riêng, nên ghép vào cùng phần cấu
 // hình callback để tầng external chỉ phải biết một lớp settings.
@@ -151,17 +184,33 @@ builder.Services.AddSingleton<ISigningKey, PluginSigningKey>();
 // Tiến trình ký chạy nền, sống lâu hơn request nên cũng phải là Singleton; nó tự mở scope cho từng file.
 builder.Services.AddSingleton<IKySoRunner, KySoRunner>();
 
+builder.Services.AddSingleton<IExcelSheetReader, ExcelSheetReader>();
+builder.Services.AddSingleton<ITextSimilarity, TextSimilarity>();
+builder.Services.AddSingleton<IPdfFormatInspector, PdfFormatInspector>();
+builder.Services.AddSingleton<IPackageFileStorage, PackageFileStorage>();
+builder.Services.AddSingleton<IPackageXmlBuilder, PackageXmlBuilder>();
+builder.Services.AddSingleton<IPackageArchiveBuilder, PackageArchiveBuilder>();
+builder.Services.AddSingleton<IPackageSchemaTemplate, PackageSchemaTemplate>();
+
+builder.Services.AddSingleton<IVerifyRunnerService, VerifyRunnerService>();
+
 builder.Services.AddSingleton<IProjectReader, ProjectReader>();
 builder.Services.AddSingleton<IProjectNotifier, ProjectNotifier>();
 
+
 builder.Services.AddHttpClient();
 #endregion
+
+
 
 
 #region mapper
 // Build mapper configuration
 builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile));
 #endregion
+
+
+
 
 builder.Services.AddControllers();
 
@@ -182,7 +231,27 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+#region Seed data
+// Run seeding inside scope
+using (var scope = app.Services.CreateScope())
+{
+    var dongGoiManager = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
 
+    await SeedDongGoi.SeedAsync(dongGoiManager);
+
+    // Kho tạm của phiên đóng gói nằm trên MinIO: kho có thể không với tới lúc khởi động, mà đó không phải
+    // lý do để cả API không lên được.
+    try
+    {
+        await scope.ServiceProvider.GetRequiredService<IPackageSessionService>()
+            .DonPhienQuaHanAsync(dongGoiSettings.SoGioGiuPhien);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Khong don duoc phien dong goi qua han luc khoi dong.");
+    }
+}
+#endregion
 
 app.UseMiddleware<ExceptionMiddleware>();
 

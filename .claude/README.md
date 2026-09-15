@@ -16,6 +16,11 @@ Toàn bộ tri thức dự án nằm trong thư mục này. Đọc theo thứ t�
 | [docs/luu-tru-minio.md](docs/luu-tru-minio.md) | Kho object: bản đồ tiền tố, quy tắc đặt key |
 | [docs/dat-dau-va-chu-ky-tuoi.md](docs/dat-dau-va-chu-ky-tuoi.md) | Cách tính vị trí đặt dấu + chữ ký tươi trên trang |
 | [docs/ky-so-kssm.md](docs/ky-so-kssm.md) | 🔶 **Chưa thi công**: ký số cho `kssm.be` — file/thư mục local và dự án, kèm nợ kỹ thuật phải sửa |
+| [docs/tt05-thong-tu.md](docs/tt05-thong-tu.md) | **Thông tư 05/2025/TT-BNV** — mục lục bộ bốn tài liệu; chọn gói nào, thể thức số hóa, các mốc thời gian |
+| [docs/tt05-chuan-sip.md](docs/tt05-chuan-sip.md) | Chuẩn **SIP** — gói nộp (`SIP_hoso` · `SIP_tailieu`): cây thư mục, METS, EAD, holey file, tên ZIP. **Có bảng chốt theo gói mẫu chuẩn** `b6acafed-…` |
+| [docs/tt05-chuan-aip.md](docs/tt05-chuan-aip.md) | Chuẩn **AIP** — gói bảo quản: PREMIS, `amdSec`, nhóm mã `arc*` |
+| [docs/tt05-chuan-dip.md](docs/tt05-chuan-dip.md) | Chuẩn **DIP** — gói giao người dùng: tệp xác thực, metadata yêu cầu khai thác |
+| [docs/tt05-pdfa.md](docs/tt05-pdfa.md) | **PDF/A hai lớp** — hai lớp là gì, mức PDF/A-2b đo từ gói mẫu. ⚠️ Trong luồng đóng gói là **tuỳ chọn**, và `kssm.be` chưa có công cụ sinh |
 | [be/architecture/](be/architecture/README.md) | Kiến trúc BE: 6 project, trách nhiệm từng tầng |
 | [fe/architecture/](fe/architecture/README.md) | Kiến trúc FE: Angular 21 zoneless, route/guard, service, hai màn đặc thù |
 | [be/plans/](be/plans/) | Kế hoạch từng tính năng phía BE |
@@ -45,6 +50,8 @@ trữ, đã có luồng ký số PDF chạy thật. KSTS dùng lại phần lớ
 | Plugin ký ở máy người dùng (`ksts.plugin`) | ✅ Xong phần ký — mở phiên giữ handle khoá, ký theo đợt |
 | Bộ cài + kiểm phiên bản plugin ở `kssm.be` | ✅ Xong — cùng bộ route `api/core/plugin/*`, không auth |
 | Ký số ở `kssm.be` (file local · dự án) | 🔶 Đã chốt kiến trúc, **chưa thi công** — `docs/ky-so-kssm.md` |
+| Đóng gói TT05 — cấu hình chuẩn metadata | ✅ Xong — `api/core/dong-goi/cau-hinh`, xuất Excel mẫu theo chuẩn |
+| Đóng gói TT05 — nhận thư mục và kiểm tra | 🔶 Đang thi công — [be/plans/dong-goi-kiem-tra.plan.md](be/plans/dong-goi-kiem-tra.plan.md) |
 | FE | ✅ Template · Chứng thư số · Import tuyển sinh · Ký số |
 | **Chạy thử lô thật với token trên prod** | ❌ **Việc kế tiếp** — xem `dang-lam.md` |
 | Job ticket · WYSIWYS · topology B (plugin gọi ra WSS) | 🔬 Nghiên cứu, tối ưu sau |

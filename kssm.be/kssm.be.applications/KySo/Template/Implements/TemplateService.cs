@@ -2,7 +2,7 @@ using AutoMapper;
 using kssm.be.applications.Base;
 using kssm.be.applications.KySo.Template.Dtos;
 using kssm.be.applications.KySo.Template.Interfaces;
-using kssm.be.external.Colors.Interfaces;
+using kssm.be.external.KySo.Colors.Interfaces;
 using kssm.be.external.S3.Interfaces;
 using kssm.be.infrastructure.Persistence;
 using kssm.be.shared.Constants.Template;
@@ -12,8 +12,8 @@ using kssm.be.shared.Requests.ErrorRequest;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using TemplateEntity = kssm.be.domain.Template.Template;
-using TemplatePositionEntity = kssm.be.domain.Template.TemplatePosition;
+using TemplateEntity = kssm.be.domain.KySo.Template.Template;
+using TemplatePositionEntity = kssm.be.domain.KySo.Template.TemplatePosition;
 
 namespace kssm.be.applications.KySo.Template.Implements
 {

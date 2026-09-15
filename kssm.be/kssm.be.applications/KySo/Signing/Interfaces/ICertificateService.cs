@@ -1,5 +1,5 @@
 using kssm.be.applications.KySo.Signing.Dtos;
-using kssm.be.external.Certificates.Dtos;
+using kssm.be.external.KySo.Certificates.Dtos;
 using kssm.be.shared.Requests.BaseRequest;
 
 namespace kssm.be.applications.KySo.Signing.Interfaces
@@ -7,7 +7,7 @@ namespace kssm.be.applications.KySo.Signing.Interfaces
     /// <summary>
     /// Lấy và chọn chứng thư số để ký.
     ///
-    /// Nguồn chứng thư do <see cref="external.Certificates.Interfaces.ICertificateProvider"/> quyết định; giai
+    /// Nguồn chứng thư do <see cref="external.KySo.Certificates.Interfaces.ICertificateProvider"/> quyết định; giai
     /// đoạn này nó đọc cert store của MÁY CHẠY API. Xem .claude/docs/ky-so-web-vs-desktop.md về giới hạn đó và
     /// hướng chuyển sang plugin ở máy client.
     /// </summary>
