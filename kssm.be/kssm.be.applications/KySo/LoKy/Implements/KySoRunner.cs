@@ -1,5 +1,6 @@
 using kssm.be.applications.KySo.LoKy.Dtos;
 using kssm.be.applications.KySo.LoKy.Interfaces;
+using kssm.be.external.Drive.Interfaces;
 using kssm.be.external.KySo.Pdf.Dtos;
 using kssm.be.external.KySo.Pdf.Interfaces;
 using kssm.be.external.KySo.SaoMai.Interfaces;
@@ -37,6 +38,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         private readonly ISigningKey _signingKey;
         private readonly ITimestampClient _timestampClient;
         private readonly ILoKyFileStorage _loKyFileStorage;
+        private readonly IDriveFileStorage _driveFileStorage;
         private readonly IS3FileStorage _s3FileStorage;
         private readonly IS3ClientFactory _s3ClientFactory;
         private readonly IProjectReader _projectReader;
@@ -58,6 +60,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             ISigningKey signingKey,
             ITimestampClient timestampClient,
             ILoKyFileStorage loKyFileStorage,
+            IDriveFileStorage driveFileStorage,
             IS3FileStorage s3FileStorage,
             IS3ClientFactory s3ClientFactory,
             IProjectReader projectReader,
@@ -73,6 +76,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             _signingKey = signingKey;
             _timestampClient = timestampClient;
             _loKyFileStorage = loKyFileStorage;
+            _driveFileStorage = driveFileStorage;
             _s3FileStorage = s3FileStorage;
             _s3ClientFactory = s3ClientFactory;
             _projectReader = projectReader;
@@ -190,7 +194,8 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 TuyChonMau = DungTuyChon(template, viTri, tenNguoiKy, anhDauDo, anhChuKyTuoi),
                 KyDe = template.KyDe,
                 Kho = await LayKhoAsync(lo.ProjectId, cancellationToken),
-                TienToDaKy = lo.TienToKho ?? LoKyConstants.GetSignedPrefix(loKyId),
+                DriveFolderId = lo.DriveFolderId ?? throw new UserFriendlyException(
+                    ErrorCodes.DriveFolderFailed, "Lô ký chưa có thư mục đích trên Google Drive."),
             };
         }
 
@@ -293,9 +298,8 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 var daKy = _pdfContentWriter.Write(prepared, cms);
                 KiemChuKy(file, daKy);
 
-                file.ObjectKeyDaKy = phien.TienToDaKy + file.TenFile;
-                await _loKyFileStorage.UploadAsync(phien.Kho, daKy, file.ObjectKeyDaKy,
-                    LoKyConstants.PdfContentType, cancellationToken);
+                file.DriveFileId = await _driveFileStorage.UploadAsync(phien.DriveFolderId, daKy,
+                    file.TenFile, LoKyConstants.PdfContentType, cancellationToken);
 
                 var genTime = _timestampClient.DocGenTime(tsaToken);
                 file.TrangThai = TrangThaiFileKy.Xong;
@@ -541,8 +545,9 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         }
 
         /// <summary>
-        /// Dọn bản nguồn của lô nhận file tải lên. Lô của dự án KHÔNG dọn gì: bản nguồn ở đó là tài liệu thật
-        /// của dự án, luồng ký chỉ đọc chứ không sở hữu chúng.
+        /// Xoá cả thư mục làm việc của lô trên kho mặc định: bản đã ký nằm trên Google Drive nên MinIO chỉ
+        /// còn là chỗ tạm trú của bản nguồn tải lên. Lô của dự án KHÔNG dọn gì — bản nguồn ở đó là tài liệu
+        /// thật của dự án, luồng ký chỉ đọc chứ không sở hữu chúng.
         /// </summary>
         public async Task DonNguonAsync(int loKyId, string? projectId, CancellationToken cancellationToken)
         {
@@ -554,12 +559,12 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             try
             {
                 await _loKyFileStorage.DeleteByPrefixAsync(_s3ClientFactory.DefaultConnection(),
-                    LoKyConstants.GetSourcePrefix(loKyId), cancellationToken);
+                    LoKyConstants.GetLoPrefix(loKyId), cancellationToken);
             }
             catch (Exception ex)
             {
                 // Dọn hỏng không được phép làm lô đã ký xong bị coi là lỗi: file đã ký vẫn nguyên vẹn.
-                _logger.LogWarning(ex, "Dọn file nguồn của lô {LoKyId} thất bại", loKyId);
+                _logger.LogWarning(ex, "Dọn thư mục lô {LoKyId} trên kho thất bại", loKyId);
             }
         }
     }

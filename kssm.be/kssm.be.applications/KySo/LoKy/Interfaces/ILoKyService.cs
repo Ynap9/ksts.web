@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Http;
 namespace kssm.be.applications.KySo.LoKy.Interfaces
 {
     /// <summary>
-    /// Lô ký số hàng loạt. Hai nguồn file: file người dùng tải lên (ghi vào kho mặc định của service) và
-    /// file của một dự án bên sao_mai (đọc và ghi ngay trên MinIO của chính dự án đó).
+    /// Lô ký số hàng loạt. Hai nguồn file: file người dùng tải lên (tạm trú trên kho mặc định của service)
+    /// và file của một dự án bên sao_mai (đọc tại chỗ trên MinIO của chính dự án đó). Bản đã ký của cả hai
+    /// đường đều ghi lên Google Drive.
     ///
     /// Không có auth: bên gọi đã xác thực người dùng từ trước, nên id người tạo chỉ để lọc và truy vết.
     /// </summary>
@@ -69,11 +70,5 @@ namespace kssm.be.applications.KySo.LoKy.Interfaces
 
         /// <summary>Lô đang chạy dở của một người, để mở lại màn hình thấy đúng lô cũ.</summary>
         Task<ViewLoKyDto?> LoDangChayAsync(string? nguoiTaoId);
-
-        /// <summary>
-        /// Nén các bản đã ký và ghi thẳng vào luồng gửi cho trình duyệt. Không dựng file nén trên đĩa: lô
-        /// vài nghìn file là vài GB.
-        /// </summary>
-        Task GhiNenAsync(int loKyId, string taiToken, Stream dich, CancellationToken cancellationToken);
     }
 }

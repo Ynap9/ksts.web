@@ -1,18 +1,18 @@
-# Ký số cho `kssm.be` — nghiên cứu
+# Ký số cho `kssm.be`
 
-> 🔶 **Chưa thi công.** Cập nhật 2026-09-04. File này chốt **kiến trúc và các quyết định đã hỏi**; bề mặt API
-> chi tiết chốt ở contract riêng khi bắt tay làm. Đọc kèm [luong-ky-so-hang-loat.md](luong-ky-so-hang-loat.md)
-> — bản KSTS là thứ được bê sang, kể cả các nợ kỹ thuật ghi ở mục cuối.
+> ✅ **Đã thi công.** Cập nhật 2026-09-15. File này chốt **kiến trúc và các quyết định đã hỏi**. Đọc kèm
+> [luong-ky-so-hang-loat.md](luong-ky-so-hang-loat.md) — bản KSTS là thứ được bê sang, kể cả các nợ kỹ thuật
+> ghi ở mục cuối.
 
 ## Hai trường hợp phải chạy
 
 | | TH1 — file / thư mục trên máy | TH2 — dự án |
 |---|---|---|
 | Nguồn file | Người dùng tải lên qua FE | `ocrdocuments` của dự án, đọc từ MongoDB |
-| Kho làm việc | MinIO **mặc định** của `kssm.be` (`appsettings`) | MinIO **của chính dự án** |
-| Bản đã ký ghi vào | `lo-ky/{loKyId}/da-ky/` | `ky-so/{tên dự án}/` trong bucket dự án |
-| Tải zip | ✅ | ✅ — kéo từ MinIO dự án |
-| Sau khi xong | Không đụng gì thêm | Gọi ngược `sao_mai_be` đổi trạng thái dự án |
+| Bản nguồn nằm ở | MinIO **mặc định**, `lo-ky/{loKyId}/nguon/` — **tạm trú** | MinIO **của chính dự án**, đọc tại chỗ |
+| Bản đã ký ghi vào | Google Drive, thư mục đặt theo **tên thư mục người dùng chọn** | Google Drive, thư mục đặt theo **tên dự án** |
+| Lấy file về | Link thư mục Drive — Drive tự có nút tải cả thư mục | Như trên |
+| Sau khi xong | **Xoá cả `lo-ky/{loKyId}/` trên MinIO** | Không đụng tài liệu dự án; gọi ngược `sao_mai_be` đổi trạng thái |
 
 Dự án được chọn **chỉ gồm dự án `dang_nghiem_thu`**; ký xong chuyển sang trạng thái **đã ký số**.
 
@@ -44,30 +44,44 @@ ngay lúc mở lô** kèm câu nói rõ dự án chưa dùng MinIO, đừng đ�
 
 ## Một tiến trình, nhiều MinIO
 
-`IS3FileStorage` hiện tại nhận `IOptions<S3Settings>` và dựng **một** `AmazonS3Client` lúc khởi tạo, đăng ký
-Singleton. TH2 cần mỗi dự án một client khác endpoint, khác bucket, khác khoá.
-
-Hướng: tách thành **`IS3ClientFactory`** trả client theo cấu hình, cache theo khoá
-`endpoint|bucket|accessKey` (đúng cách `sao_mai_be` cache). `IS3FileStorage` hiện tại giữ nguyên bề mặt cho
-ảnh template và cho TH1 — nó chỉ là factory gọi với cấu hình mặc định. Không nhân đôi code đọc/ghi object.
+TH2 cần mỗi dự án một client khác endpoint, khác bucket, khác khoá, nên **`IS3ClientFactory`** trả client theo
+cấu hình và cache theo khoá `endpoint|bucket|accessKey` (đúng cách `sao_mai_be` cache). `IS3FileStorage` giữ
+nguyên bề mặt cho ảnh template — nó chỉ là factory gọi với cấu hình mặc định.
 
 ## Đường đi của file
 
 ```text
-TH1  FE tải lên -> lo-ky/{loKyId}/nguon/{000001}.pdf   (MinIO mặc định)
-                -> ký -> lo-ky/{loKyId}/da-ky/{tên gốc}.pdf
-                -> zip: kéo từng bản đã ký, nén thẳng vào luồng gửi
+TH1  FE tải lên -> lo-ky/{loKyId}/nguon/{000001}.pdf   (MinIO mặc định, tạm trú)
+                -> ký -> Drive: {thư mục gốc}/{tên thư mục đã chọn}/{tên gốc}.pdf
+                -> lô xong -> XOÁ lo-ky/{loKyId}/ trên MinIO
 
 TH2  ocrdocuments.pdfUrl -> object key trong bucket dự án   (KHÔNG chép sang chỗ khác)
-                -> ký -> ky-so/{tên dự án}/{tên gốc}.pdf    (cùng bucket dự án)
-                -> zip: kéo từ bucket dự án
+                -> ký -> Drive: {thư mục gốc}/{tên dự án}/{tên gốc}.pdf
+                -> không xoá gì trên kho của dự án
 ```
 
 Bản đã ký giữ **đúng tên file gốc** để đối chiếu được với bản chưa ký, giống cách KSTS đặt tên theo số CCCD.
 
-⚠️ Tên thư mục là **tên dự án nguyên văn**, có dấu và có khoảng trắng (đã chốt). Object key kiểu đó hợp lệ với
-S3 nhưng **mọi chỗ ghép vào URL đều phải encode**: đường presign, link tải, tên entry trong zip, và cả câu log.
-Bỏ sót một chỗ là lỗi 404 khó lần. Đổi tên dự án giữa chừng thì lô sau ghi sang thư mục khác — chấp nhận.
+## Google Drive nhận bản đã ký
+
+Khoá là **service account** (`kssm.be.api/service-account.json`, không commit — đã vào `.gitignore`), thư mục
+gốc khai ở `appsettings.json` mục `Drive`. Mỗi lô dựng một thư mục con: tìm theo tên trước, chưa có mới tạo,
+nên **ký tiếp** sau khi tạm dừng ghi đúng vào thư mục cũ. Thư mục dựng ngay ở `bat-dau`, trước khi runner
+chạy — hỏng cấu hình thì người dùng biết ngay thay vì trượt ở file đầu tiên.
+
+⚠️ Khai `service-account.json` trong `.csproj` phải dùng `<Content Update=…>`, **không** `Include`: Web SDK đã
+tự gom mọi `*.json` vào `Content`, khai thêm là lỗi *Duplicate 'Content' items were included*.
+
+⚠️ Thư mục gốc **phải nằm trong Shared Drive**. Service account không có dung lượng Drive riêng: đẩy file vào
+một thư mục thuộc My Drive của người khác sẽ trượt `storageQuotaExceeded` dù đã chia sẻ quyền Editor. Mọi lời
+gọi đều đặt `SupportsAllDrives = true`, thiếu cờ đó thì Drive trả "không tìm thấy thư mục".
+
+⚠️ Thư mục con **không** được đặt quyền riêng — quyền kế thừa từ thư mục gốc (đã chốt). Ai không có quyền trên
+thư mục gốc thì mở link sẽ báo không có quyền, đừng lần theo hướng "link hỏng".
+
+⚠️ Tên thư mục là **tên nguyên văn**, có dấu và có khoảng trắng. Hai chỗ phải để ý: chuỗi `q` của Drive API
+phải escape dấu nháy đơn (`DriveConstants.EscapeQueryValue`), và hai lô khác nhau trùng tên thư mục sẽ **ghi
+chung một chỗ** — trùng tên file thì Drive giữ cả hai bản chứ không ghi đè.
 
 ## Bê gì từ `ksts.be`
 
@@ -152,15 +166,14 @@ chốt trạng thái.
 - **Không khoá tuần tự phép ký ở máy chủ** — token tự xếp hàng bên plugin; khoá ở đây là mất hết tác dụng của
   việc gom 8 yêu cầu mỗi đợt.
 - **Chỗ trống `/Contents` 32 KB** và bề rộng số `/ByteRange` 10 chữ số: đổi là hỏng file.
-- **Zip nén ngay lúc tải**, không dựng file nén trên đĩa máy chủ.
 
-## Chưa chốt, quyết trước khi thi công
+## Chưa chốt
 
-1. **Callback đổi trạng thái dự án**: `sao_mai_be` chưa có đường nào cho service khác gọi vào —
-   `project/update/:id` đòi Bearer của người dùng. Cần một route nội bộ kèm khoá dùng chung, và cách xử lý khi
-   callback hỏng (lô đã ký xong nhưng trạng thái dự án chưa đổi).
-2. **Có ghi ngược đường dẫn bản đã ký vào `ocrdocuments` không** (thêm trường `signedPdfUrl`), hay chỉ để file
-   nằm trong `ky-so/{tên dự án}/`.
-3. **Ký lại một dự án đã ký**: gặp file trùng tên trong thư mục đích thì ghi đè hay bỏ qua.
+1. **Có ghi ngược link Drive của bản đã ký vào `ocrdocuments` không** (thêm trường `signedPdfUrl`), hay chỉ để
+   file nằm trong thư mục Drive của dự án.
+2. **Ký lại một dự án đã ký**: hiện Drive giữ **cả hai bản** cùng tên trong một thư mục. Muốn ghi đè thì phải
+   tìm theo tên trước mỗi lần đẩy — thêm một lời gọi API cho mỗi file, lô 5.000 file là 5.000 lượt.
+3. **Huỷ lô giữa chừng không dọn MinIO**: `lo-ky/{loKyId}/` chỉ bị xoá khi lô chạy hết. Lô bị huỷ để lại bản
+   nguồn nằm đó vô thời hạn.
 4. **Origin production của `sao_mai_fe`** phải vào `PluginConstants.OriginMacDinh` rồi đóng gói lại — việc cũ
    còn treo từ 2026-08-29, TH1 lẫn TH2 đều không chạy được nếu thiếu.

@@ -48,6 +48,14 @@
     <Content Include="Templates\schemas\*.xsd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+
+    <!-- Khoá service account của Google Drive. DriveSettings resolve đường dẫn tương đối từ
+         AppContext.BaseDirectory nên file phải nằm trong output; KHÔNG commit file này vào git.
+         Dùng Update chứ KHÔNG Include: Web SDK đã tự gom mọi *.json vào Content, Include lần nữa là lỗi
+         "Duplicate 'Content' items were included". -->
+    <Content Update="service-account.json" Condition="Exists('service-account.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

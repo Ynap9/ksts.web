@@ -24,6 +24,11 @@ namespace kssm.be.shared.Requests.ErrorRequest
         public const int StorageDeleteFailed = 1042;
         public const int StorageDownloadFailed = 1043;
 
+        //Google Drive nhận bản đã ký: 1060 - 1079
+        public const int DriveNotConfigured = 1060;
+        public const int DriveFolderFailed = 1061;
+        public const int DriveUploadFailed = 1062;
+
 
         //Ký số PDF: 1140 - 1159
         public const int TimestampFailed = 1140;

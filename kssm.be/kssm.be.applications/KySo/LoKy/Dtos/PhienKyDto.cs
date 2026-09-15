@@ -18,10 +18,10 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public bool KyDe { get; set; }
 
-        /// <summary>Kho chứa bản nguồn và cũng là nơi ghi bản đã ký: kho mặc định, hoặc MinIO của dự án.</summary>
+        /// <summary>Kho chứa bản NGUỒN: kho mặc định cho lô tải lên, MinIO của dự án cho lô dự án.</summary>
         public S3ConnectionDto Kho { get; set; } = new();
 
-        /// <summary>Tiền tố thư mục nhận bản đã ký, chốt lúc bắt đầu lô để cả lô ghi về cùng một chỗ.</summary>
-        public string TienToDaKy { get; set; } = string.Empty;
+        /// <summary>Thư mục trên Google Drive nhận bản đã ký, chốt lúc bắt đầu lô.</summary>
+        public string DriveFolderId { get; set; } = string.Empty;
     }
 }

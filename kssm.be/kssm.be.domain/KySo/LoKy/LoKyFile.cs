@@ -28,8 +28,8 @@ namespace kssm.be.domain.KySo.LoKy
         [MaxLength(1000)]
         public string ObjectKeyNguon { get; set; } = string.Empty;
 
-        [MaxLength(1000)]
-        public string? ObjectKeyDaKy { get; set; }
+        [MaxLength(100)]
+        public string? DriveFileId { get; set; }
 
         public TrangThaiFileKy TrangThai { get; set; }
 

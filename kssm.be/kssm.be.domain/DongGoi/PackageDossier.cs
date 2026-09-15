@@ -28,8 +28,8 @@ namespace kssm.be.domain.DongGoi
         [MaxLength(100)]
         public string? PackageObjid { get; set; }
 
-        [MaxLength(200)]
-        public string? PackageObjectKey { get; set; }
+        [MaxLength(100)]
+        public string? PackageDriveFileId { get; set; }
 
         public long PackageSize { get; set; }
 

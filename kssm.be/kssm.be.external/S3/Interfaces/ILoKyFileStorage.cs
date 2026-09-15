@@ -4,17 +4,14 @@ using Microsoft.AspNetCore.Http;
 namespace kssm.be.external.S3.Interfaces
 {
     /// <summary>
-    /// Kho object của luồng ký. Khác <see cref="IS3FileStorage"/> ở chỗ mọi thao tác đều nhận cấu hình kho:
-    /// lô file tải lên dùng kho mặc định, còn lô của dự án đọc và ghi ngay trên MinIO của chính dự án đó.
+    /// Kho object chứa bản NGUỒN của luồng ký. Khác <see cref="IS3FileStorage"/> ở chỗ mọi thao tác đều nhận
+    /// cấu hình kho: lô file tải lên tạm trú trên kho mặc định rồi xoá khi lô xong, còn lô của dự án đọc tại
+    /// chỗ trên MinIO của chính dự án đó. Bản đã ký không đi qua đây — nó nằm trên Google Drive.
     /// </summary>
     public interface ILoKyFileStorage
     {
         /// <summary>Đẩy một file người dùng tải lên vào kho, giữ nguyên nội dung.</summary>
         Task<long> SaveSourceAsync(S3ConnectionDto storage, IFormFile file, string objectKey,
-            CancellationToken cancellationToken = default);
-
-        /// <summary>Đẩy nội dung đã nằm trong bộ nhớ lên kho — dùng cho bản PDF vừa ký xong.</summary>
-        Task UploadAsync(S3ConnectionDto storage, byte[] content, string objectKey, string contentType,
             CancellationToken cancellationToken = default);
 
         /// <summary>Tải nội dung một object về bộ nhớ.</summary>

@@ -8,7 +8,5 @@ namespace kssm.be.applications.DongGoi.Package.Interfaces
             CancellationToken cancellationToken = default);
 
         Task<ViewDongGoiDto> DanhSachGoiAsync(int sessionId, CancellationToken cancellationToken = default);
-
-        Task<TaiGoiDto> TaiGoiAsync(int sessionId, int hoSoId, CancellationToken cancellationToken = default);
     }
 }

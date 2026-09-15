@@ -10,6 +10,7 @@ using kssm.be.external.Excel.Interfaces;
 using kssm.be.infrastructure.Persistence;
 using kssm.be.shared.Constants;
 using kssm.be.shared.Constants.DongGoi;
+using kssm.be.shared.Constants.Drive;
 using kssm.be.shared.Requests.AppException;
 using kssm.be.shared.Requests.ErrorRequest;
 using Microsoft.AspNetCore.Http;
@@ -95,6 +96,13 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             var boNhoExcel = new Dictionary<string, ExcelDaDocDto>(StringComparer.Ordinal);
             var ketQua = new ViewDongGoiDto { PhienId = sessionId };
 
+            // Dựng thư mục đích MỘT lần cho cả phiên, trước vòng lặp: hỏng cấu hình Drive thì trượt ngay
+            // ở đây thay vì dựng xong gói đầu tiên mới phát hiện không có chỗ ghi.
+            var driveFolderId = await _packageFileStorage.EnsurePackageFolderAsync(
+                DriveConstants.ChuanHoaTenThuMuc(phien.RootFolderName)
+                    ?? KiemTraConstants.GetDefaultDriveFolderName(phien.Id, DateTimeConstants.VietnamNow),
+                cancellationToken);
+
             foreach (var hoSo in hoSoList)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -117,8 +125,8 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                     continue;
                 }
 
-                var goi = await DungMotGoiAsync(phien, dto, hoSo, cuaHoSo, capDto, schemaHoSo, schemaTaiLieu,
-                    schemaEntries, cancellationToken);
+                var goi = await DungMotGoiAsync(phien, driveFolderId, dto, hoSo, cuaHoSo, capDto, schemaHoSo,
+                    schemaTaiLieu, schemaEntries, cancellationToken);
 
                 ketQua.Goi.Add(goi);
                 ketQua.SoTaiLieu += goi.SoTaiLieu;
@@ -136,7 +144,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
         {
             var hoSoList = await _kstsDbContext.PackageDossier
                 .AsNoTracking()
-                .Where(x => !x.Deleted && x.SessionId == sessionId && x.PackageObjectKey != null)
+                .Where(x => !x.Deleted && x.SessionId == sessionId && x.PackageDriveFileId != null)
                 .OrderBy(x => x.FileCode)
                 .ToListAsync(cancellationToken);
 
@@ -150,34 +158,15 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                     HoSoId = x.Id,
                     MaHoSo = x.FileCode ?? x.FolderName,
                     Objid = x.PackageObjid ?? string.Empty,
-                    TenFile = Path.GetFileName(x.PackageObjectKey!),
+                    TenFile = TenGoi(x.PackageObjid),
                     SoTaiLieu = x.DocumentCount,
                     DungLuong = x.PackageSize,
-                    Url = _packageFileStorage.BuildPublicUrl(x.PackageObjectKey!),
+                    Url = _packageFileStorage.BuildPackageUrl(x.PackageDriveFileId!),
                 }).ToList(),
             };
         }
 
-        public async Task<TaiGoiDto> TaiGoiAsync(int sessionId, int hoSoId,
-            CancellationToken cancellationToken = default)
-        {
-            var hoSo = await _kstsDbContext.PackageDossier
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => !x.Deleted && x.SessionId == sessionId && x.Id == hoSoId
-                    && x.PackageObjectKey != null, cancellationToken);
-
-            if (hoSo == null)
-            {
-                throw new UserFriendlyException(ErrorCodes.DongGoiGoiNotFound,
-                    $"Không tìm thấy gói đã đóng của hồ sơ {hoSoId}.");
-            }
-
-            return new TaiGoiDto
-            {
-                NoiDung = await _packageFileStorage.DownloadAsync(hoSo.PackageObjectKey!, cancellationToken),
-                TenFile = Path.GetFileName(hoSo.PackageObjectKey!),
-            };
-        }
+        public string TenGoi(string? objid) => $"{objid}{SipPackConstants.ZipExtension}";
 
         public async Task<PackageSession> LayPhienDaKiemAsync(int sessionId, CancellationToken cancellationToken)
         {
@@ -203,10 +192,10 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             return phien;
         }
 
-        public async Task<ViewGoiDto> DungMotGoiAsync(PackageSession phien, DongGoiDto dto, PackageDossier hoSo,
-            List<PackageDocument> cuaHoSo, ExcelDaDocDto capDto, PackageSchemaDto schemaHoSo,
-            IReadOnlyList<PackageSchemaDto> schemaTaiLieu, IReadOnlyList<PackEntryDto> schemaEntries,
-            CancellationToken cancellationToken)
+        public async Task<ViewGoiDto> DungMotGoiAsync(PackageSession phien, string driveFolderId,
+            DongGoiDto dto, PackageDossier hoSo, List<PackageDocument> cuaHoSo, ExcelDaDocDto capDto,
+            PackageSchemaDto schemaHoSo, IReadOnlyList<PackageSchemaDto> schemaTaiLieu,
+            IReadOnlyList<PackEntryDto> schemaEntries, CancellationToken cancellationToken)
         {
             var objid = _packageXmlBuilder.NewUuid();
             var created = _packageXmlBuilder.FormatDateTime(GioVietNam());
@@ -312,11 +301,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             entries.Add(new PackEntryDto { DuongDan = SipPackConstants.MetsFileName, NoiDung = rootMetsBytes });
 
             var zip = _packageArchiveBuilder.Build(objid, entries);
-            var tenZip = $"{Guid.NewGuid()}{SipPackConstants.ZipExtension}";
-            var objectKey = await _packageFileStorage.SavePackageAsync(zip, phien.Id, tenZip, cancellationToken);
+            var tenZip = TenGoi(objid);
+            var driveFileId = await _packageFileStorage.SavePackageAsync(driveFolderId, zip, tenZip,
+                cancellationToken);
 
             hoSo.PackageObjid = objid;
-            hoSo.PackageObjectKey = objectKey;
+            hoSo.PackageDriveFileId = driveFileId;
             hoSo.PackageSize = zip.LongLength;
             hoSo.ModifiedDate = DateTimeConstants.VietnamNow;
 
@@ -328,7 +318,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                 TenFile = tenZip,
                 SoTaiLieu = docs.Count,
                 DungLuong = zip.LongLength,
-                Url = _packageFileStorage.BuildPublicUrl(objectKey),
+                Url = _packageFileStorage.BuildPackageUrl(driveFileId),
             };
         }
 

@@ -12,8 +12,6 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public string? Thumbprint { get; set; }
 
-        public string TaiToken { get; set; } = string.Empty;
-
         public string TrangThai { get; set; } = string.Empty;
 
         public int TongSo { get; set; }
@@ -22,7 +20,9 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public int SoLoi { get; set; }
 
-        public string? TienToKho { get; set; }
+        public string? ThuMucDaKy { get; set; }
+
+        public string? DriveFolderUrl { get; set; }
 
         public DateTime? CreatedDate { get; set; }
     }
