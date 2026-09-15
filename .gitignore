@@ -86,3 +86,6 @@ desktop.ini
 *~
 *.swp
 *.bak
+
+# Khoá service account Google Drive — bí mật, không commit.
+service-account.json

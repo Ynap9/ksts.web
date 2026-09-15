@@ -6,8 +6,6 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public string TrangThai { get; set; } = string.Empty;
 
-        public string TaiToken { get; set; } = string.Empty;
-
         public int TongSo { get; set; }
 
         public int DaXong { get; set; }
@@ -22,7 +20,9 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public string? LoiChung { get; set; }
 
-        public string? TienToKho { get; set; }
+        public string? ThuMucDaKy { get; set; }
+
+        public string? DriveFolderUrl { get; set; }
 
         public List<ViewFileKyDto> FilesLoi { get; set; } = new();
 

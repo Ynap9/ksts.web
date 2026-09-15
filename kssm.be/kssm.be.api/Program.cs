@@ -16,6 +16,8 @@ using kssm.be.applications.DongGoi.Package.Interfaces;
 using kssm.be.domain.DongGoi;
 using kssm.be.external.DongGoi.Implements;
 using kssm.be.external.DongGoi.Interfaces;
+using kssm.be.external.Drive.Implements;
+using kssm.be.external.Drive.Interfaces;
 using kssm.be.external.Excel.Implements;
 using kssm.be.external.Excel.Interfaces;
 using kssm.be.external.Errors.Implements;
@@ -43,6 +45,7 @@ using kssm.be.external.S3.Interfaces;
 using kssm.be.infrastructure.Persistence;
 using kssm.be.infrastructure.Persistence.Seeder;
 using kssm.be.shared.Constants.Auth;
+using kssm.be.shared.Constants.Drive;
 using kssm.be.shared.Constants.Plugin;
 using kssm.be.shared.Requests;
 using kssm.be.shared.Requests.ErrorRequest;
@@ -125,6 +128,9 @@ builder.Services.Configure<S3Settings>(builder.Configuration.GetSection("S3"));
 
 builder.Services.Configure<DongGoiSettings>(builder.Configuration.GetSection("DongGoi"));
 
+builder.Services.Configure<DriveSettings>(
+    builder.Configuration.GetSection(DriveConstants.ConfigSection));
+
 // Mặc định Kestrel chặn thân request ở ~30 MB còn FormOptions ở ~128 MB: một đợt tải lên vài chục PDF lưu
 // trữ là vượt ngay, mà lỗi hiện ra dưới dạng đứt kết nối chứ không phải một câu báo đọc được.
 var dongGoiSettings = builder.Configuration.GetSection("DongGoi").Get<DongGoiSettings>() ?? new DongGoiSettings();
@@ -162,6 +168,9 @@ builder.Services.AddSingleton<ITemplateImageStorage, TemplateImageStorage>();
 builder.Services.AddSingleton<IHexColorReader, HexColorReader>();
 builder.Services.AddSingleton<IS3ClientFactory, S3ClientFactory>();
 builder.Services.AddSingleton<ILoKyFileStorage, LoKyFileStorage>();
+
+// DriveService giữ khoá đã ký và pool HTTP của Google SDK nên dựng lại mỗi request là tự xin lại token.
+builder.Services.AddSingleton<IDriveFileStorage, DriveFileStorage>();
 builder.Services.AddSingleton<IImageSizeReader, ImageSizeReader>();
 
 // Luồng ký: dựng bản ký, ghép CMS, xin dấu thời gian.

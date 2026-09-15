@@ -29,9 +29,6 @@ namespace kssm.be.domain.KySo.LoKy
         [MaxLength(100)]
         public string? Thumbprint { get; set; }
 
-        [MaxLength(100)]
-        public string TaiToken { get; set; } = string.Empty;
-
         public TrangThaiLoKy TrangThai { get; set; }
 
         public int TongSo { get; set; }
@@ -47,8 +44,11 @@ namespace kssm.be.domain.KySo.LoKy
 
         public DateTime? ThoiDiemXong { get; set; }
 
-        [MaxLength(1000)]
-        public string? TienToKho { get; set; }
+        [MaxLength(500)]
+        public string? ThuMucDaKy { get; set; }
+
+        [MaxLength(100)]
+        public string? DriveFolderId { get; set; }
 
         public bool DaBaoDuAnKyXong { get; set; }
 

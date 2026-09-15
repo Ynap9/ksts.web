@@ -49,31 +49,6 @@ namespace kssm.be.external.S3.Implements
             return file.Length;
         }
 
-        public async Task UploadAsync(S3ConnectionDto storage, byte[] content, string objectKey,
-            string contentType, CancellationToken cancellationToken = default)
-        {
-            using var stream = new MemoryStream(content);
-
-            try
-            {
-                await _clientFactory.Get(storage).PutObjectAsync(new PutObjectRequest
-                {
-                    BucketName = storage.Bucket,
-                    Key = objectKey,
-                    InputStream = stream,
-                    ContentType = contentType,
-                    UseChunkEncoding = false,
-                    DisableDefaultChecksumValidation = true,
-                }, cancellationToken);
-            }
-            catch (AmazonS3Exception ex)
-            {
-                _logger.LogError(ex, "Đẩy object {Key} lên kho thất bại", objectKey);
-                throw new UserFriendlyException(ErrorCodes.StorageUploadFailed,
-                    $"Không đẩy được file lên kho lưu trữ: {ex.Message}");
-            }
-        }
-
         public async Task<byte[]> DownloadAsync(S3ConnectionDto storage, string objectKey,
             CancellationToken cancellationToken = default)
         {

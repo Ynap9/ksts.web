@@ -6,6 +6,8 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
 
         public string? ProjectId { get; set; }
 
+        public string? TenThuMuc { get; set; }
+
         public string? NguoiTaoId { get; set; }
     }
 }

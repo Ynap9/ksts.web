@@ -4,8 +4,10 @@ namespace kssm.be.shared.Constants.DongGoi
     {
         public const string ObjectKeyPrefix = "dong-goi";
         public const string SourceFolder = "nguon";
-        public const string PackageFolder = "goi";
         public const string SourceObjectKeyFormat = "{0}/{1}/{2}/{3:D6}{4}";
+
+        // Tên thư mục trên Drive khi phiên không mang tên thư mục gốc nào.
+        public const string DefaultDriveFolderNameFormat = "Dong goi {0} - {1:yyyyMMdd-HHmm}";
 
         public static string GetSessionPrefix(int sessionId) => $"{ObjectKeyPrefix}/{sessionId}/";
 
@@ -15,11 +17,8 @@ namespace kssm.be.shared.Constants.DongGoi
         public static string GetSourceObjectKey(int sessionId, int thuTu, string extension) =>
             string.Format(SourceObjectKeyFormat, ObjectKeyPrefix, sessionId, SourceFolder, thuTu, extension);
 
-        public static string GetPackagePrefix(int sessionId) =>
-            $"{ObjectKeyPrefix}/{sessionId}/{PackageFolder}/";
-
-        public static string GetPackageObjectKey(int sessionId, string tenFile) =>
-            $"{ObjectKeyPrefix}/{sessionId}/{PackageFolder}/{tenFile}";
+        public static string GetDefaultDriveFolderName(int sessionId, DateTime thoiDiem) =>
+            string.Format(DefaultDriveFolderNameFormat, sessionId, thoiDiem);
 
         public const string PdfExtension = ".pdf";
         public const string XlsxExtension = ".xlsx";

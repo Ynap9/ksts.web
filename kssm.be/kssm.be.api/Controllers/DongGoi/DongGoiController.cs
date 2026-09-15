@@ -1,7 +1,6 @@
 using kssm.be.api.Controllers.Base;
 using kssm.be.applications.DongGoi.Package.Dtos;
 using kssm.be.applications.DongGoi.Package.Interfaces;
-using kssm.be.shared.Constants.DongGoi;
 using kssm.be.shared.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -49,18 +48,5 @@ namespace kssm.be.api.Controllers.DongGoi
             }
         }
 
-        [HttpGet("{id}/ho-so/{hoSoId}/tai-ve")]
-        public async Task<IActionResult> TaiVe(int id, int hoSoId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var result = await _packageBuilderService.TaiGoiAsync(id, hoSoId, cancellationToken);
-                return File(result.NoiDung, SipPackConstants.MimeTypeZip, result.TenFile);
-            }
-            catch (Exception ex)
-            {
-                return Ok(OkException(ex));
-            }
-        }
     }
 }

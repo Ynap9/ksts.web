@@ -1,7 +1,22 @@
 # Đang làm dở — đọc file này đầu phiên
 
-> Cập nhật 2026-09-09. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
+> Cập nhật 2026-09-15. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
 > và `be/architecture/`, đừng chép lại vào đây.
+
+## Đang làm (2026-09-15) — bản đã ký đẩy lên Google Drive thay cho MinIO
+
+Xong tầng `kssm.be`, **chưa build lần nào và chưa sinh migration**. Kiến trúc và các bẫy ở
+[docs/ky-so-kssm.md](docs/ky-so-kssm.md).
+
+Đã làm: `external/Drive/` (`IDriveFileStorage` — tìm/tạo thư mục con, đẩy file), `DriveSettings` +
+mục `Drive` trong `appsettings.json`, mã lỗi **1060-1062**, và bỏ hẳn đường tải zip (`lo-ky/{id}/zip`,
+`GhiNenAsync`, cột `TaiToken`). Bản nguồn TH1 **vẫn lên MinIO** rồi xoá cả `lo-ky/{id}/` khi lô xong.
+
+Đổi lược đồ, **phải `dotnet ef migrations add` rồi `database update`**: `LoKy` bỏ `TaiToken`, đổi
+`TienToKho` → `ThuMucDaKy`, thêm `DriveFolderId`; `LoKyFile` đổi `ObjectKeyDaKy` → `DriveFileId`.
+
+Việc kế tiếp, đúng thứ tự: **`sao_mai_be`** (chuyển tiếp `tenThuMuc` lúc tạo lô, bỏ route proxy zip) rồi
+**`sao_mai_fe`** (gửi tên thư mục từ `webkitRelativePath`, thay nút Tải zip bằng nút mở link Drive).
 
 ## Đang làm (2026-09-09) — đóng gói TT05 ở `kssm.be`, đường local
 

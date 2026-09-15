@@ -1,16 +1,13 @@
 using kssm.be.api.Controllers.Base;
 using kssm.be.applications.KySo.LoKy.Dtos;
 using kssm.be.applications.KySo.LoKy.Interfaces;
-using kssm.be.shared.Constants.LoKy;
 using kssm.be.shared.Requests;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 namespace kssm.be.api.Controllers.LoKy
 {
     /// <summary>
-    /// Lô ký số hàng loạt. Bên gọi đứng trước service này đã xác thực người dùng nên ở đây không kiểm token;
-    /// riêng đường tải zip còn có thêm token của chính lô vì trình duyệt điều hướng thẳng tới đó.
+    /// Lô ký số hàng loạt. Bên gọi đứng trước service này đã xác thực người dùng nên ở đây không kiểm token.
     /// </summary>
     [ApiController]
     [Route("api/core/lo-ky")]
@@ -223,44 +220,5 @@ namespace kssm.be.api.Controllers.LoKy
             }
         }
 
-        /// <summary>
-        /// Tải các bản đã ký dưới dạng zip. Trả bytes thô, KHÔNG bọc envelope — trình duyệt điều hướng thẳng
-        /// tới đây nên mọi trường hợp sai đều trả 404 trơn, không nêu lý do cho người dò.
-        /// </summary>
-        [HttpGet("{id}/zip")]
-        public async Task<IActionResult> TaiZip(int id, [FromQuery] string token,
-            CancellationToken cancellationToken)
-        {
-            // ZipArchive ghi bảng mục lục cuối gói bằng lệnh ghi ĐỒNG BỘ, mà Response.Body cấm ghi đồng bộ
-            // theo mặc định - không mở cờ này thì gói hỏng đúng lúc đóng, sau khi đã ghi hết file.
-            var dieuKhienThan = HttpContext.Features.Get<IHttpBodyControlFeature>();
-            if (dieuKhienThan != null)
-            {
-                dieuKhienThan.AllowSynchronousIO = true;
-            }
-
-            Response.ContentType = LoKyConstants.ZipContentType;
-            Response.Headers.ContentDisposition =
-                $"attachment; filename=\"ky-so-{DateTime.UtcNow:yyyyMMddHHmmss}.zip\"";
-
-            try
-            {
-                await _loKyService.GhiNenAsync(id, token, Response.Body, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Tải zip lô {LoKyId} thất bại", id);
-
-                // Header đã gửi đi rồi thì không đổi sang response lỗi được nữa, chỉ còn cách cắt luồng.
-                if (Response.HasStarted)
-                {
-                    return new EmptyResult();
-                }
-
-                return NotFound();
-            }
-
-            return new EmptyResult();
-        }
     }
 }
