@@ -1,7 +1,28 @@
 # Đang làm dở — đọc file này đầu phiên
 
-> Cập nhật 2026-09-04. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
+> Cập nhật 2026-09-09. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
 > và `be/architecture/`, đừng chép lại vào đây.
+
+## Đang làm (2026-09-09) — đóng gói TT05 ở `kssm.be`, đường local
+
+Nhận thư mục tải lên rồi kiểm trước khi đóng gói. Kế hoạch đầy đủ ở
+[be/plans/dong-goi-kiem-tra.plan.md](be/plans/dong-goi-kiem-tra.plan.md).
+
+Đã viết xong tầng BE: 3 entity `PackageSession`/`PackageDossier`/`PackageDocument`, module
+`applications/DongGoi/Package/` (5 service), `external/DongGoi/` (soi PDF/A, đo giống tên cột, kho tạm),
+port `external/Excel/` từ `ksts.be`, và `api/core/dong-goi/kiem-tra` 6 route. Dải mã lỗi mới **1200-1219**.
+
+**Chưa chạy được:** phải `dotnet ef migrations add` cho 3 bảng mới rồi `database update`, và **chưa build lần
+nào**. Việc kế tiếp sau khi chạy thông: dựng gói SIP thật (METS 2 tầng, EAD_DOC, checksum, ZIP), rồi mới tới
+đường **dự án** và FE.
+
+Ba điểm đã chốt khác với hình dung ban đầu:
+
+1. **Tên file PDF khớp `docId`** (*Mã định danh tài liệu*), không phải `docCode` (*Mã lưu trữ*) — gói mẫu đặt
+   `H49.64.33.2001.160.1.pdf` còn `docCode` là `…160.0000001`, so nhầm là trượt 100% số file.
+2. **Không kiểm cấu trúc thư mục**, chỉ phân biệt một hay nhiều hồ sơ theo đường dẫn tương đối của file.
+3. **Soi chữ ký số và PDF/A ngay lúc upload**, lúc bytes còn trong tay — để bước kiểm tự tải về thì lô 10.000
+   file kéo thêm ~8,7 GB chiều ngược, tức 9-14 phút chỉ để đọc lại thứ vừa đi qua.
 
 ## Đang nghiên cứu (2026-09-04) — ký số cho `kssm.be`
 

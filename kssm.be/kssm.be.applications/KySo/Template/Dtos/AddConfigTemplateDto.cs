@@ -1,0 +1,40 @@
+using kssm.be.shared.Constants.Template;
+using Microsoft.AspNetCore.Http;
+
+namespace kssm.be.applications.KySo.Template.Dtos
+{
+    public class AddConfigTemplateDto
+    {
+        public int Id { get; set; }
+
+        public string Thumbprint { get; set; } = string.Empty;
+
+        public string? TenChungThu { get; set; }
+
+        public string? LyDoKy { get; set; }
+
+        public string? NoiKy { get; set; }
+
+        public bool HienThiChuKySo { get; set; } = true;
+
+        public bool NhoiChuKySoVaoAnh { get; set; }
+
+        public bool KyDe { get; set; }
+
+        public int DoDamDauDo { get; set; } = TemplateConstants.DoDamMacDinh;
+
+        public int DoDamChuKyTuoi { get; set; } = TemplateConstants.DoDamMacDinh;
+
+        public int DoDayNetChuKyTuoi { get; set; } = TemplateConstants.DoDayNetMacDinh;
+
+        public string MauChuKySo { get; set; } = TemplateConstants.MauMacDinh;
+
+        public string? MauChuKyTuoi { get; set; }
+
+        public IFormFile? AnhDauDo { get; set; }
+
+        public IFormFile? AnhChuKyTuoi { get; set; }
+
+        public List<TemplatePositionDto> Positions { get; set; } = new();
+    }
+}
