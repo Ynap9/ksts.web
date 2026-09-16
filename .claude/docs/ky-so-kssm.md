@@ -72,6 +72,11 @@ chạy — hỏng cấu hình thì người dùng biết ngay thay vì trượt 
 ⚠️ Khai `service-account.json` trong `.csproj` phải dùng `<Content Update=…>`, **không** `Include`: Web SDK đã
 tự gom mọi `*.json` vào `Content`, khai thêm là lỗi *Duplicate 'Content' items were included*.
 
+⚠️ Trên máy chủ khoá **không** đi theo git lẫn image. Chép tay vào `kssm.deploy/secrets/service-account.json`
+(`chmod 644` — container chạy bằng `$APP_UID`, không phải root); compose mount nó vào
+`/app/secrets/` và trỏ `Drive__DRIVE_CREDENTIALS_PATH` tới đó. Thiếu file thì Docker tự tạo một **thư mục** trùng
+tên ở chỗ mount và API trả lỗi 1060.
+
 ⚠️ Thư mục gốc **phải nằm trong Shared Drive**. Service account không có dung lượng Drive riêng: đẩy file vào
 một thư mục thuộc My Drive của người khác sẽ trượt `storageQuotaExceeded` dù đã chia sẻ quyền Editor. Mọi lời
 gọi đều đặt `SupportsAllDrives = true`, thiếu cờ đó thì Drive trả "không tìm thấy thư mục".

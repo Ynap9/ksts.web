@@ -17,10 +17,12 @@ services:
     environment:
       - ASPNETCORE_HTTP_PORTS=8080
       - FileConfig__File__Path=/app/App_Data
+      - Drive__DRIVE_CREDENTIALS_PATH=/app/secrets/service-account.json
     volumes:
       # Bộ cài plugin thay được mà không phải dựng lại image: đóng gói lại là restart container.
       - ../kssm.be.api/Plugins:/app/Plugins:ro
       - kssm_app_data:/app/App_Data
+      - ./secrets/service-account.json:/app/secrets/service-account.json:ro
 
 volumes:
   kssm_app_data:
