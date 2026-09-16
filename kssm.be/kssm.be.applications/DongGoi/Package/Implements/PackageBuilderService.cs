@@ -94,14 +94,21 @@ namespace kssm.be.applications.DongGoi.Package.Implements
 
             var schemaEntries = _packageSchemaTemplate.Load();
             var boNhoExcel = new Dictionary<string, ExcelDaDocDto>(StringComparer.Ordinal);
-            var ketQua = new ViewDongGoiDto { PhienId = sessionId };
 
-            // Dựng thư mục đích MỘT lần cho cả phiên, trước vòng lặp: hỏng cấu hình Drive thì trượt ngay
-            // ở đây thay vì dựng xong gói đầu tiên mới phát hiện không có chỗ ghi.
-            var driveFolderId = await _packageFileStorage.EnsurePackageFolderAsync(
-                DriveConstants.ChuanHoaTenThuMuc(phien.RootFolderName)
-                    ?? KiemTraConstants.GetDefaultDriveFolderName(phien.Id, DateTimeConstants.VietnamNow),
+            phien.DriveFolderName ??= DriveConstants.ChuanHoaTenThuMuc(phien.RootFolderName)
+                ?? KiemTraConstants.GetDefaultDriveFolderName(phien.Id, GetVietnamTime());
+            var driveFolderId = await _packageFileStorage.EnsurePackageFolderAsync(phien.DriveFolderName,
                 cancellationToken);
+            phien.DriveFolderId = driveFolderId;
+            phien.ModifiedDate = GetVietnamTime();
+            await _kstsDbContext.SaveChangesAsync(cancellationToken);
+
+            var ketQua = new ViewDongGoiDto
+            {
+                PhienId = sessionId,
+                ThuMucDongGoi = phien.DriveFolderName,
+                DriveFolderUrl = DriveConstants.GetFolderUrl(driveFolderId),
+            };
 
             foreach (var hoSo in hoSoList)
             {
@@ -134,7 +141,11 @@ namespace kssm.be.applications.DongGoi.Package.Implements
 
             ketQua.SoGoi = ketQua.Goi.Count;
 
+            phien.PackagedDate = GetVietnamTime();
+            phien.ModifiedDate = GetVietnamTime();
             await _kstsDbContext.SaveChangesAsync(cancellationToken);
+
+            await _packageFileStorage.RemoveSessionAsync(sessionId, cancellationToken);
 
             return ketQua;
         }
@@ -142,6 +153,16 @@ namespace kssm.be.applications.DongGoi.Package.Implements
         public async Task<ViewDongGoiDto> DanhSachGoiAsync(int sessionId,
             CancellationToken cancellationToken = default)
         {
+            var phien = await _kstsDbContext.PackageSession
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => !x.Deleted && x.Id == sessionId, cancellationToken);
+
+            if (phien == null)
+            {
+                throw new UserFriendlyException(ErrorCodes.KiemTraPhienNotFound,
+                    $"Không tìm thấy phiên kiểm tra {sessionId}.");
+            }
+
             var hoSoList = await _kstsDbContext.PackageDossier
                 .AsNoTracking()
                 .Where(x => !x.Deleted && x.SessionId == sessionId && x.PackageDriveFileId != null)
@@ -151,6 +172,10 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             return new ViewDongGoiDto
             {
                 PhienId = sessionId,
+                ThuMucDongGoi = phien.DriveFolderName,
+                DriveFolderUrl = string.IsNullOrWhiteSpace(phien.DriveFolderId)
+                    ? null
+                    : DriveConstants.GetFolderUrl(phien.DriveFolderId),
                 SoGoi = hoSoList.Count,
                 SoTaiLieu = hoSoList.Sum(x => x.DocumentCount),
                 Goi = hoSoList.Select(x => new ViewGoiDto
@@ -187,6 +212,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             {
                 throw new UserFriendlyException(ErrorCodes.DongGoiPhienChuaKiem,
                     "Phiên chưa kiểm tra xong nên chưa đóng gói được.");
+            }
+
+            if (phien.PackagedDate != null)
+            {
+                throw new UserFriendlyException(ErrorCodes.DongGoiPhienDaDongGoi,
+                    "Phiên đã đóng gói xong và bản nguồn đã được dọn, cần tải lại thư mục để đóng gói lần nữa.");
             }
 
             return phien;
