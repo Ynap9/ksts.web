@@ -3,6 +3,19 @@
 > Cập nhật 2026-09-15. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
 > và `be/architecture/`, đừng chép lại vào đây.
 
+## Đang làm (2026-09-16) — gói SIP đẩy lên Google Drive, trả link thư mục
+
+Gói ZIP ghi vào thư mục con của `Drive:DRIVE_PACKAGE_FOLDER_ID`, tên theo thư mục gốc người dùng tải lên.
+`dong-goi` và `danh-sach` trả thêm `thuMucDongGoi` + `driveFolderUrl`. Đóng gói xong thì **xoá cả
+`dong-goi/{sessionId}/` trên MinIO** và đóng phiên bằng `PackagedDate` — gọi lại `dong-goi`, `them-file`,
+`bat-dau` trên phiên đó trả mã **1224**.
+
+Migration đã sinh (2026-09-16). `lo-ky/{id}/danh-sach-file` trả thêm `driveFileUrl` từng file.
+
+`sao_mai_fe` đã thay nút tải zip / tải gói bằng link Drive (thư mục + cột link từng file / từng gói), và gửi
+`tenThuMuc` (từ `webkitRelativePath`) lúc tạo lô. `sao_mai_be` chuyển tiếp `tenThuMuc` và đã gỡ hai route proxy
+`lo-ky/:id/zip`, `goi/:id/ho-so/:hoSoId/tai-ve`. Cả ba khối **chưa build, chưa chạy thử**.
+
 ## Đang làm (2026-09-15) — bản đã ký đẩy lên Google Drive thay cho MinIO
 
 Xong tầng `kssm.be`, **chưa build lần nào và chưa sinh migration**. Kiến trúc và các bẫy ở

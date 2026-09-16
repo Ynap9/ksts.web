@@ -88,6 +88,7 @@ namespace kssm.be.shared.Requests.ErrorRequest
         public const int DongGoiKhongCoHoSoDat = 1221;
         public const int DongGoiThieuSchema = 1222;
         public const int DongGoiGoiNotFound = 1223;
+        public const int DongGoiPhienDaDongGoi = 1224;
 
     }
 }

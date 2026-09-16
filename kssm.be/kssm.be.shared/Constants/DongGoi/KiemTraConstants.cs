@@ -6,7 +6,6 @@ namespace kssm.be.shared.Constants.DongGoi
         public const string SourceFolder = "nguon";
         public const string SourceObjectKeyFormat = "{0}/{1}/{2}/{3:D6}{4}";
 
-        // Tên thư mục trên Drive khi phiên không mang tên thư mục gốc nào.
         public const string DefaultDriveFolderNameFormat = "Dong goi {0} - {1:yyyyMMdd-HHmm}";
 
         public static string GetSessionPrefix(int sessionId) => $"{ObjectKeyPrefix}/{sessionId}/";

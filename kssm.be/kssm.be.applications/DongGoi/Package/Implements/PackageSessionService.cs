@@ -436,6 +436,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                 throw new UserFriendlyException(ErrorCodes.KiemTraPhienDaDon,
                     "Phiên đã được dọn, cần tải lại thư mục.");
             }
+
+            if (phien.PackagedDate != null)
+            {
+                throw new UserFriendlyException(ErrorCodes.DongGoiPhienDaDongGoi,
+                    "Phiên đã đóng gói xong và bản nguồn đã được dọn, cần tải lại thư mục.");
+            }
         }
 
         public List<HeaderMatchReportDto> DocBaoCao(string? json)

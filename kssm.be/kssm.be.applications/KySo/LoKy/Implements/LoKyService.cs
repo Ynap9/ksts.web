@@ -546,6 +546,9 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         public string? LayLinkThuMuc(string? driveFolderId) =>
             string.IsNullOrWhiteSpace(driveFolderId) ? null : DriveConstants.GetFolderUrl(driveFolderId);
 
+        public string? LayLinkFile(string? driveFileId) =>
+            string.IsNullOrWhiteSpace(driveFileId) ? null : DriveConstants.GetFileUrl(driveFileId);
+
         public async Task<LoKyEntity> LayLoAsync(int loKyId)
         {
             return await _kstsDbContext.LoKy.FirstOrDefaultAsync(x => x.Id == loKyId && !x.Deleted)
@@ -572,6 +575,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             DauThoiGian = file.DauThoiGian,
             ChuKyHopLe = file.ChuKyHopLe,
             LyDoChuKy = file.LyDoChuKy,
+            DriveFileUrl = LayLinkFile(file.DriveFileId),
         };
 
         public ViewLoKyDto ToViewDto(LoKyEntity lo) => new()

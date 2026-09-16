@@ -21,5 +21,7 @@ namespace kssm.be.applications.KySo.LoKy.Dtos
         public bool? ChuKyHopLe { get; set; }
 
         public string? LyDoChuKy { get; set; }
+
+        public string? DriveFileUrl { get; set; }
     }
 }

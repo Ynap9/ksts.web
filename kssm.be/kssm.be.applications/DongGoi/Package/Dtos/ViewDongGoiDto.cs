@@ -8,6 +8,10 @@ namespace kssm.be.applications.DongGoi.Package.Dtos
 
         public int SoTaiLieu { get; set; }
 
+        public string? ThuMucDongGoi { get; set; }
+
+        public string? DriveFolderUrl { get; set; }
+
         public List<ViewGoiDto> Goi { get; set; } = new();
 
         public List<string> BoQua { get; set; } = new();

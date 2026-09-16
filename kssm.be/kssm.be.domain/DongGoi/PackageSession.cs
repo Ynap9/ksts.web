@@ -45,6 +45,14 @@ namespace kssm.be.domain.DongGoi
 
         public string? MatchReport { get; set; }
 
+        [MaxLength(500)]
+        public string? DriveFolderName { get; set; }
+
+        [MaxLength(100)]
+        public string? DriveFolderId { get; set; }
+
+        public DateTime? PackagedDate { get; set; }
+
         public DateTime? CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public DateTime? DeletedDate { get; set; }
