@@ -119,6 +119,7 @@ builder.Services.AddScoped<IConfigService, ConfigService>();
 builder.Services.AddScoped<IMetadataSchemaService, MetadataSchemaService>();
 builder.Services.AddScoped<IDossierLayoutService, DossierLayoutService>();
 builder.Services.AddScoped<IHeaderMatchService, HeaderMatchService>();
+builder.Services.AddScoped<IMetadataValueService, MetadataValueService>();
 builder.Services.AddScoped<IPackageSessionService, PackageSessionService>();
 builder.Services.AddScoped<IPackageBuilderService, PackageBuilderService>();
 
@@ -202,6 +203,7 @@ builder.Services.AddSingleton<IPackageArchiveBuilder, PackageArchiveBuilder>();
 builder.Services.AddSingleton<IPackageSchemaTemplate, PackageSchemaTemplate>();
 
 builder.Services.AddSingleton<IVerifyRunnerService, VerifyRunnerService>();
+builder.Services.AddSingleton<IPackageBuildRunnerService, PackageBuildRunnerService>();
 
 builder.Services.AddSingleton<IProjectReader, ProjectReader>();
 builder.Services.AddSingleton<IProjectNotifier, ProjectNotifier>();

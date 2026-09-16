@@ -15,7 +15,7 @@ namespace kssm.be.external.DongGoi.Implements
             {
                 foreach (var entry in entries)
                 {
-                    var muc = zip.CreateEntry($"{thuMucGoc}/{entry.DuongDan}", CompressionLevel.Optimal);
+                    var muc = zip.CreateEntry($"{thuMucGoc}/{entry.DuongDan}", CompressionLevel.Fastest);
                     using var luong = muc.Open();
                     luong.Write(entry.NoiDung, 0, entry.NoiDung.Length);
                 }

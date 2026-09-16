@@ -71,6 +71,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             var layoutService = scope.ServiceProvider.GetRequiredService<IDossierLayoutService>();
             var excelReader = scope.ServiceProvider.GetRequiredService<IExcelSheetReader>();
             var storage = scope.ServiceProvider.GetRequiredService<IPackageFileStorage>();
+            var valueService = scope.ServiceProvider.GetRequiredService<IMetadataValueService>();
 
             var phien = await db.PackageSession
                 .FirstOrDefaultAsync(x => !x.Deleted && x.Id == sessionId, cancellationToken);
@@ -142,7 +143,8 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             foreach (var nhom in nhomList)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                KiemMotNhom(nhom, boNhoExcel, excelReader, layoutService);
+                KiemMotNhom(nhom, boNhoExcel, excelReader, layoutService, valueService, schemaHoSo, schemaTaiLieu,
+                    phien.PackageType);
             }
 
             phien.Multi = nhomList.Count > 1;
@@ -293,7 +295,8 @@ namespace kssm.be.applications.DongGoi.Package.Implements
         }
 
         public void KiemMotNhom(NhomHoSoDto nhom, IReadOnlyDictionary<string, ExcelDaDocDto> boNhoExcel,
-            IExcelSheetReader excelReader, IDossierLayoutService layoutService)
+            IExcelSheetReader excelReader, IDossierLayoutService layoutService, IMetadataValueService valueService,
+            PackageSchemaDto schemaHoSo, IReadOnlyList<PackageSchemaDto> schemaTaiLieu, PackageType packageType)
         {
             var hoSo = nhom.HoSo!;
             hoSo.DocumentCount = nhom.Files.Count;
@@ -306,7 +309,9 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             }
 
             var docDuoc = boNhoExcel[nhom.ExcelObjectKey];
-            var maTaiLieu = TapMaTaiLieu(nhom.FileCode, docDuoc, excelReader, layoutService);
+            KiemDongHoSo(nhom, docDuoc, excelReader, valueService, schemaHoSo, packageType);
+
+            var maTaiLieu = DongTaiLieuTheoMa(nhom.FileCode, docDuoc, excelReader, layoutService);
             var coMaDinhDanh = docDuoc.TaiLieu.Any(x => x.CoMaDinhDanh);
 
             var daGap = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -330,10 +335,21 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                     continue;
                 }
 
-                if (!maTaiLieu.Contains(ten))
+                if (!maTaiLieu.TryGetValue(ten, out var dongTaiLieu))
                 {
                     file.Status = KiemTraConstants.StatusFailed;
                     file.Reason = "File không có dòng metadata tương ứng (mã định danh tài liệu).";
+                    continue;
+                }
+
+                var loiDuLieu = valueService.KiemDong(
+                    schemaTaiLieu.First(x => x.ObjectType == dongTaiLieu.Sheet.ObjectType),
+                    dongTaiLieu.Sheet.BaoCao, dongTaiLieu.Dong!, packageType, nhom.FileCode);
+
+                if (loiDuLieu.Count > 0)
+                {
+                    file.Status = KiemTraConstants.StatusFailed;
+                    file.Reason = GhepLyDo(loiDuLieu);
                     continue;
                 }
 
@@ -357,8 +373,11 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                 file.Reason = canhBao.Count > 0 ? string.Join("; ", canhBao) : null;
             }
 
-            var thieuFile = maTaiLieu.Count - nhom.Files.Count(x =>
-                !string.Equals(x.Status, KiemTraConstants.StatusFailed, StringComparison.Ordinal));
+            var thieuFile = maTaiLieu.Count - nhom.Files
+                .Select(x => x.DocId)
+                .Where(x => x != null && maTaiLieu.ContainsKey(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Count();
             var thieuFileGhiChu = 0;
 
             if (thieuFile > 0)
@@ -381,10 +400,10 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                     : KiemTraConstants.StatusPassed;
         }
 
-        public HashSet<string> TapMaTaiLieu(string fileCode, ExcelDaDocDto docDuoc,
+        public Dictionary<string, DongTaiLieuDto> DongTaiLieuTheoMa(string fileCode, ExcelDaDocDto docDuoc,
             IExcelSheetReader excelReader, IDossierLayoutService layoutService)
         {
-            var tap = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var theoMa = new Dictionary<string, DongTaiLieuDto>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var taiLieu in docDuoc.TaiLieu)
             {
@@ -402,11 +421,49 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                         continue;
                     }
 
-                    tap.Add(ma.Normalize(NormalizationForm.FormC));
+                    theoMa.TryAdd(ma.Normalize(NormalizationForm.FormC),
+                        new DongTaiLieuDto { Sheet = taiLieu, Dong = row });
                 }
             }
 
-            return tap;
+            return theoMa;
+        }
+
+        public void KiemDongHoSo(NhomHoSoDto nhom, ExcelDaDocDto docDuoc, IExcelSheetReader excelReader,
+            IMetadataValueService valueService, PackageSchemaDto schemaHoSo, PackageType packageType)
+        {
+            if (nhom.FileCode == null || docDuoc.SheetHoSo == null || docDuoc.BaoCaoHoSo == null
+                || docDuoc.HeaderMaHoSo == null)
+            {
+                return;
+            }
+
+            var maHoSo = nhom.FileCode.Trim().Normalize(NormalizationForm.FormC);
+            var dong = docDuoc.SheetHoSo.Rows.FirstOrDefault(row => string.Equals(
+                excelReader.LayGiaTri(row, new[] { docDuoc.HeaderMaHoSo }).Trim().Normalize(NormalizationForm.FormC),
+                maHoSo, StringComparison.OrdinalIgnoreCase));
+
+            if (dong == null)
+            {
+                return;
+            }
+
+            foreach (var loi in valueService.KiemDong(schemaHoSo, docDuoc.BaoCaoHoSo, dong, packageType, nhom.FileCode))
+            {
+                if (!nhom.Loi.Contains(loi))
+                {
+                    nhom.Loi.Add(loi);
+                }
+            }
+        }
+
+        public string GhepLyDo(IEnumerable<string> loi)
+        {
+            var lyDo = string.Join(MetadataValueConstants.DauNoiLyDo, loi);
+
+            return lyDo.Length > MetadataValueConstants.DoDaiLyDoToiDa
+                ? lyDo[..MetadataValueConstants.DoDaiLyDoToiDa]
+                : lyDo;
         }
 
         public string GhepMaDinhDanh(SheetTaiLieuDto taiLieu, Dictionary<string, string> row,

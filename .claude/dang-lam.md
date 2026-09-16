@@ -3,6 +3,30 @@
 > Cập nhật 2026-09-15. Chỉ ghi **trạng thái và việc kế tiếp**; tri thức bền vững nằm ở `docs/`, `contracts/`
 > và `be/architecture/`, đừng chép lại vào đây.
 
+## Đang làm (2026-09-16) — kiểm dữ liệu Excel theo cấu hình metadata
+
+`MetadataValueService` kiểm từng ô của dòng hồ sơ và dòng từng tài liệu theo `SchemaFieldDto`: bắt buộc,
+bắt buộc có điều kiện (chỉ bắt **có** khi điều kiện đúng — gói mẫu ghi `riskRecoveryStatus` cả khi
+`riskRecovery=0`), danh mục mã, kiểu Ngày `DD/MM/YYYY` (AIP thêm `MM/YYYY`, `YYYY` cho `startDate`/`endDate`),
+Số, Đúng/Sai `1`/`0`, độ dài, và `docCode` kết thúc bằng số thứ tự 7 ký tự (SIP: bắt đầu bằng mã hồ sơ). Sai là
+**lỗi chặn**, lý do hiện ở cột Ghi chú. Chưa build.
+
+Cố ý bắt hai lỗi của gói mẫu: `docCode` sai năm và `paperFileCode` trống khi `confidenceLevel=02`.
+
+## Đang làm (2026-09-16) — tăng tốc ký số và đóng gói
+
+**Chưa build, chưa sinh migration**: `PackageSession` thêm `PackageStatus`, `PackageTotal`, `PackageDone`,
+`PackageFailReason`.
+
+- **Ký số** (`KySoRunner`): tách 2 tầng nối bằng `Channel` — 8 luồng tải/dựng/ký (`ParallelFiles`) và 8 luồng
+  TSA/kiểm/đẩy Drive/ghi (`ParallelFinishingFiles`); nhận việc theo đợt 8 file; ghi kết quả bằng `ExecuteUpdate`.
+  Dừng hoặc sự cố thì quét mọi file `DangKy` của lô về `Cho`. Đẩy Drive thử lại tối đa 4 lần khi 429 / 5xx /
+  403 rate limit. Chưa đo lại lô thật — số luồng giữ 8 như cũ, chỉ đổi cách xếp.
+- **Đóng gói**: job nền `PackageBuildRunnerService`, `goi/{id}/dong-goi` trả tiến độ ngay, poll
+  `goi/{id}/tien-do`. 3 hồ sơ song song, mỗi hồ sơ tải 8 PDF song song; mỗi gói xong ghi DB ngay; chạy lại bỏ qua
+  hồ sơ đã có gói. ZIP nén `Fastest`. Mã lỗi mới **1225** (đang đóng gói).
+- `sao_mai_be` thêm route `goi/:id/tien-do`; `sao_mai_fe` màn `kiem-tra` poll tiến độ đóng gói.
+
 ## Đang làm (2026-09-16) — gói SIP đẩy lên Google Drive, trả link thư mục
 
 Gói ZIP ghi vào thư mục con của `Drive:DRIVE_PACKAGE_FOLDER_ID`, tên theo thư mục gốc người dùng tải lên.

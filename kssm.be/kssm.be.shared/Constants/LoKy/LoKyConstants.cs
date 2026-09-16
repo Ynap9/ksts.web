@@ -43,6 +43,8 @@ namespace kssm.be.shared.Constants.LoKy
         // nhân CPU. Chặn ở 8 vì 16 luồng đo ra CHẬM hơn: đường truyền tới kho đã bão hoà.
         public const int ParallelFiles = 8;
 
+        public const int ParallelFinishingFiles = 8;
+
         /// <summary>
         /// Số file vừa ký xong kèm theo mỗi nhịp hỏi tiến độ. Có trần vì kèm cả nghìn dòng mỗi nhịp là thứ
         /// làm trình duyệt cạn tài nguyên rồi chết giữa lô.

@@ -27,127 +27,107 @@ namespace kssm.be.applications.DongGoi.Package.Implements
         private const string FieldKeyMaDinhDanh = "docId";
         private const string FieldKeyTieuDe = "title";
 
-        private readonly IMetadataSchemaService _metadataSchemaService;
         private readonly IHeaderMatchService _headerMatchService;
         private readonly IExcelSheetReader _excelSheetReader;
         private readonly IPackageFileStorage _packageFileStorage;
         private readonly IPackageXmlBuilder _packageXmlBuilder;
         private readonly IPackageArchiveBuilder _packageArchiveBuilder;
-        private readonly IPackageSchemaTemplate _packageSchemaTemplate;
+        private readonly IPackageBuildRunnerService _packageBuildRunnerService;
+        private readonly IMetadataValueService _metadataValueService;
 
         public PackageBuilderService(
             KssmDbContext kstsDbContext,
             IHttpContextAccessor httpContextAccessor,
             ILogger<PackageBuilderService> logger,
             IMapper mapper,
-            IMetadataSchemaService metadataSchemaService,
             IHeaderMatchService headerMatchService,
             IExcelSheetReader excelSheetReader,
             IPackageFileStorage packageFileStorage,
             IPackageXmlBuilder packageXmlBuilder,
             IPackageArchiveBuilder packageArchiveBuilder,
-            IPackageSchemaTemplate packageSchemaTemplate
+            IPackageBuildRunnerService packageBuildRunnerService,
+            IMetadataValueService metadataValueService
         ) : base(kstsDbContext, logger, httpContextAccessor, mapper)
         {
-            _metadataSchemaService = metadataSchemaService;
+            _metadataValueService = metadataValueService;
             _headerMatchService = headerMatchService;
             _excelSheetReader = excelSheetReader;
             _packageFileStorage = packageFileStorage;
             _packageXmlBuilder = packageXmlBuilder;
             _packageArchiveBuilder = packageArchiveBuilder;
-            _packageSchemaTemplate = packageSchemaTemplate;
+            _packageBuildRunnerService = packageBuildRunnerService;
         }
 
-        public async Task<ViewDongGoiDto> DongGoiAsync(int sessionId, DongGoiDto dto,
+        public async Task<ViewTienDoDongGoiDto> DongGoiAsync(int sessionId, DongGoiDto dto,
             CancellationToken cancellationToken = default)
         {
             _logger.LogInformation($"{nameof(DongGoiAsync)} sessionId={sessionId}");
 
             var phien = await LayPhienDaKiemAsync(sessionId, cancellationToken);
 
-            var hoSoList = await _kstsDbContext.PackageDossier
+            var daCoGoi = await _kstsDbContext.PackageDossier
+                .AsNoTracking()
                 .Where(x => !x.Deleted && x.SessionId == sessionId
                     && x.Status != KiemTraConstants.StatusFailed && x.DocumentCount > 0)
-                .OrderBy(x => x.FileCode)
+                .Select(x => x.PackageDriveFileId != null)
                 .ToListAsync(cancellationToken);
 
-            if (hoSoList.Count == 0)
+            if (daCoGoi.Count == 0)
             {
                 throw new UserFriendlyException(ErrorCodes.DongGoiKhongCoHoSoDat,
                     "Không có hồ sơ nào đạt để đóng gói.");
             }
 
-            var files = await _kstsDbContext.PackageDocument
-                .Where(x => !x.Deleted && x.SessionId == sessionId
-                    && x.Status != KiemTraConstants.StatusFailed)
-                .OrderBy(x => x.Id)
-                .ToListAsync(cancellationToken);
-
-            var schemaHoSo = await _metadataSchemaService.GetAsync(phien.PackageType, phien.ObjectType,
-                cancellationToken);
-
-            var schemaTaiLieu = new List<PackageSchemaDto>();
-            foreach (var loai in MetadataObjectTypeGroups.Doc(phien.DocumentTypes))
-            {
-                schemaTaiLieu.Add(await _metadataSchemaService.GetAsync(phien.PackageType, loai, cancellationToken));
-            }
-
-            var schemaEntries = _packageSchemaTemplate.Load();
-            var boNhoExcel = new Dictionary<string, ExcelDaDocDto>(StringComparer.Ordinal);
-
             phien.DriveFolderName ??= DriveConstants.ChuanHoaTenThuMuc(phien.RootFolderName)
                 ?? KiemTraConstants.GetDefaultDriveFolderName(phien.Id, GetVietnamTime());
-            var driveFolderId = await _packageFileStorage.EnsurePackageFolderAsync(phien.DriveFolderName,
+            phien.DriveFolderId = await _packageFileStorage.EnsurePackageFolderAsync(phien.DriveFolderName,
                 cancellationToken);
-            phien.DriveFolderId = driveFolderId;
+            phien.PackageStatus = KiemTraConstants.PackageStatusRunning;
+            phien.PackageTotal = daCoGoi.Count;
+            phien.PackageDone = daCoGoi.Count(x => x);
+            phien.PackageFailReason = null;
             phien.ModifiedDate = GetVietnamTime();
             await _kstsDbContext.SaveChangesAsync(cancellationToken);
 
-            var ketQua = new ViewDongGoiDto
+            _packageBuildRunnerService.BatDau(sessionId, dto);
+
+            return ToViewTienDoDongGoiDto(phien);
+        }
+
+        public async Task<ViewTienDoDongGoiDto> TienDoDongGoiAsync(int sessionId,
+            CancellationToken cancellationToken = default)
+        {
+            var phien = await _kstsDbContext.PackageSession
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => !x.Deleted && x.Id == sessionId, cancellationToken);
+
+            if (phien == null)
             {
-                PhienId = sessionId,
-                ThuMucDongGoi = phien.DriveFolderName,
-                DriveFolderUrl = DriveConstants.GetFolderUrl(driveFolderId),
-            };
-
-            foreach (var hoSo in hoSoList)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var cuaHoSo = files.Where(x => x.DossierId == hoSo.Id).ToList();
-
-                if (cuaHoSo.Count == 0 || string.IsNullOrWhiteSpace(hoSo.FileCode)
-                    || string.IsNullOrWhiteSpace(hoSo.ExcelObjectKey))
-                {
-                    ketQua.BoQua.Add(hoSo.FileCode ?? hoSo.FolderName);
-                    continue;
-                }
-
-                var capDto = await LaySheetAsync(boNhoExcel, hoSo.ExcelObjectKey, schemaHoSo, schemaTaiLieu,
-                    cancellationToken);
-
-                if (capDto.TaiLieu.Count == 0)
-                {
-                    ketQua.BoQua.Add(hoSo.FileCode);
-                    continue;
-                }
-
-                var goi = await DungMotGoiAsync(phien, driveFolderId, dto, hoSo, cuaHoSo, capDto, schemaHoSo,
-                    schemaTaiLieu, schemaEntries, cancellationToken);
-
-                ketQua.Goi.Add(goi);
-                ketQua.SoTaiLieu += goi.SoTaiLieu;
+                throw new UserFriendlyException(ErrorCodes.KiemTraPhienNotFound,
+                    $"Không tìm thấy phiên kiểm tra {sessionId}.");
             }
 
-            ketQua.SoGoi = ketQua.Goi.Count;
+            return ToViewTienDoDongGoiDto(phien);
+        }
 
-            phien.PackagedDate = GetVietnamTime();
-            phien.ModifiedDate = GetVietnamTime();
-            await _kstsDbContext.SaveChangesAsync(cancellationToken);
+        public ViewTienDoDongGoiDto ToViewTienDoDongGoiDto(PackageSession phien)
+        {
+            var dangChay = _packageBuildRunnerService.DangChay(phien.Id);
 
-            await _packageFileStorage.RemoveSessionAsync(sessionId, cancellationToken);
-
-            return ketQua;
+            return new ViewTienDoDongGoiDto
+            {
+                PhienId = phien.Id,
+                TrangThai = phien.PackageStatus,
+                DangChay = dangChay,
+                HoanTat = !dangChay && phien.PackageStatus != null,
+                TongSo = phien.PackageTotal,
+                DaXong = phien.PackageDone,
+                LyDoDung = phien.PackageFailReason,
+                ThuMucDongGoi = phien.DriveFolderName,
+                DriveFolderUrl = string.IsNullOrWhiteSpace(phien.DriveFolderId)
+                    ? null
+                    : DriveConstants.GetFolderUrl(phien.DriveFolderId),
+            };
         }
 
         public async Task<ViewDongGoiDto> DanhSachGoiAsync(int sessionId,
@@ -165,9 +145,13 @@ namespace kssm.be.applications.DongGoi.Package.Implements
 
             var hoSoList = await _kstsDbContext.PackageDossier
                 .AsNoTracking()
-                .Where(x => !x.Deleted && x.SessionId == sessionId && x.PackageDriveFileId != null)
+                .Where(x => !x.Deleted && x.SessionId == sessionId
+                    && (x.PackageDriveFileId != null
+                        || (x.Status != KiemTraConstants.StatusFailed && x.DocumentCount > 0)))
                 .OrderBy(x => x.FileCode)
                 .ToListAsync(cancellationToken);
+
+            var daDong = hoSoList.Where(x => x.PackageDriveFileId != null).ToList();
 
             return new ViewDongGoiDto
             {
@@ -176,9 +160,9 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                 DriveFolderUrl = string.IsNullOrWhiteSpace(phien.DriveFolderId)
                     ? null
                     : DriveConstants.GetFolderUrl(phien.DriveFolderId),
-                SoGoi = hoSoList.Count,
-                SoTaiLieu = hoSoList.Sum(x => x.DocumentCount),
-                Goi = hoSoList.Select(x => new ViewGoiDto
+                SoGoi = daDong.Count,
+                SoTaiLieu = daDong.Sum(x => x.DocumentCount),
+                Goi = daDong.Select(x => new ViewGoiDto
                 {
                     HoSoId = x.Id,
                     MaHoSo = x.FileCode ?? x.FolderName,
@@ -188,6 +172,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
                     DungLuong = x.PackageSize,
                     Url = _packageFileStorage.BuildPackageUrl(x.PackageDriveFileId!),
                 }).ToList(),
+                BoQua = phien.PackagedDate == null
+                    ? new List<string>()
+                    : hoSoList
+                        .Where(x => x.PackageDriveFileId == null)
+                        .Select(x => x.FileCode ?? x.FolderName)
+                        .ToList(),
             };
         }
 
@@ -212,6 +202,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             {
                 throw new UserFriendlyException(ErrorCodes.DongGoiPhienChuaKiem,
                     "Phiên chưa kiểm tra xong nên chưa đóng gói được.");
+            }
+
+            if (_packageBuildRunnerService.DangChay(sessionId))
+            {
+                throw new UserFriendlyException(ErrorCodes.DongGoiDangChay,
+                    "Phiên đang đóng gói, chờ chạy xong rồi thao tác tiếp.");
             }
 
             if (phien.PackagedDate != null)
@@ -249,13 +245,15 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             });
 
             var docs = new List<PackDocDto>();
+            var noiDungFiles = await TaiNoiDungAsync(cuaHoSo, cancellationToken);
 
-            foreach (var file in cuaHoSo)
+            for (var i = 0; i < cuaHoSo.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var file = cuaHoSo[i];
                 var docId = file.DocId ?? Path.GetFileNameWithoutExtension(file.FileName);
-                var noiDung = await _packageFileStorage.DownloadAsync(file.ObjectKey, cancellationToken);
+                var noiDung = noiDungFiles[i];
                 var tenData = $"{docId}{Path.GetExtension(file.FileName)}";
 
                 var sheet = TimSheetTaiLieu(capDto, docId);
@@ -353,6 +351,23 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             };
         }
 
+        public async Task<byte[][]> TaiNoiDungAsync(IReadOnlyList<PackageDocument> files,
+            CancellationToken cancellationToken)
+        {
+            var ketQua = new byte[files.Count][];
+
+            await Parallel.ForEachAsync(Enumerable.Range(0, files.Count),
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = KiemTraConstants.ParallelPackageDownloads,
+                    CancellationToken = cancellationToken,
+                },
+                async (viTri, token) =>
+                    ketQua[viTri] = await _packageFileStorage.DownloadAsync(files[viTri].ObjectKey, token));
+
+            return ketQua;
+        }
+
         public PackFileDto DungPackFile(string tenFile, byte[] noiDung, string fileId, string mimeType)
         {
             return new PackFileDto
@@ -403,13 +418,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             var field = schema.Fields.FirstOrDefault(x => string.Equals(x.FieldKey, fieldKey,
                 StringComparison.Ordinal));
 
-            return field != null && field.Codes.Count > 0 ? TachMa(giaTri) : giaTri;
-        }
-
-        public string TachMa(string giaTri)
-        {
-            var viTri = giaTri.IndexOf(':');
-            return viTri > 0 ? giaTri[..viTri].Trim() : giaTri;
+            return field != null && field.Codes.Count > 0 ? _metadataValueService.TachMa(giaTri) : giaTri;
         }
 
         public Dictionary<string, string>? TimDongTheoMa(ExcelSheetDto? sheet, string? header, string ma)

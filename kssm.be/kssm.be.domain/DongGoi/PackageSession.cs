@@ -53,6 +53,16 @@ namespace kssm.be.domain.DongGoi
 
         public DateTime? PackagedDate { get; set; }
 
+        [MaxLength(20)]
+        public string? PackageStatus { get; set; }
+
+        public int PackageTotal { get; set; }
+
+        public int PackageDone { get; set; }
+
+        [MaxLength(2000)]
+        public string? PackageFailReason { get; set; }
+
         public DateTime? CreatedDate { get; set; }
         public DateTime? ModifiedDate { get; set; }
         public DateTime? DeletedDate { get; set; }
