@@ -1,3 +1,4 @@
+using Google;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
@@ -10,6 +11,7 @@ using kssm.be.shared.Requests.ErrorRequest;
 using kssm.be.shared.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Net;
 using DriveFile = Google.Apis.Drive.v3.Data.File;
 
 namespace kssm.be.external.Drive.Implements
@@ -146,26 +148,53 @@ namespace kssm.be.external.Drive.Implements
         public async Task<string> UploadAsync(string folderId, byte[] content, string tenFile,
             string contentType, CancellationToken cancellationToken = default)
         {
-            using var stream = new MemoryStream(content);
+            var delay = TimeSpan.FromSeconds(DriveConstants.UploadRetryDelaySeconds);
 
-            var request = _service.Value.Files.Create(
-                new DriveFile { Name = tenFile, Parents = new List<string> { folderId } },
-                stream,
-                contentType);
-            request.Fields = DriveConstants.UploadFields;
-            request.SupportsAllDrives = true;
-
-            var tienTrinh = await request.UploadAsync(cancellationToken);
-            if (tienTrinh.Status != UploadStatus.Completed)
+            for (var lan = 1; ; lan++)
             {
+                using var stream = new MemoryStream(content);
+
+                var request = _service.Value.Files.Create(
+                    new DriveFile { Name = tenFile, Parents = new List<string> { folderId } },
+                    stream,
+                    contentType);
+                request.Fields = DriveConstants.UploadFields;
+                request.SupportsAllDrives = true;
+
+                var tienTrinh = await request.UploadAsync(cancellationToken);
+                if (tienTrinh.Status == UploadStatus.Completed)
+                {
+                    return request.ResponseBody?.Id ?? string.Empty;
+                }
+
                 cancellationToken.ThrowIfCancellationRequested();
 
-                _logger.LogError(tienTrinh.Exception, "Đẩy {TenFile} lên Google Drive thất bại", tenFile);
-                throw new UserFriendlyException(ErrorCodes.DriveUploadFailed,
-                    $"Không đẩy được file \"{tenFile}\" lên Google Drive: {tienTrinh.Exception?.Message}");
+                if (lan >= DriveConstants.UploadMaxAttempts || !LaLoiTamThoi(tienTrinh.Exception))
+                {
+                    _logger.LogError(tienTrinh.Exception, "Đẩy {TenFile} lên Google Drive thất bại", tenFile);
+                    throw new UserFriendlyException(ErrorCodes.DriveUploadFailed,
+                        $"Không đẩy được file \"{tenFile}\" lên Google Drive: {tienTrinh.Exception?.Message}");
+                }
+
+                _logger.LogWarning(tienTrinh.Exception, "Đẩy {TenFile} lên Google Drive lỗi tạm thời, thử lại lần {Lan}",
+                    tenFile, lan + 1);
+
+                await Task.Delay(delay, cancellationToken);
+                delay += delay;
+            }
+        }
+
+        public bool LaLoiTamThoi(Exception? ex)
+        {
+            if (ex is GoogleApiException google)
+            {
+                return google.HttpStatusCode == HttpStatusCode.TooManyRequests
+                    || (int)google.HttpStatusCode >= 500
+                    || (google.HttpStatusCode == HttpStatusCode.Forbidden
+                        && google.Error?.Errors?.Any(x => DriveConstants.RateLimitReasons.Contains(x.Reason)) == true);
             }
 
-            return request.ResponseBody?.Id ?? string.Empty;
+            return ex is HttpRequestException or IOException or TaskCanceledException;
         }
     }
 }

@@ -24,6 +24,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
         private readonly IPackageFileStorage _packageFileStorage;
         private readonly IPdfFormatInspector _pdfFormatInspector;
         private readonly IPdfSignatureInspector _pdfSignatureInspector;
+        private readonly IPackageBuildRunnerService _packageBuildRunnerService;
 
         public PackageSessionService(
             KssmDbContext kstsDbContext,
@@ -35,9 +36,11 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             IVerifyRunnerService verifyRunnerService,
             IPackageFileStorage packageFileStorage,
             IPdfFormatInspector pdfFormatInspector,
-            IPdfSignatureInspector pdfSignatureInspector
+            IPdfSignatureInspector pdfSignatureInspector,
+            IPackageBuildRunnerService packageBuildRunnerService
         ) : base(kstsDbContext, logger, httpContextAccessor, mapper)
         {
+            _packageBuildRunnerService = packageBuildRunnerService;
             _metadataSchemaService = metadataSchemaService;
             _dossierLayoutService = dossierLayoutService;
             _verifyRunnerService = verifyRunnerService;
@@ -378,6 +381,7 @@ namespace kssm.be.applications.DongGoi.Package.Implements
 
             var phien = await LayPhienAsync(sessionId, cancellationToken);
 
+            _packageBuildRunnerService.Dung(sessionId);
             await _packageFileStorage.RemoveSessionAsync(sessionId, cancellationToken);
 
             phien.Status = KiemTraConstants.StatusCancelled;
@@ -435,6 +439,12 @@ namespace kssm.be.applications.DongGoi.Package.Implements
             {
                 throw new UserFriendlyException(ErrorCodes.KiemTraPhienDaDon,
                     "Phiên đã được dọn, cần tải lại thư mục.");
+            }
+
+            if (_packageBuildRunnerService.DangChay(phien.Id))
+            {
+                throw new UserFriendlyException(ErrorCodes.DongGoiDangChay,
+                    "Phiên đang đóng gói, chờ chạy xong rồi thao tác tiếp.");
             }
 
             if (phien.PackagedDate != null)

@@ -20,9 +20,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using LoKyFileEntity = kssm.be.domain.KySo.LoKy.LoKyFile;
+using System.Threading.Channels;
 using TemplateEntity = kssm.be.domain.KySo.Template.Template;
 
 namespace kssm.be.applications.KySo.LoKy.Implements
@@ -46,9 +48,6 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         private readonly ILogger<KySoRunner> _logger;
 
         private readonly ConcurrentDictionary<int, CancellationTokenSource> _dangChay = new();
-
-        /// <summary>Khoá nhận việc: hai luồng không được nhận trúng cùng một file.</summary>
-        private readonly SemaphoreSlim _khoaNhanViec = new(1, 1);
 
         public KySoRunner(
             IServiceScopeFactory scopeFactory,
@@ -127,28 +126,79 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         {
             var phien = await MoPhienAsync(loKyId, thumbprint, cancellationToken);
 
-            var luong = Enumerable.Range(0, LoKyConstants.ParallelFiles)
-                .Select(_ => ChayMotLuongAsync(phien, cancellationToken))
-                .ToArray();
+            using var dungLo = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var viec = Channel.CreateBounded<ViecKyDto>(LoKyConstants.ParallelFiles);
+            var banKy = Channel.CreateBounded<BanKyDto>(LoKyConstants.ParallelFinishingFiles);
 
-            // Dừng lô thì các luồng ném OperationCanceledException. Đó là kết thúc BÌNH THƯỜNG, phải nuốt
-            // lại — để nó thoát ra ngoài là lô bị ghi thành Lỗi thay vì Tạm dừng hay Huỷ.
+            var luongKy = Enumerable.Range(0, LoKyConstants.ParallelFiles)
+                .Select(_ => ChayCoKiemSoatAsync(
+                    () => ChayLuongKyAsync(phien, viec.Reader, banKy.Writer, dungLo.Token), dungLo))
+                .ToList();
+
+            var tacVu = new List<Task>(luongKy)
+            {
+                ChayCoKiemSoatAsync(() => NhanViecAsync(loKyId, viec.Writer, dungLo.Token), dungLo),
+                DongKenhKhiXongAsync(luongKy, banKy.Writer),
+            };
+
+            tacVu.AddRange(Enumerable.Range(0, LoKyConstants.ParallelFinishingFiles)
+                .Select(_ => ChayCoKiemSoatAsync(
+                    () => ChayLuongHoanTatAsync(phien, banKy.Reader, dungLo.Token), dungLo)));
+
             try
             {
-                await Task.WhenAll(luong);
+                await Task.WhenAll(tacVu);
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
             }
 
-            // Bị dừng giữa chừng thì trạng thái đã do tầng nghiệp vụ chốt (tạm dừng hoặc huỷ), đụng vào nữa
-            // là ghi đè đúng thứ người dùng vừa chọn.
+            var suCo = tacVu
+                .Where(x => x.IsFaulted)
+                .SelectMany(x => x.Exception!.InnerExceptions)
+                .FirstOrDefault(x => x is not OperationCanceledException);
+
+            if (dungLo.IsCancellationRequested)
+            {
+                await TraViecDangKyAsync(loKyId);
+            }
+
+            if (suCo != null)
+            {
+                ExceptionDispatchInfo.Capture(suCo).Throw();
+            }
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
             }
 
             await KetThucLoAsync(loKyId, CancellationToken.None);
+        }
+
+        public async Task ChayCoKiemSoatAsync(Func<Task> viec, CancellationTokenSource dungLo)
+        {
+            try
+            {
+                await viec();
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                dungLo.Cancel();
+                throw;
+            }
+        }
+
+        public async Task DongKenhKhiXongAsync(IEnumerable<Task> luongKy, ChannelWriter<BanKyDto> banKy)
+        {
+            try
+            {
+                await Task.WhenAll(luongKy);
+            }
+            finally
+            {
+                banKy.TryComplete();
+            }
         }
 
         public async Task<PhienKyDto> MoPhienAsync(int loKyId, string thumbprint,
@@ -199,75 +249,101 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             };
         }
 
-        public async Task ChayMotLuongAsync(PhienKyDto phien, CancellationToken cancellationToken)
+        public async Task NhanViecAsync(int loKyId, ChannelWriter<ViecKyDto> viec,
+            CancellationToken cancellationToken)
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                var fileId = await NhanViecAsync(phien.LoKyId, cancellationToken);
-                if (fileId == null)
-                {
-                    break;
-                }
-
-                await KyMotFileAsync(fileId.Value, phien, cancellationToken);
-            }
-        }
-
-        public async Task<int?> NhanViecAsync(int loKyId, CancellationToken cancellationToken)
-        {
-            await _khoaNhanViec.WaitAsync(cancellationToken);
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
-
-                // Lấy việc kế tiếp LUÔN lọc theo trạng thái Cho, nên ký tiếp sau khi tạm dừng không bao giờ
-                // ký đè lên file đã Xong.
-                var ke = await db.LoKyFile
-                    .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Cho)
-                    .OrderBy(x => x.ThuTu)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (ke == null)
+                while (true)
                 {
-                    return null;
+                    var dot = await NhanDotViecAsync(loKyId, cancellationToken);
+                    if (dot.Count == 0)
+                    {
+                        return;
+                    }
+
+                    foreach (var item in dot)
+                    {
+                        await viec.WriteAsync(item, cancellationToken);
+                    }
                 }
-
-                ke.TrangThai = TrangThaiFileKy.DangKy;
-                ke.ModifiedDate = DateTimeConstants.VietnamNow;
-                await db.SaveChangesAsync(cancellationToken);
-
-                return ke.Id;
             }
             finally
             {
-                _khoaNhanViec.Release();
+                viec.TryComplete();
             }
         }
 
-        public async Task KyMotFileAsync(int loKyFileId, PhienKyDto phien,
-            CancellationToken cancellationToken)
+        public async Task<List<ViecKyDto>> NhanDotViecAsync(int loKyId, CancellationToken cancellationToken)
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
 
-            var file = await db.LoKyFile.FirstOrDefaultAsync(x => x.Id == loKyFileId, cancellationToken);
-            if (file == null)
+            var dot = await db.LoKyFile
+                .AsNoTracking()
+                .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.Cho)
+                .OrderBy(x => x.ThuTu)
+                .Take(LoKyConstants.ParallelFiles)
+                .Select(x => new ViecKyDto
+                {
+                    Id = x.Id,
+                    LoKyId = x.LoKyId,
+                    ThuTu = x.ThuTu,
+                    TenFile = x.TenFile,
+                    ObjectKeyNguon = x.ObjectKeyNguon,
+                })
+                .ToListAsync(cancellationToken);
+
+            if (dot.Count == 0)
             {
-                return;
+                return dot;
             }
 
-            var thanhCong = false;
-            var dongHo = System.Diagnostics.Stopwatch.StartNew();
-            long msTai = 0, msDung = 0, msKy = 0, msTsa = 0;
+            var ids = dot.Select(x => x.Id).ToList();
+            var now = DateTimeConstants.VietnamNow;
+
+            await db.LoKyFile
+                .Where(x => ids.Contains(x.Id) && x.TrangThai == TrangThaiFileKy.Cho)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.TrangThai, TrangThaiFileKy.DangKy)
+                    .SetProperty(x => x.ModifiedDate, now), cancellationToken);
+
+            return dot;
+        }
+
+        public async Task ChayLuongKyAsync(PhienKyDto phien, ChannelReader<ViecKyDto> viec,
+            ChannelWriter<BanKyDto> banKy, CancellationToken cancellationToken)
+        {
+            await foreach (var item in viec.ReadAllAsync(cancellationToken))
+            {
+                var ban = await DungBanKyAsync(item, phien, cancellationToken);
+                if (ban != null)
+                {
+                    await banKy.WriteAsync(ban, cancellationToken);
+                }
+            }
+        }
+
+        public async Task ChayLuongHoanTatAsync(PhienKyDto phien, ChannelReader<BanKyDto> banKy,
+            CancellationToken cancellationToken)
+        {
+            await foreach (var ban in banKy.ReadAllAsync(cancellationToken))
+            {
+                await HoanTatBanKyAsync(ban, phien, cancellationToken);
+            }
+        }
+
+        public async Task<BanKyDto?> DungBanKyAsync(ViecKyDto viec, PhienKyDto phien,
+            CancellationToken cancellationToken)
+        {
+            var dongHo = Stopwatch.StartNew();
+            long msTai = 0, msDung = 0;
 
             try
             {
-                var pdf = await _loKyFileStorage.DownloadAsync(phien.Kho, file.ObjectKeyNguon, cancellationToken);
+                var pdf = await _loKyFileStorage.DownloadAsync(phien.Kho, viec.ObjectKeyNguon, cancellationToken);
                 msTai = dongHo.ElapsedMilliseconds;
 
-                // Chốt cửa trước khi dựng bản ký: file đã có chữ ký chỉ được ký thêm khi template bật cờ ký
-                // đè. Đánh trượt RIÊNG file này để người dùng thấy đúng file nào bị chặn, cả lô vẫn chạy tiếp.
                 if (!phien.KyDe && _pdfSignatureInspector.HasSignature(pdf))
                 {
                     throw new UserFriendlyException(ErrorCodes.PdfAlreadySigned,
@@ -277,82 +353,156 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 var signedAt = DateTimeConstants.VietnamNow;
                 var prepared = _pdfPreparer.Prepare(pdf, NhanBanTuyChon(phien.TuyChonMau, signedAt));
 
-                // Đúng bộ byte mà về sau máy người dùng sẽ ký bằng token: máy chủ băm nội dung, dựng thuộc
-                // tính, còn phép ký thì nằm ở nơi giữ khoá.
                 var hash = SHA256.HashData(prepared.NoiDungKy);
                 var signedAttributes = _cmsAssembler.BuildSignedAttributes(hash, phien.Cert, DateTime.UtcNow);
                 msDung = dongHo.ElapsedMilliseconds - msTai;
 
-                // KHÔNG khoá tuần tự ở đây: token vẫn ký lần lượt, nhưng việc xếp hàng do chính nơi giữ khoá
-                // lo. Khoá ở đây thì mỗi lúc chỉ có một yêu cầu bay sang máy người dùng, và việc gom tám yêu
-                // cầu thành một đợt trở nên vô nghĩa.
-                var chuKyTho = await _signingKey.KyAsync(file.LoKyId, signedAttributes, phien.Cert,
+                var chuKyTho = await _signingKey.KyAsync(viec.LoKyId, signedAttributes, phien.Cert,
                     cancellationToken);
-                msKy = dongHo.ElapsedMilliseconds - msTai - msDung;
 
-                var tsaToken = await _timestampClient.RequestTokenAsync(chuKyTho, cancellationToken);
-                msTsa = dongHo.ElapsedMilliseconds - msTai - msDung - msKy;
-                var cms = _cmsAssembler.Assemble(signedAttributes, chuKyTho, phien.Cert,
-                    phien.ChuoiChungThu, tsaToken);
-
-                var daKy = _pdfContentWriter.Write(prepared, cms);
-                KiemChuKy(file, daKy);
-
-                file.DriveFileId = await _driveFileStorage.UploadAsync(phien.DriveFolderId, daKy,
-                    file.TenFile, LoKyConstants.PdfContentType, cancellationToken);
-
-                var genTime = _timestampClient.DocGenTime(tsaToken);
-                file.TrangThai = TrangThaiFileKy.Xong;
-                file.ThoiGianKy = signedAt;
-                file.DauThoiGian = genTime.HasValue ? DateTimeConstants.ToVietnamTime(genTime.Value) : null;
-                file.LyDoLoi = null;
-                thanhCong = true;
+                return new BanKyDto
+                {
+                    Viec = viec,
+                    Prepared = prepared,
+                    SignedAttributes = signedAttributes,
+                    ChuKyTho = chuKyTho,
+                    SignedAt = signedAt,
+                    MsTai = msTai,
+                    MsDung = msDung,
+                    MsKy = dongHo.ElapsedMilliseconds - msTai - msDung,
+                };
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
-                // Lô bị dừng giữa chừng: trả file về hàng đợi để lần chạy sau ký lại từ đúng chỗ này, và
-                // KHÔNG đếm nó vào số lỗi — người dùng chỉ tạm dừng chứ file có hỏng đâu.
-                file.TrangThai = TrangThaiFileKy.Cho;
-                file.ModifiedDate = DateTimeConstants.VietnamNow;
-                await db.SaveChangesAsync(CancellationToken.None);
-                throw;
+                _logger.LogError(ex, "Ký file {FileId} thất bại", viec.Id);
+                await GhiKetQuaLoiAsync(viec, ex.Message, null);
+                GhiNhatKyThoiGian(viec.ThuTu, dongHo.ElapsedMilliseconds, msTai, msDung, 0, 0);
+                return null;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Ký file {FileId} thất bại", loKyFileId);
-                file.TrangThai = TrangThaiFileKy.Loi;
-                file.LyDoLoi = ex.Message;
-            }
-
-            file.ModifiedDate = DateTimeConstants.VietnamNow;
-            await db.SaveChangesAsync(CancellationToken.None);
-            await CongDonKetQuaAsync(file.LoKyId, thanhCong);
-
-            // Chia nhỏ thời gian từng chặng: không có bảng này thì mọi phán đoán về chỗ chậm đều là đoán mò.
-            _logger.LogInformation(
-                "Ky file {ThuTu}: tong {Tong}ms (tai {Tai}ms, dung {Dung}ms, cho chu ky {Ky}ms, tsa {Tsa}ms, day len kho {Day}ms)",
-                file.ThuTu, dongHo.ElapsedMilliseconds, msTai, msDung, msKy, msTsa,
-                dongHo.ElapsedMilliseconds - msTai - msDung - msKy - msTsa);
         }
 
-        /// <summary>
-        /// Đọc lại chữ ký trên bản vừa dựng rồi ghi kết quả vào chính dòng file. Không hợp lệ thì ném để
-        /// đánh trượt RIÊNG file đó: đẩy một bản ký hỏng lên kho rồi giao cho người dùng còn tệ hơn hẳn.
-        /// </summary>
-        public void KiemChuKy(LoKyFileEntity file, byte[] daKy)
+        public async Task HoanTatBanKyAsync(BanKyDto ban, PhienKyDto phien, CancellationToken cancellationToken)
+        {
+            var dongHo = Stopwatch.StartNew();
+            long msTsa = 0;
+            KiemChuKyDto? kiem = null;
+            string driveFileId;
+            DateTime? dauThoiGian;
+
+            try
+            {
+                var tsaToken = await _timestampClient.RequestTokenAsync(ban.ChuKyTho, cancellationToken);
+                msTsa = dongHo.ElapsedMilliseconds;
+
+                var cms = _cmsAssembler.Assemble(ban.SignedAttributes, ban.ChuKyTho, phien.Cert,
+                    phien.ChuoiChungThu, tsaToken);
+                var daKy = _pdfContentWriter.Write(ban.Prepared, cms);
+
+                kiem = KiemChuKy(daKy);
+                if (!kiem.HopLe)
+                {
+                    throw new UserFriendlyException(ErrorCodes.SignatureAssembleFailed, kiem.LyDo!);
+                }
+
+                driveFileId = await _driveFileStorage.UploadAsync(phien.DriveFolderId, daKy,
+                    ban.Viec.TenFile, LoKyConstants.PdfContentType, cancellationToken);
+
+                var genTime = _timestampClient.DocGenTime(tsaToken);
+                dauThoiGian = genTime.HasValue ? DateTimeConstants.ToVietnamTime(genTime.Value) : null;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogError(ex, "Ký file {FileId} thất bại", ban.Viec.Id);
+                await GhiKetQuaLoiAsync(ban.Viec, ex.Message, kiem);
+                GhiNhatKyThoiGian(ban.Viec.ThuTu, ban.MsTai + ban.MsDung + ban.MsKy + dongHo.ElapsedMilliseconds,
+                    ban.MsTai, ban.MsDung, ban.MsKy, msTsa);
+                return;
+            }
+
+            await GhiKetQuaXongAsync(ban, driveFileId, dauThoiGian, kiem!);
+            GhiNhatKyThoiGian(ban.Viec.ThuTu, ban.MsTai + ban.MsDung + ban.MsKy + dongHo.ElapsedMilliseconds,
+                ban.MsTai, ban.MsDung, ban.MsKy, msTsa);
+        }
+
+        public KiemChuKyDto KiemChuKy(byte[] daKy)
         {
             var chuKy = _pdfSignatureInspector.ReadSignature(daKy);
-            var ketQua = chuKy == null
+
+            return chuKy == null
                 ? new KiemChuKyDto { LyDo = "Không tìm thấy khối chữ ký trong bản vừa ký." }
                 : _signatureVerifier.Verify(chuKy);
+        }
 
-            file.ChuKyHopLe = ketQua.HopLe;
-            file.LyDoChuKy = ketQua.LyDo;
+        public async Task GhiKetQuaXongAsync(BanKyDto ban, string driveFileId, DateTime? dauThoiGian,
+            KiemChuKyDto kiem)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
+            var now = DateTimeConstants.VietnamNow;
 
-            if (!ketQua.HopLe)
+            await db.LoKyFile
+                .Where(x => x.Id == ban.Viec.Id)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.DriveFileId, driveFileId)
+                    .SetProperty(x => x.TrangThai, TrangThaiFileKy.Xong)
+                    .SetProperty(x => x.ThoiGianKy, (DateTime?)ban.SignedAt)
+                    .SetProperty(x => x.DauThoiGian, dauThoiGian)
+                    .SetProperty(x => x.ChuKyHopLe, (bool?)kiem.HopLe)
+                    .SetProperty(x => x.LyDoChuKy, kiem.LyDo)
+                    .SetProperty(x => x.LyDoLoi, (string?)null)
+                    .SetProperty(x => x.ModifiedDate, now));
+
+            await CongDonKetQuaAsync(db, ban.Viec.LoKyId, true);
+        }
+
+        public async Task GhiKetQuaLoiAsync(ViecKyDto viec, string lyDo, KiemChuKyDto? kiem)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
+            var now = DateTimeConstants.VietnamNow;
+
+            if (kiem == null)
             {
-                throw new UserFriendlyException(ErrorCodes.SignatureAssembleFailed, ketQua.LyDo!);
+                await db.LoKyFile
+                    .Where(x => x.Id == viec.Id)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.TrangThai, TrangThaiFileKy.Loi)
+                        .SetProperty(x => x.LyDoLoi, lyDo)
+                        .SetProperty(x => x.ModifiedDate, now));
             }
+            else
+            {
+                await db.LoKyFile
+                    .Where(x => x.Id == viec.Id)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(x => x.TrangThai, TrangThaiFileKy.Loi)
+                        .SetProperty(x => x.LyDoLoi, lyDo)
+                        .SetProperty(x => x.ChuKyHopLe, (bool?)kiem.HopLe)
+                        .SetProperty(x => x.LyDoChuKy, kiem.LyDo)
+                        .SetProperty(x => x.ModifiedDate, now));
+            }
+
+            await CongDonKetQuaAsync(db, viec.LoKyId, false);
+        }
+
+        public async Task TraViecDangKyAsync(int loKyId)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
+            var now = DateTimeConstants.VietnamNow;
+
+            await db.LoKyFile
+                .Where(x => x.LoKyId == loKyId && !x.Deleted && x.TrangThai == TrangThaiFileKy.DangKy)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.TrangThai, TrangThaiFileKy.Cho)
+                    .SetProperty(x => x.ModifiedDate, now));
+        }
+
+        public void GhiNhatKyThoiGian(int thuTu, long msTong, long msTai, long msDung, long msKy, long msTsa)
+        {
+            _logger.LogInformation(
+                "Ky file {ThuTu}: tong {Tong}ms (tai {Tai}ms, dung {Dung}ms, cho chu ky {Ky}ms, tsa {Tsa}ms, day len kho {Day}ms)",
+                thuTu, msTong, msTai, msDung, msKy, msTsa, msTong - msTai - msDung - msKy - msTsa);
         }
 
         public async Task<byte[]?> TaiAnhDauDoAsync(TemplateEntity template,
@@ -452,10 +602,8 @@ namespace kssm.be.applications.KySo.LoKy.Implements
             };
         }
 
-        public async Task CongDonKetQuaAsync(int loKyId, bool thanhCong)
+        public async Task CongDonKetQuaAsync(KssmDbContext db, int loKyId, bool thanhCong)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
             var now = DateTimeConstants.VietnamNow;
 
             // Cộng dồn bằng MỘT câu lệnh thay vì đếm lại cả bảng sau mỗi file: đếm lại là hai lần quét bảng

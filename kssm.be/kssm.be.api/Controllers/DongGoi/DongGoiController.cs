@@ -34,6 +34,20 @@ namespace kssm.be.api.Controllers.DongGoi
             }
         }
 
+        [HttpGet("{id}/tien-do")]
+        public async Task<ApiResponse> TienDo(int id, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _packageBuilderService.TienDoDongGoiAsync(id, cancellationToken);
+                return new(result);
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
         [HttpGet("{id}/danh-sach")]
         public async Task<ApiResponse> DanhSach(int id, CancellationToken cancellationToken)
         {

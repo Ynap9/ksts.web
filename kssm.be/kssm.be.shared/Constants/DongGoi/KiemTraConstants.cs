@@ -36,6 +36,12 @@ namespace kssm.be.shared.Constants.DongGoi
         public const double NguongGhepTen = 0.8d;
         public const int DongTieuDe = 1;
         public const int SoGioGiuPhienMacDinh = 24;
+        public const int ParallelPackageDossiers = 3;
+        public const int ParallelPackageDownloads = 8;
+
+        public const string PackageStatusRunning = "dangDongGoi";
+        public const string PackageStatusDone = "xong";
+        public const string PackageStatusFailed = "loi";
 
         public const string StatusPending = "cho";
         public const string StatusRunning = "dangKiem";

@@ -73,6 +73,7 @@ namespace kssm.be.shared.Requests.ErrorRequest
             { ErrorCodes.DongGoiThieuSchema, "Thiếu bộ schema .xsd đi kèm bản build" },
             { ErrorCodes.DongGoiGoiNotFound, "Không tìm thấy gói đã đóng của hồ sơ" },
             { ErrorCodes.DongGoiPhienDaDongGoi, "Phiên đã đóng gói xong, cần tải lại thư mục để đóng gói lần nữa" },
+            { ErrorCodes.DongGoiDangChay, "Phiên đang đóng gói" },
         };
 
         public static string GetMessage(int code)

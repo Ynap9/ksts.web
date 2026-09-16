@@ -19,6 +19,12 @@ namespace kssm.be.shared.Constants.Drive
 
         public const string UploadFields = "id";
 
+        public const int UploadMaxAttempts = 4;
+
+        public const int UploadRetryDelaySeconds = 2;
+
+        public static readonly string[] RateLimitReasons = { "rateLimitExceeded", "userRateLimitExceeded" };
+
         public static string GetFolderUrl(string folderId) => string.Format(FolderUrlFormat, folderId);
 
         public static string GetFileUrl(string fileId) => string.Format(FileUrlFormat, fileId);

@@ -1,5 +1,8 @@
 using kssm.be.applications.KySo.LoKy.Dtos;
 using kssm.be.external.KySo.Pdf.Dtos;
+using kssm.be.external.KySo.Signing.Dtos;
+using kssm.be.infrastructure.Persistence;
+using System.Threading.Channels;
 using TemplateEntity = kssm.be.domain.KySo.Template.Template;
 
 namespace kssm.be.applications.KySo.LoKy.Interfaces
@@ -40,23 +43,33 @@ namespace kssm.be.applications.KySo.LoKy.Interfaces
         /// </summary>
         Task<PhienKyDto> MoPhienAsync(int loKyId, string thumbprint, CancellationToken cancellationToken);
 
-        /// <summary>Một luồng thợ: rút việc kế tiếp rồi ký, tới khi hết việc hoặc lô bị dừng.</summary>
-        Task ChayMotLuongAsync(PhienKyDto phien, CancellationToken cancellationToken);
+        Task ChayCoKiemSoatAsync(Func<Task> viec, CancellationTokenSource dungLo);
 
-        /// <summary>
-        /// Nhận file kế tiếp còn ở trạng thái chờ và đánh dấu đang ký, trả null khi hết việc. Việc nhận được
-        /// khoá lại để hai luồng không bao giờ nhận trúng cùng một file.
-        /// </summary>
-        Task<int?> NhanViecAsync(int loKyId, CancellationToken cancellationToken);
+        Task DongKenhKhiXongAsync(IEnumerable<Task> luongKy, ChannelWriter<BanKyDto> banKy);
 
-        /// <summary>
-        /// Ký đúng một file rồi đẩy luôn bản ký lên kho của lô.
-        ///
-        /// Fail-closed với dấu thời gian: TSA hỏng sau các lần thử thì file bị đánh lỗi chứ KHÔNG bao giờ
-        /// phát hành bản ký thiếu dấu thời gian. Lô bị dừng giữa chừng thì file đang ký được trả về hàng đợi
-        /// để lần chạy sau ký lại từ đúng chỗ này, không tính là lỗi.
-        /// </summary>
-        Task KyMotFileAsync(int loKyFileId, PhienKyDto phien, CancellationToken cancellationToken);
+        Task NhanViecAsync(int loKyId, ChannelWriter<ViecKyDto> viec, CancellationToken cancellationToken);
+
+        Task<List<ViecKyDto>> NhanDotViecAsync(int loKyId, CancellationToken cancellationToken);
+
+        Task ChayLuongKyAsync(PhienKyDto phien, ChannelReader<ViecKyDto> viec, ChannelWriter<BanKyDto> banKy,
+            CancellationToken cancellationToken);
+
+        Task ChayLuongHoanTatAsync(PhienKyDto phien, ChannelReader<BanKyDto> banKy,
+            CancellationToken cancellationToken);
+
+        Task<BanKyDto?> DungBanKyAsync(ViecKyDto viec, PhienKyDto phien, CancellationToken cancellationToken);
+
+        Task HoanTatBanKyAsync(BanKyDto ban, PhienKyDto phien, CancellationToken cancellationToken);
+
+        KiemChuKyDto KiemChuKy(byte[] daKy);
+
+        Task GhiKetQuaXongAsync(BanKyDto ban, string driveFileId, DateTime? dauThoiGian, KiemChuKyDto kiem);
+
+        Task GhiKetQuaLoiAsync(ViecKyDto viec, string lyDo, KiemChuKyDto? kiem);
+
+        Task TraViecDangKyAsync(int loKyId);
+
+        void GhiNhatKyThoiGian(int thuTu, long msTong, long msTai, long msDung, long msKy, long msTsa);
 
         /// <summary>
         /// Tải ảnh dấu đỏ của template về, MỘT lần cho cả lô. Cùng luật với ảnh chữ ký tươi: không khai thì
@@ -86,7 +99,7 @@ namespace kssm.be.applications.KySo.LoKy.Interfaces
         PdfPrepareOptionsDto NhanBanTuyChon(PdfPrepareOptionsDto mau, DateTime signedAt);
 
         /// <summary>Cộng dồn số file xong / lỗi của lô bằng một câu lệnh, không đếm lại cả bảng sau mỗi file.</summary>
-        Task CongDonKetQuaAsync(int loKyId, bool thanhCong);
+        Task CongDonKetQuaAsync(KssmDbContext db, int loKyId, bool thanhCong);
 
         /// <summary>
         /// Chốt lô sau khi chạy hết: đánh dấu xong, dọn file nguồn của lô tải lên, và báo sang sao_mai để
