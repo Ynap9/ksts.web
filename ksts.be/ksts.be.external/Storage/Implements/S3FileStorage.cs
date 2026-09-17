@@ -149,8 +149,15 @@ namespace ksts.be.external.Storage.Implements
 
             try
             {
-                await _client.GetObjectMetadataAsync(_settings.Bucket, objectKey, cancellationToken);
-                return true;
+                var listed = await _client.ListObjectsV2Async(new ListObjectsV2Request
+                {
+                    BucketName = _settings.Bucket,
+                    Prefix = objectKey,
+                    MaxKeys = 1,
+                }, cancellationToken);
+
+                return (listed.S3Objects ?? new List<S3Object>())
+                    .Any(x => string.Equals(x.Key, objectKey, StringComparison.Ordinal));
             }
             catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
