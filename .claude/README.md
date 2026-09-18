@@ -13,6 +13,7 @@ Toàn bộ tri thức dự án nằm trong thư mục này. Đọc theo thứ t�
 | [docs/luong-ky-so-hang-loat.md](docs/luong-ky-so-hang-loat.md) | **Luồng ký đang chạy** — trang web làm người đưa thư, vòng đời lô, số đo thật |
 | [docs/dung-giay-bao-tuyen-sinh.md](docs/dung-giay-bao-tuyen-sinh.md) | Luồng dựng giấy báo từ Excel — khâu đứng trước luồng ký |
 | [docs/bao-mat-agent-ky-so.md](docs/bao-mat-agent-ky-so.md) | 🔬 **Nghiên cứu, tối ưu sau**: threat model, topology B, job ticket, WYSIWYS |
+| [docs/ky-so-macos/](docs/ky-so-macos/README.md) | 🔬 **Nghiên cứu**: plugin ký số trên macOS — token VGCA, mổ “Ký số đa năng”, khả năng ký chứng thư Ban Cơ yếu bằng Rust, chuẩn bị Rust |
 | [docs/luu-tru-minio.md](docs/luu-tru-minio.md) | Kho object: bản đồ tiền tố, quy tắc đặt key |
 | [docs/dat-dau-va-chu-ky-tuoi.md](docs/dat-dau-va-chu-ky-tuoi.md) | Cách tính vị trí đặt dấu + chữ ký tươi trên trang |
 | [docs/ky-so-kssm.md](docs/ky-so-kssm.md) | 🔶 **Chưa thi công**: ký số cho `kssm.be` — file/thư mục local và dự án, kèm nợ kỹ thuật phải sửa |
