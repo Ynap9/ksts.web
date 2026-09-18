@@ -212,6 +212,7 @@ Ba việc đi kèm, làm ngay trong lần chạy thử đó:
 | Làm phần ký số của `kssm.be` | [docs/ky-so-kssm.md](docs/ky-so-kssm.md) · [docs/luong-ky-so-hang-loat.md](docs/luong-ky-so-hang-loat.md) |
 | Sửa bất cứ tầng BE nào | [be/architecture/](be/architecture/README.md) |
 | Bàn chuyện bảo mật nâng cao | [docs/bao-mat-agent-ky-so.md](docs/bao-mat-agent-ky-so.md) — 🔬 nghiên cứu |
+| Plugin ký số trên macOS / viết bằng Rust | [docs/ky-so-macos/](docs/ky-so-macos/README.md) — 🔬 nghiên cứu, còn 3 phép đo |
 
 ## Hai giới hạn đã biết, phải nói với người dùng
 
