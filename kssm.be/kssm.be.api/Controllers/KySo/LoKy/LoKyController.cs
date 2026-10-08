@@ -190,6 +190,20 @@ namespace kssm.be.api.Controllers.LoKy
             }
         }
 
+        [HttpDelete("{id}/file/{fileId}")]
+        public async Task<ApiResponse> XoaFile(int id, int fileId)
+        {
+            try
+            {
+                var result = await _loKyService.XoaFileAsync(id, fileId);
+                return new(result);
+            }
+            catch (Exception ex)
+            {
+                return OkException(ex);
+            }
+        }
+
         /// <summary>Tiến độ để hỏi theo nhịp: bộ đếm, file lỗi, file vừa xong và cờ phiên ký còn sống.</summary>
         [HttpGet("{id}/trang-thai")]
         public async Task<ApiResponse> TrangThai(int id)

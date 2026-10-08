@@ -48,6 +48,9 @@ namespace kssm.be.shared.Requests.ErrorRequest
         public const int LoKyRong = 1163;
         public const int LoKyThuMucKhoRong = 1164;
         public const int LoKyPhienDaMat = 1166;
+        public const int LoKyThieuTenDot = 1167;
+        public const int LoKyFileNotFound = 1168;
+        public const int LoKyFileKhongXoaDuoc = 1169;
 
         //Dự án bên sao_mai: 1180 - 1199
         public const int DuAnNotFound = 1180;

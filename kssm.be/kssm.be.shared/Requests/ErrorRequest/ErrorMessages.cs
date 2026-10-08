@@ -39,6 +39,9 @@ namespace kssm.be.shared.Requests.ErrorRequest
             { ErrorCodes.LoKyRong, "Lô ký chưa có file nào" },
             { ErrorCodes.LoKyThuMucKhoRong, "Thư mục trên kho không có file PDF nào" },
             { ErrorCodes.LoKyPhienDaMat, "Phiên ký ở máy người dùng đã mất" },
+            { ErrorCodes.LoKyThieuTenDot, "Chưa nhập tên đợt ký" },
+            { ErrorCodes.LoKyFileNotFound, "Không tìm thấy file trong lô ký" },
+            { ErrorCodes.LoKyFileKhongXoaDuoc, "Không xoá được file khỏi lô ký" },
 
             { ErrorCodes.DuAnNotFound, "Không tìm thấy dự án" },
             { ErrorCodes.DuAnChuaCauHinhMinio, "Dự án chưa cấu hình kho lưu trữ MinIO" },
