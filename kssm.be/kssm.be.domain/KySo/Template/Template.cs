@@ -17,6 +17,7 @@ namespace kssm.be.domain.KySo.Template
         public int Id { get; set; }
         [MaxLength(250)]
         public string TenTemplate { get; set; } = string.Empty;
+        public string? Description { get; set; } = string.Empty;
 
         [MaxLength(100)]
         public string Thumbprint { get; set; } = string.Empty;

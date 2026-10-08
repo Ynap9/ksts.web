@@ -356,8 +356,6 @@ namespace kssm.be.external.KySo.Pdf.Implements
         {
             var plan = new PdfAnnotationPlanDto { NextObjectNumber = nextObjectNumber };
 
-            // Khối chữ ký không ghi phần bù múi giờ: giờ vẽ ra luôn là giờ VN nên "+07:00" chỉ làm khối dài
-            // thêm mà không nói thêm được gì cho người đọc trong nước.
             var signedAtText = options.SignedAt
                 .ToString(SigningConstants.AppearanceTimeFormat, CultureInfo.InvariantCulture);
 

@@ -6,6 +6,8 @@ namespace kssm.be.applications.KySo.Template.Dtos
 
         public string TenTemplate { get; set; } = string.Empty;
 
+        public string? Description { get; set; }
+
         public string Thumbprint { get; set; } = string.Empty;
 
         public string? TenChungThu { get; set; }

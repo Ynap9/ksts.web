@@ -5,11 +5,17 @@
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
-# tzdata cho múi giờ "SE Asia Standard Time"; fonts-liberation + fontconfig để vẽ khối chữ ký (Times New Roman).
+# tzdata cho múi giờ "SE Asia Standard Time"; ttf-mscorefonts-installer để khối chữ ký vẽ đúng Times New Roman
+# như TT05 Điều 8 đòi (nằm ở kho contrib, phải nhận EULA trước). fonts-liberation giữ làm dự phòng.
+# Gói này tải font từ Internet lúc build và có thể cài "thành công" mà không có file nào, nên kiểm fc-list để
+# build hỏng ngay thay vì âm thầm vẽ bằng font khác.
 USER root
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends tzdata fonts-liberation fontconfig \
+RUN sed -i 's/^Components: main$/Components: main contrib/' /etc/apt/sources.list.d/debian.sources \
+    && echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends tzdata ca-certificates fonts-liberation fontconfig ttf-mscorefonts-installer \
     && fc-cache -f \
+    && fc-list | grep -qi "Times New Roman" \
     && rm -rf /var/lib/apt/lists/*
 ENV TZ=Asia/Ho_Chi_Minh
 
