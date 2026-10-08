@@ -83,11 +83,9 @@ namespace kssm.be.external.KySo.Pdf.Interfaces
         /// </summary>
         PdfRectPointsDto ToPoints(PdfPlacementDto placement, PdfRectPointsDto pageBox);
 
-        /// <summary>
-        /// Áp sàn kích cỡ cho khối chữ ký số: co giãn theo khổ trang so với khổ tham chiếu, rồi kéo lên sàn
-        /// nếu người dùng kéo ô nhỏ tới mức không đọc nổi chữ. Vị trí người dùng chọn giữ nguyên.
-        /// </summary>
-        PdfRectPointsDto ApplyChuKyMinSize(PdfRectPointsDto rect, PdfRectPointsDto pageBox);
+        double GetChuKyFontSize(double coChu, PdfRectPointsDto pageBox);
+
+        PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize);
 
         /// <summary>
         /// Đặt con dấu về bề rộng thật <c>ImagePlacementConstants.DauDoWidthMm</c>, cao suy ra theo tỉ lệ ảnh

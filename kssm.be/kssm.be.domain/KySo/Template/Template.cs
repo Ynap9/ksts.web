@@ -58,6 +58,11 @@ namespace kssm.be.domain.KySo.Template
         [MaxLength(7)]
         public string MauChuKySo { get; set; } = TemplateConstants.MauMacDinh;
 
+        [MaxLength(100)]
+        public string FontChuKySo { get; set; } = TemplateConstants.FontChuKySoMacDinh;
+
+        public double CoChuKySo { get; set; } = TemplateConstants.CoChuKySoMacDinh;
+
         [MaxLength(7)]
         public string? MauChuKyTuoi { get; set; }
 

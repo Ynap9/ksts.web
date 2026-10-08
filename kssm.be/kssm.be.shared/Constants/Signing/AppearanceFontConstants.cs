@@ -51,5 +51,15 @@ namespace kssm.be.shared.Constants.Signing
             "NotoSerif-BoldItalic.ttf",
             "FreeSerifBoldItalic.ttf",
         };
+
+        public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> RegularFilesByFamily =
+            new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                [SigningConstants.AppearanceFontFamily] = RegularFiles,
+                ["Arial"] = new[] { "arial.ttf", "LiberationSans-Regular.ttf", "Arimo-Regular.ttf" },
+                ["Verdana"] = new[] { "verdana.ttf", "DejaVuSans.ttf" },
+                ["Georgia"] = new[] { "georgia.ttf", "Gelasio-Regular.ttf" },
+                ["Courier New"] = new[] { "cour.ttf", "Courier_New.ttf", "LiberationMono-Regular.ttf", "Cousine-Regular.ttf" },
+            };
     }
 }

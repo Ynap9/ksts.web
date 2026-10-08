@@ -1,4 +1,5 @@
-﻿using System;
+﻿using kssm.be.shared.Constants.Signing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -125,6 +126,14 @@ namespace kssm.be.shared.Constants.Template
         /// thẳng vào phép dựng /Decode và bảng màu của PDF, nơi một giá trị lạ làm hỏng màu cả ảnh.
         /// </summary>
         public const string MauPattern = "^#[0-9A-Fa-f]{6}$";
+
+        public const string FontChuKySoMacDinh = SigningConstants.AppearanceFontFamily;
+
+        public const double CoChuKySoMacDinh = SigningConstants.AppearanceFontSize;
+
+        public const double CoChuKySoMin = 6;
+
+        public const double CoChuKySoMax = 24;
 
         // ===== File PDF mẫu =====
         /// <summary>

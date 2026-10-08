@@ -40,18 +40,34 @@ namespace kssm.be.external.KySo.Pdf.Implements
             GlobalFontSettings.FontResolver = fontResolver;
         }
 
-        public PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
-            double height, string mau)
+        public PdfRectPointsDto MeasureText(string dong1, string dong2, string fontFamily, double fontSize)
         {
-            // Tỉ lệ lấy theo CHIỀU CAO: hai dòng chữ xếp dọc nên chiều cao mới là chiều quyết định cỡ chữ;
-            // lấy theo bề rộng thì ô rộng-thấp sẽ có chữ cao hơn cả hộp.
-            var scale = height / SigningConstants.AppearanceHeight;
+            lock (_khoaPdfSharp)
+            {
+                var font = new XFont(fontFamily, fontSize);
+                var padding = fontSize * SigningConstants.AppearancePaddingRatio;
+                using var gfx = XGraphics.CreateMeasureContext(new XSize(1, 1), XGraphicsUnit.Point,
+                    XPageDirection.Downwards);
+
+                return new PdfRectPointsDto
+                {
+                    Width = Math.Max(gfx.MeasureString(dong1, font).Width, gfx.MeasureString(dong2, font).Width)
+                        + padding * 2,
+                    Height = font.GetHeight() * 2 + padding * 2,
+                };
+            }
+        }
+
+        public PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
+            double height, string mau, string fontFamily, double fontSize)
+        {
             var mauChu = _hexColorReader.Read(mau);
 
             var tempPdf = Draw(width, height, (gfx, box) =>
             {
-                var font = new XFont(SigningConstants.AppearanceFontFamily,
-                    SigningConstants.AppearanceFontSize * scale);
+                var font = new XFont(fontFamily, fontSize);
+                var padding = fontSize * SigningConstants.AppearancePaddingRatio;
+                var lineHeight = font.GetHeight();
                 var but = new XSolidBrush(mauChu == null
                     ? XColors.Black
                     : XColor.FromArgb(
@@ -60,9 +76,10 @@ namespace kssm.be.external.KySo.Pdf.Implements
                         (int)Math.Round(mauChu.Blue * 255)));
 
                 gfx.DrawString(dong1, font, but,
-                    new XRect(0, 0, box.Width, box.Height / 2), XStringFormats.Center);
+                    new XRect(padding, padding, box.Width - padding * 2, lineHeight), XStringFormats.TopLeft);
                 gfx.DrawString(dong2, font, but,
-                    new XRect(0, box.Height / 2, box.Width, box.Height / 2), XStringFormats.Center);
+                    new XRect(padding, padding + lineHeight, box.Width - padding * 2, lineHeight),
+                    XStringFormats.TopLeft);
             });
 
             return Transplant(tempPdf, firstObjectNumber, width, height);

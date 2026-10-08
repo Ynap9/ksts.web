@@ -399,7 +399,12 @@ namespace kssm.be.external.KySo.Pdf.Implements
 
                 var pageBox = ReadPageBox(revision, pageRaw, pagesObjectNumber);
                 var rect = ToPoints(placement, pageBox);
-                if (veKhoiChu) rect = ApplyChuKyMinSize(rect, pageBox);
+                var fontSize = GetChuKyFontSize(options.CoChuKySo, pageBox);
+                if (veKhoiChu)
+                {
+                    rect = ApplyChuKyTextSize(rect, _appearanceBuilder.MeasureText(options.TenNguoiKy,
+                        signedAtText, options.FontChuKySo, fontSize));
+                }
                 if (anh != null)
                 {
                     rect = laDauDo ? ApplyDauDoSize(rect, anh) : ApplyChuKyTuoiFit(rect, pageBox, anh);
@@ -412,7 +417,7 @@ namespace kssm.be.external.KySo.Pdf.Implements
                 // là bản in sẵn có đường viền và mực đỏ riêng - động vào là ra vệt bệt và sai màu con dấu.
                 var appearance = veKhoiChu
                     ? _appearanceBuilder.BuildText(options.TenNguoiKy, signedAtText, plan.NextObjectNumber,
-                        rect.Width, rect.Height, options.MauChuKySo)
+                        rect.Width, rect.Height, options.MauChuKySo, options.FontChuKySo, fontSize)
                     : anh != null
                         ? _appearanceBuilder.BuildImage(anh,
                             laDauDo ? options.DoDamDauDo : options.DoDamChuKyTuoi,
@@ -533,31 +538,19 @@ namespace kssm.be.external.KySo.Pdf.Implements
             };
         }
 
-        public PdfRectPointsDto ApplyChuKyMinSize(PdfRectPointsDto rect, PdfRectPointsDto pageBox)
-        {
-            // Nhân theo khổ trang thật so với khổ tham chiếu để trang A3 không bị chữ ký teo bằng con tem còn
-            // trang nhỏ hơn A4 thì không bị tràn.
-            var scale = Math.Min(
+        public double GetChuKyFontSize(double coChu, PdfRectPointsDto pageBox) =>
+            coChu * Math.Min(
                 pageBox.Width / SigningConstants.AppearanceReferencePageWidth,
                 pageBox.Height / SigningConstants.AppearanceReferencePageHeight);
 
-            var nominalWidth = SigningConstants.AppearanceWidth * scale;
-            var nominalHeight = SigningConstants.AppearanceHeight * scale;
-
-            var width = rect.Width <= 0
-                ? nominalWidth
-                : Math.Max(rect.Width, nominalWidth * SigningConstants.AppearanceMinScale);
-            var height = rect.Height <= 0
-                ? nominalHeight
-                : Math.Max(rect.Height, nominalHeight * SigningConstants.AppearanceMinScale);
-
-            // Mép TRÊN của ô là chỗ người dùng thả khối nên giữ nguyên; phần cao thêm mọc xuống dưới.
+        public PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize)
+        {
             return new PdfRectPointsDto
             {
                 X = rect.X,
-                Y = rect.Top - height,
-                Width = width,
-                Height = height,
+                Y = rect.Top - textSize.Height,
+                Width = textSize.Width,
+                Height = textSize.Height,
             };
         }
 

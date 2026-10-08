@@ -19,23 +19,36 @@ namespace kssm.be.external.KySo.Fonts.Implements
 
         public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic)
         {
-            var path = FindFontFile(bold, italic);
+            var path = FindFontFile(familyName, bold, italic);
             if (path != null)
             {
                 return new FontResolverInfo(path);
             }
 
-            var regular = FindFontFile(false, false);
+            var regular = FindFontFile(familyName, false, false);
             return regular == null ? null : new FontResolverInfo(regular, bold, italic);
         }
 
         public byte[]? GetFont(string faceName) => _bytesByPath.GetOrAdd(faceName, File.ReadAllBytes);
 
-        public string? FindFontFile(bool bold, bool italic) =>
-            _pathByStyle.GetOrAdd($"{bold}|{italic}", _ => Locate(GetCandidateFiles(bold, italic)));
+        public string? FindFontFile(string familyName, bool bold, bool italic) =>
+            _pathByStyle.GetOrAdd($"{familyName}|{bold}|{italic}",
+                _ => Locate(GetCandidateFiles(familyName, bold, italic)));
 
-        public IReadOnlyList<string> GetCandidateFiles(bool bold, bool italic)
+        public IReadOnlyList<string> GetCandidateFiles(string familyName, bool bold, bool italic)
         {
+            if (!bold && !italic)
+            {
+                return AppearanceFontConstants.RegularFilesByFamily.TryGetValue(familyName, out var files)
+                    ? files
+                    : AppearanceFontConstants.RegularFiles;
+            }
+
+            if (!string.Equals(familyName, SigningConstants.AppearanceFontFamily, StringComparison.OrdinalIgnoreCase))
+            {
+                return Array.Empty<string>();
+            }
+
             if (bold && italic)
             {
                 return AppearanceFontConstants.BoldItalicFiles;
