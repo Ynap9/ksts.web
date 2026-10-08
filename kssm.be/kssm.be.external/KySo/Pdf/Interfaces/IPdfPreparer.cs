@@ -85,7 +85,8 @@ namespace kssm.be.external.KySo.Pdf.Interfaces
 
         double GetChuKyFontSize(double coChu, PdfRectPointsDto pageBox);
 
-        PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize);
+        PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize,
+            PdfRectPointsDto pageBox);
 
         /// <summary>
         /// Đặt con dấu về bề rộng thật <c>ImagePlacementConstants.DauDoWidthMm</c>, cao suy ra theo tỉ lệ ảnh

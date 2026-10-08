@@ -99,8 +99,6 @@ namespace kssm.be.applications.KySo.Template.Implements
                 }
             }
 
-            entity.Thumbprint = (input.Thumbprint ?? string.Empty).Trim();
-            entity.TenChungThu = input.TenChungThu;
             entity.LyDoKy = input.LyDoKy;
             entity.NoiKy = input.NoiKy;
             entity.HienThiChuKySo = input.HienThiChuKySo;

@@ -563,9 +563,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
         {
             return new PdfPrepareOptionsDto
             {
-                TenNguoiKy = string.IsNullOrWhiteSpace(tenNguoiKy)
-                    ? template.TenChungThu ?? string.Empty
-                    : tenNguoiKy,
+                TenNguoiKy = tenNguoiKy,
                 LyDoKy = template.LyDoKy,
                 NoiKy = template.NoiKy,
                 HienThiChuKySo = template.HienThiChuKySo,

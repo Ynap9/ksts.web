@@ -86,12 +86,6 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 ?? throw new UserFriendlyException(ErrorCodes.TemplateNotFound,
                     "Không tìm thấy template chữ ký đã chọn.");
 
-            if (string.IsNullOrWhiteSpace(template.Thumbprint))
-            {
-                throw new UserFriendlyException(ErrorCodes.CertificateNotFound,
-                    "Template chưa cấu hình chứng thư số nên chưa ký được.");
-            }
-
             var lo = new LoKyEntity
             {
                 NguoiTaoId = input.NguoiTaoId,

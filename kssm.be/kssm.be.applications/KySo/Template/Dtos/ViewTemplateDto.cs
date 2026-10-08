@@ -8,10 +8,6 @@ namespace kssm.be.applications.KySo.Template.Dtos
 
         public string? Description { get; set; }
 
-        public string Thumbprint { get; set; } = string.Empty;
-
-        public string? TenChungThu { get; set; }
-
         public string? LyDoKy { get; set; }
 
         public string? NoiKy { get; set; }
