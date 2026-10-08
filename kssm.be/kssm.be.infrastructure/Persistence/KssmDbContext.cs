@@ -44,6 +44,8 @@ namespace kssm.be.infrastructure.Persistence
                 // Khối chữ ký số vốn vẽ chữ đen nên cột này có mặc định; còn màu mực chữ ký tươi để TRỐNG
                 // nghĩa là chưa chọn, giữ nguyên mực ảnh gốc - đặt mặc định ở đó là mất hẳn trạng thái đó.
                 entity.Property(x => x.MauChuKySo).HasDefaultValue(TemplateConstants.MauMacDinh);
+                entity.Property(x => x.FontChuKySo).HasDefaultValue(TemplateConstants.FontChuKySoMacDinh);
+                entity.Property(x => x.CoChuKySo).HasDefaultValue(TemplateConstants.CoChuKySoMacDinh);
 
             });
             modelBuilder.Entity<TemplatePosition>(entity =>

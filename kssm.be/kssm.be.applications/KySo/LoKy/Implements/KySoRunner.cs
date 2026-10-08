@@ -577,6 +577,8 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 DoDayNetChuKyTuoi = template.DoDayNetChuKyTuoi,
                 MauChuKySo = template.MauChuKySo,
                 MauChuKyTuoi = template.MauChuKyTuoi,
+                FontChuKySo = template.FontChuKySo,
+                CoChuKySo = template.CoChuKySo,
                 ViTri = viTri,
             };
         }
@@ -598,6 +600,8 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 DoDayNetChuKyTuoi = mau.DoDayNetChuKyTuoi,
                 MauChuKySo = mau.MauChuKySo,
                 MauChuKyTuoi = mau.MauChuKyTuoi,
+                FontChuKySo = mau.FontChuKySo,
+                CoChuKySo = mau.CoChuKySo,
                 ViTri = mau.ViTri,
             };
         }

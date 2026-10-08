@@ -14,12 +14,11 @@ namespace kssm.be.external.KySo.Pdf.Interfaces
     /// </summary>
     public interface IPdfAppearanceBuilder
     {
-        /// <summary>
-        /// Khối chữ ký số hai dòng (tên người ký + giờ ký). Mọi số đo bên trong được nhân theo tỉ lệ so với
-        /// khổ chuẩn nên ô to thì chữ to theo, không bị chữ giữ nguyên cỡ rồi lọt thỏm hoặc tràn khỏi hộp.
-        /// </summary>
+        PdfRectPointsDto MeasureText(string dong1, string dong2, string fontFamily, double fontSize);
+
+        /// <summary>Khối chữ ký số hai dòng (tên người ký + giờ ký).</summary>
         PdfAppearanceDto BuildText(string dong1, string dong2, int firstObjectNumber, double width,
-            double height, string mau);
+            double height, string mau, string fontFamily, double fontSize);
 
         /// <summary>
         /// Mặt chữ ký là chính ẢNH CHỮ KÝ TƯƠI, không vẽ chữ. Ảnh được vẽ kín ô đã tính sẵn theo đúng tỉ lệ

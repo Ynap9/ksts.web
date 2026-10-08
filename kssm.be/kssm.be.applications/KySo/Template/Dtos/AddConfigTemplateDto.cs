@@ -31,6 +31,10 @@ namespace kssm.be.applications.KySo.Template.Dtos
 
         public string? MauChuKyTuoi { get; set; }
 
+        public string FontChuKySo { get; set; } = TemplateConstants.FontChuKySoMacDinh;
+
+        public double CoChuKySo { get; set; } = TemplateConstants.CoChuKySoMacDinh;
+
         public IFormFile? AnhDauDo { get; set; }
 
         public IFormFile? AnhChuKyTuoi { get; set; }

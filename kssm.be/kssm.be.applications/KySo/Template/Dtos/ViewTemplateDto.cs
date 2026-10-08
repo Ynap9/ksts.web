@@ -36,6 +36,10 @@ namespace kssm.be.applications.KySo.Template.Dtos
 
         public string? MauChuKyTuoi { get; set; }
 
+        public string FontChuKySo { get; set; } = string.Empty;
+
+        public double CoChuKySo { get; set; }
+
         public DateTime? CreatedDate { get; set; }
 
         public DateTime? ModifiedDate { get; set; }

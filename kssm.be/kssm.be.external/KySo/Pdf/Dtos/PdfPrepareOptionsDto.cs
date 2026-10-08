@@ -30,6 +30,10 @@ namespace kssm.be.external.KySo.Pdf.Dtos
 
         public string? MauChuKyTuoi { get; set; }
 
+        public string FontChuKySo { get; set; } = TemplateConstants.FontChuKySoMacDinh;
+
+        public double CoChuKySo { get; set; } = TemplateConstants.CoChuKySoMacDinh;
+
         public List<PdfPlacementDto> ViTri { get; set; } = new();
     }
 }

@@ -83,12 +83,13 @@ namespace kssm.be.shared.Constants.Signing
         // ===== Hình thức chữ ký hiển thị =====
         // Số đo TRÍCH TỪ FILE THẬT, không phải tự chọn cho đẹp.
         // Khối 170x30pt; 2 dòng chữ: dòng 1 = CN người ký, dòng 2 = giờ ký ISO 8601.
-        // Hai dòng được CANH GIỮA ô nên không có hằng số toạ độ từng dòng: chỗ đặt chữ suy ra từ chính
-        // khổ ô mà người dùng kéo thả.
+        // Hai dòng CĂN TRÁI, mỗi dòng một hàng không xuống dòng; khung ôm theo chữ đo bằng font và cỡ chữ
+        // của template nên không bị bề rộng ô bó lại.
         public const double AppearanceWidth = 170;
         public const double AppearanceHeight = 30;
         public const string AppearanceFontFamily = "Times New Roman";
         public const double AppearanceFontSize = 10;
+        public const double AppearancePaddingRatio = 0.2;
 
         // Giờ ký hiển thị trong khối chữ ký: ISO 8601 theo giờ VN, KÈM múi giờ +07:00 như TT05 Điều 8 đòi.
         // Ghi cứng '+07:00' chứ không dùng "zzz": giờ ký đã quy về giờ VN nhưng Kind là Unspecified, "zzz" sẽ
@@ -102,11 +103,6 @@ namespace kssm.be.shared.Constants.Signing
         // chung cho cả thư mục có nhiều khổ giấy.
         public const double AppearanceReferencePageWidth = 595;
         public const double AppearanceReferencePageHeight = 842;
-
-        // Sàn kích cỡ khi người dùng TỰ chọn vị trí: khối không được nhỏ hơn ngần này lần khổ chuẩn của trang.
-        // Vị trí người dùng chọn được tôn trọng nguyên vẹn; chỉ hai thứ bị sửa là khối TRÀN ra ngoài trang
-        // (kẹp lại) và khối NHỎ tới mức không đọc nổi chữ (kéo lên sàn này).
-        public const double AppearanceMinScale = 0.5;
 
         // Lề chừa với mép trang khi TỰ đặt chữ ký (vị trí mặc định) — dính sát mép trông như lỗi in.
         // Cũng co giãn theo khổ trang như khối chữ ký.

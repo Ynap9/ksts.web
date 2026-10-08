@@ -5,6 +5,7 @@ using kssm.be.applications.KySo.Template.Interfaces;
 using kssm.be.external.KySo.Colors.Interfaces;
 using kssm.be.external.S3.Interfaces;
 using kssm.be.infrastructure.Persistence;
+using kssm.be.shared.Constants.Signing;
 using kssm.be.shared.Constants.Template;
 using kssm.be.shared.Requests.AppException;
 using kssm.be.shared.Requests.BaseRequest;
@@ -116,6 +117,11 @@ namespace kssm.be.applications.KySo.Template.Implements
                 TemplateConstants.DoDayNetMin, TemplateConstants.DoDayNetMax);
             entity.MauChuKySo = _hexColorReader.Normalize(input.MauChuKySo) ?? TemplateConstants.MauMacDinh;
             entity.MauChuKyTuoi = _hexColorReader.Normalize(input.MauChuKyTuoi);
+            entity.FontChuKySo = AppearanceFontConstants.RegularFilesByFamily.Keys
+                .FirstOrDefault(x => string.Equals(x, input.FontChuKySo?.Trim(), StringComparison.OrdinalIgnoreCase))
+                ?? TemplateConstants.FontChuKySoMacDinh;
+            entity.CoChuKySo = Math.Clamp(input.CoChuKySo,
+                TemplateConstants.CoChuKySoMin, TemplateConstants.CoChuKySoMax);
 
             entity.ModifiedDate = GetVietnamTime();
 
