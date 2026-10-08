@@ -19,12 +19,6 @@ namespace kssm.be.domain.KySo.Template
         public string TenTemplate { get; set; } = string.Empty;
         public string? Description { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string Thumbprint { get; set; } = string.Empty;
-
-        [MaxLength(500)]
-        public string? TenChungThu { get; set; }
-
         [MaxLength(500)]
         public string? LyDoKy { get; set; }
 

@@ -403,7 +403,7 @@ namespace kssm.be.external.KySo.Pdf.Implements
                 if (veKhoiChu)
                 {
                     rect = ApplyChuKyTextSize(rect, _appearanceBuilder.MeasureText(options.TenNguoiKy,
-                        signedAtText, options.FontChuKySo, fontSize));
+                        signedAtText, options.FontChuKySo, fontSize), pageBox);
                 }
                 if (anh != null)
                 {
@@ -543,11 +543,14 @@ namespace kssm.be.external.KySo.Pdf.Implements
                 pageBox.Width / SigningConstants.AppearanceReferencePageWidth,
                 pageBox.Height / SigningConstants.AppearanceReferencePageHeight);
 
-        public PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize)
+        public PdfRectPointsDto ApplyChuKyTextSize(PdfRectPointsDto rect, PdfRectPointsDto textSize,
+            PdfRectPointsDto pageBox)
         {
+            var bamPhai = rect.X + rect.Width / 2 > pageBox.X + pageBox.Width / 2;
+
             return new PdfRectPointsDto
             {
-                X = rect.X,
+                X = bamPhai ? rect.Right - textSize.Width : rect.X,
                 Y = rect.Top - textSize.Height,
                 Width = textSize.Width,
                 Height = textSize.Height,
