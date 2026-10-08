@@ -618,29 +618,25 @@ namespace kssm.be.external.KySo.Pdf.Implements
 
         public PdfRectPointsDto ClampToPage(PdfRectPointsDto rect, PdfRectPointsDto pageBox)
         {
-            var margin = SigningConstants.AppearancePageMargin
-                * Math.Min(pageBox.Width / SigningConstants.AppearanceReferencePageWidth,
-                    pageBox.Height / SigningConstants.AppearanceReferencePageHeight);
-
             var x = rect.X;
             var y = rect.Y;
 
-            if (rect.Width + 2 * margin >= pageBox.Width)
+            if (rect.Width >= pageBox.Width)
             {
                 x = pageBox.X + (pageBox.Width - rect.Width) / 2;
             }
             else
             {
-                x = Math.Clamp(x, pageBox.X + margin, pageBox.X + pageBox.Width - margin - rect.Width);
+                x = Math.Clamp(x, pageBox.X, pageBox.X + pageBox.Width - rect.Width);
             }
 
-            if (rect.Height + 2 * margin >= pageBox.Height)
+            if (rect.Height >= pageBox.Height)
             {
                 y = pageBox.Y + (pageBox.Height - rect.Height) / 2;
             }
             else
             {
-                y = Math.Clamp(y, pageBox.Y + margin, pageBox.Y + pageBox.Height - margin - rect.Height);
+                y = Math.Clamp(y, pageBox.Y, pageBox.Y + pageBox.Height - rect.Height);
             }
 
             return new PdfRectPointsDto { X = x, Y = y, Width = rect.Width, Height = rect.Height };

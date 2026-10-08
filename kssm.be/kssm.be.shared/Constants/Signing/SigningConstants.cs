@@ -105,7 +105,7 @@ namespace kssm.be.shared.Constants.Signing
         public const double AppearanceReferencePageHeight = 842;
 
         // Lề chừa với mép trang khi TỰ đặt chữ ký (vị trí mặc định) — dính sát mép trông như lỗi in.
-        // Cũng co giãn theo khổ trang như khối chữ ký.
+        // Vị trí người dùng tự kéo không bị ép lề này.
         public const double AppearancePageMargin = 8;
 
         // ===== Tên file đã ký =====
