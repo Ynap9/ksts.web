@@ -86,6 +86,13 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                 ?? throw new UserFriendlyException(ErrorCodes.TemplateNotFound,
                     "Không tìm thấy template chữ ký đã chọn.");
 
+            var tenDotKy = DriveConstants.ChuanHoaTenThuMuc(input.TenThuMuc);
+            if (string.IsNullOrWhiteSpace(input.ProjectId) && tenDotKy == null)
+            {
+                throw new UserFriendlyException(ErrorCodes.LoKyThieuTenDot,
+                    "Chưa nhập tên đợt ký để đặt tên thư mục trên Google Drive.");
+            }
+
             var lo = new LoKyEntity
             {
                 NguoiTaoId = input.NguoiTaoId,
@@ -99,10 +106,7 @@ namespace kssm.be.applications.KySo.LoKy.Implements
 
             if (string.IsNullOrWhiteSpace(input.ProjectId))
             {
-                // Lô nhận file tải lên: thư mục trên Drive lấy tên thư mục người dùng chọn trên máy; chọn
-                // từng file lẻ thì không có tên nào nên lùi về tên đặt theo lô.
-                lo.ThuMucDaKy = DriveConstants.ChuanHoaTenThuMuc(input.TenThuMuc)
-                    ?? LoKyConstants.GetDefaultFolderName(lo.Id, lo.CreatedDate!.Value);
+                lo.ThuMucDaKy = tenDotKy;
             }
             else
             {
@@ -375,6 +379,64 @@ namespace kssm.be.applications.KySo.LoKy.Implements
                     .ToListAsync())
                 .Select(ToViewFileDto)
                 .ToList();
+        }
+
+        public async Task<ViewLoKyDto?> XoaFileAsync(int loKyId, int fileId)
+        {
+            _logger.LogInformation("{Method} loKyId={LoKyId} fileId={FileId}", nameof(XoaFileAsync),
+                loKyId, fileId);
+
+            var lo = await LayLoAsync(loKyId);
+
+            if (lo.TrangThai is TrangThaiLoKy.MoiTao or TrangThaiLoKy.DangKy || _kySoRunner.DangChay(loKyId))
+            {
+                throw new UserFriendlyException(ErrorCodes.LoKyDangChay,
+                    "Lô đang ký nên chưa xoá file được. Tạm dừng lô rồi xoá.");
+            }
+
+            var file = await _kstsDbContext.LoKyFile
+                .FirstOrDefaultAsync(x => x.Id == fileId && x.LoKyId == loKyId && !x.Deleted)
+                ?? throw new UserFriendlyException(ErrorCodes.LoKyFileNotFound,
+                    "Không tìm thấy file trong lô ký.");
+
+            if (file.TrangThai is not (TrangThaiFileKy.Cho or TrangThaiFileKy.Loi))
+            {
+                throw new UserFriendlyException(ErrorCodes.LoKyFileKhongXoaDuoc,
+                    "Chỉ xoá được file đang chờ ký hoặc bị lỗi.");
+            }
+
+            var now = DateTimeConstants.VietnamNow;
+            var laLoTaiLen = string.IsNullOrWhiteSpace(lo.ProjectId);
+
+            if (file.TrangThai == TrangThaiFileKy.Loi)
+            {
+                lo.SoLoi = Math.Max(0, lo.SoLoi - 1);
+            }
+
+            file.Deleted = true;
+            file.DeletedDate = now;
+            lo.TongSo = Math.Max(0, lo.TongSo - 1);
+            lo.ModifiedDate = now;
+
+            var conFile = await _kstsDbContext.LoKyFile
+                .AnyAsync(x => x.LoKyId == loKyId && !x.Deleted && x.Id != fileId);
+
+            if (!conFile)
+            {
+                _hangDoiKy.DongPhien(loKyId);
+                lo.Deleted = true;
+                lo.DeletedDate = now;
+            }
+
+            await _kstsDbContext.SaveChangesAsync();
+
+            if (laLoTaiLen)
+            {
+                await _loKyFileStorage.DeleteByPrefixAsync(_s3ClientFactory.DefaultConnection(),
+                    conFile ? file.ObjectKeyNguon : LoKyConstants.GetLoPrefix(loKyId));
+            }
+
+            return conFile ? ToViewDto(lo) : null;
         }
 
         public async Task<ViewTienDoDto> TrangThaiAsync(int loKyId)

@@ -62,6 +62,8 @@ namespace kssm.be.applications.KySo.LoKy.Interfaces
         /// <summary>Danh sách đầy đủ các file của lô, lấy MỘT lần lúc mở màn hình.</summary>
         Task<List<ViewFileKyDto>> DanhSachFileAsync(int loKyId);
 
+        Task<ViewLoKyDto?> XoaFileAsync(int loKyId, int fileId);
+
         /// <summary>
         /// Tiến độ để hỏi theo nhịp: bộ đếm, file lỗi, một ít file vừa xong, và cờ phiên ký còn sống hay
         /// không. Không bao giờ trả cả danh sách file.
