@@ -90,9 +90,10 @@ namespace kssm.be.shared.Constants.Signing
         public const string AppearanceFontFamily = "Times New Roman";
         public const double AppearanceFontSize = 10;
 
-        // Giờ ký hiển thị trong khối chữ ký: ISO 8601 theo giờ VN, KHÔNG kèm phần bù múi giờ.
-        // Mọi giờ trong khối đều là giờ VN nên phần bù chỉ làm khối dài thêm.
-        public const string AppearanceTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffffff";
+        // Giờ ký hiển thị trong khối chữ ký: ISO 8601 theo giờ VN, KÈM múi giờ +07:00 như TT05 Điều 8 đòi.
+        // Ghi cứng '+07:00' chứ không dùng "zzz": giờ ký đã quy về giờ VN nhưng Kind là Unspecified, "zzz" sẽ
+        // lấy múi của máy chủ (container chạy UTC in ra +00:00).
+        public const string AppearanceTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffffff'+07:00'";
 
         // ===== Co giãn khối chữ ký theo khổ trang =====
         // Khổ trang mà bộ số 170x30pt ở trên được đo ra (A4 dọc). Khối chữ ký được nhân theo tỉ lệ

@@ -42,6 +42,7 @@ namespace kssm.be.applications.KySo.Template.Implements
             var entity = new TemplateEntity
             {
                 TenTemplate = (input.TenTemplate ?? string.Empty).Trim(),
+                Description = input.Description?.Trim(),
                 CreatedDate = GetVietnamTime(),
             };
 

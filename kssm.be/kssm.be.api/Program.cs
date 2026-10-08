@@ -249,6 +249,7 @@ using (var scope = app.Services.CreateScope())
     var dongGoiManager = scope.ServiceProvider.GetRequiredService<KssmDbContext>();
 
     await SeedDongGoi.SeedAsync(dongGoiManager);
+    await SeedKySoTemplate.SeedAsync(dongGoiManager);
 
     // Kho tạm của phiên đóng gói nằm trên MinIO: kho có thể không với tới lúc khởi động, mà đó không phải
     // lý do để cả API không lên được.
